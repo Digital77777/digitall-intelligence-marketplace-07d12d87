@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Users, Search, Filter } from 'lucide-react';
+import { ArrowLeft, Briefcase, MapPin, DollarSign, Clock, Users, Search, Filter, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useMarketplace } from '@/hooks/useMarketplace';
 import { useAuth } from '@/hooks/useAuth';
 import { JobApplicationModal } from '@/components/marketplace/JobApplicationModal';
@@ -18,23 +22,89 @@ const JobListingsPage = () => {
   const [employmentFilter, setEmploymentFilter] = useState<string>('all');
   const [selectedJob, setSelectedJob] = useState<any>(null);
   const [isApplicationModalOpen, setIsApplicationModalOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  
+  // Advanced filters
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [experienceLevel, setExperienceLevel] = useState<string>('all');
+  const [salaryRange, setSalaryRange] = useState<[number, number]>([0, 300000]);
+  const [jobType, setJobType] = useState<string>('all'); // remote/onsite/hybrid
+  const [location, setLocation] = useState<string>('');
 
   // Filter only job listings
   const jobListings = listings.filter(listing => listing.listing_type === 'job');
 
+  // Extract all unique skills from job listings
+  const allSkills = Array.from(new Set(
+    jobListings.flatMap(job => job.tags || [])
+  )).sort();
+
   // Apply search and filters
   const filteredJobs = jobListings.filter(job => {
+    const details = parseJobDetails(job.requirements);
+    
+    // Search filter
     const matchesSearch = 
       job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (job.tags && job.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     
+    // Employment type filter
     const requirements = job.requirements || '';
     const matchesEmployment = employmentFilter === 'all' || 
       requirements.toLowerCase().includes(employmentFilter.toLowerCase());
     
-    return matchesSearch && matchesEmployment;
+    // Skills filter
+    const matchesSkills = selectedSkills.length === 0 || 
+      (job.tags && selectedSkills.some(skill => job.tags.includes(skill)));
+    
+    // Experience level filter
+    const matchesExperience = experienceLevel === 'all' || 
+      (details.experience && details.experience.toLowerCase().includes(experienceLevel.toLowerCase()));
+    
+    // Salary range filter
+    let matchesSalary = true;
+    if (details.salary) {
+      const salaryMatch = details.salary.match(/\d+/g);
+      if (salaryMatch) {
+        const jobSalary = parseInt(salaryMatch[0]);
+        matchesSalary = jobSalary >= salaryRange[0] && jobSalary <= salaryRange[1];
+      }
+    }
+    
+    // Job type filter (remote/onsite/hybrid)
+    const matchesJobType = jobType === 'all' || 
+      (details.remote && (
+        (jobType === 'remote' && details.remote.toLowerCase() === 'yes') ||
+        (jobType === 'onsite' && details.remote.toLowerCase() === 'no') ||
+        (jobType === 'hybrid' && details.remote.toLowerCase().includes('hybrid'))
+      ));
+    
+    // Location filter
+    const matchesLocation = !location || 
+      (details.location && details.location.toLowerCase().includes(location.toLowerCase()));
+    
+    return matchesSearch && matchesEmployment && matchesSkills && 
+           matchesExperience && matchesSalary && matchesJobType && matchesLocation;
   });
+
+  // Count active filters
+  const activeFiltersCount = 
+    (employmentFilter !== 'all' ? 1 : 0) +
+    selectedSkills.length +
+    (experienceLevel !== 'all' ? 1 : 0) +
+    (salaryRange[0] !== 0 || salaryRange[1] !== 300000 ? 1 : 0) +
+    (jobType !== 'all' ? 1 : 0) +
+    (location ? 1 : 0);
+
+  const clearAllFilters = () => {
+    setEmploymentFilter('all');
+    setSelectedSkills([]);
+    setExperienceLevel('all');
+    setSalaryRange([0, 300000]);
+    setJobType('all');
+    setLocation('');
+  };
 
   const parseJobDetails = (requirements: string | null) => {
     if (!requirements) return {};
@@ -77,8 +147,8 @@ const JobListingsPage = () => {
           </p>
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
+        {/* Search Bar */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -88,20 +158,216 @@ const JobListingsPage = () => {
               className="pl-10"
             />
           </div>
-          <Select value={employmentFilter} onValueChange={setEmploymentFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Employment Type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="full-time">Full-time</SelectItem>
-              <SelectItem value="part-time">Part-time</SelectItem>
-              <SelectItem value="contract">Contract</SelectItem>
-              <SelectItem value="freelance">Freelance</SelectItem>
-              <SelectItem value="internship">Internship</SelectItem>
-            </SelectContent>
-          </Select>
+          <Button 
+            variant={isFilterOpen ? "default" : "outline"}
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="sm:w-auto"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            Filters
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
+                {activeFiltersCount}
+              </Badge>
+            )}
+            {isFilterOpen ? <ChevronUp className="h-4 w-4 ml-2" /> : <ChevronDown className="h-4 w-4 ml-2" />}
+          </Button>
+        </div>
+
+        {/* Advanced Filters Panel */}
+        {isFilterOpen && (
+          <Card className="mb-6 bg-muted/30">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">Advanced Filters</h3>
+                {activeFiltersCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                    <X className="h-4 w-4 mr-2" />
+                    Clear All
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Employment Type */}
+                <div className="space-y-2">
+                  <Label>Employment Type</Label>
+                  <Select value={employmentFilter} onValueChange={setEmploymentFilter}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="full-time">Full-time</SelectItem>
+                      <SelectItem value="part-time">Part-time</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                      <SelectItem value="freelance">Freelance</SelectItem>
+                      <SelectItem value="internship">Internship</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Experience Level */}
+                <div className="space-y-2">
+                  <Label>Experience Level</Label>
+                  <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="All Levels" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">All Levels</SelectItem>
+                      <SelectItem value="entry">Entry Level</SelectItem>
+                      <SelectItem value="junior">Junior (1-3 years)</SelectItem>
+                      <SelectItem value="mid">Mid-Level (3-5 years)</SelectItem>
+                      <SelectItem value="senior">Senior (5+ years)</SelectItem>
+                      <SelectItem value="lead">Lead/Principal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Job Type (Remote/Onsite) */}
+                <div className="space-y-2">
+                  <Label>Work Location</Label>
+                  <Select value={jobType} onValueChange={setJobType}>
+                    <SelectTrigger className="bg-background">
+                      <SelectValue placeholder="All Locations" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50">
+                      <SelectItem value="all">All Locations</SelectItem>
+                      <SelectItem value="remote">Remote</SelectItem>
+                      <SelectItem value="onsite">On-site</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Location */}
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input
+                    placeholder="e.g., San Francisco, Remote"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+
+                {/* Salary Range */}
+                <div className="space-y-3 md:col-span-2">
+                  <Label>
+                    Salary Range: ${salaryRange[0].toLocaleString()} - ${salaryRange[1].toLocaleString()}
+                  </Label>
+                  <Slider
+                    min={0}
+                    max={300000}
+                    step={10000}
+                    value={salaryRange}
+                    onValueChange={(value) => setSalaryRange(value as [number, number])}
+                    className="py-4"
+                  />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>$0</span>
+                    <span>$300k+</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Skills Filter */}
+              {allSkills.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <Label>Required Skills ({selectedSkills.length} selected)</Label>
+                  <div className="flex flex-wrap gap-2 p-4 bg-background rounded-lg border max-h-48 overflow-y-auto">
+                    {allSkills.map((skill) => (
+                      <div key={skill} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`skill-${skill}`}
+                          checked={selectedSkills.includes(skill)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedSkills([...selectedSkills, skill]);
+                            } else {
+                              setSelectedSkills(selectedSkills.filter(s => s !== skill));
+                            }
+                          }}
+                        />
+                        <Label
+                          htmlFor={`skill-${skill}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {skill}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Active Filters Summary */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {employmentFilter !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                {employmentFilter}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={() => setEmploymentFilter('all')}
+                />
+              </Badge>
+            )}
+            {experienceLevel !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                {experienceLevel}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={() => setExperienceLevel('all')}
+                />
+              </Badge>
+            )}
+            {jobType !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                {jobType}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={() => setJobType('all')}
+                />
+              </Badge>
+            )}
+            {location && (
+              <Badge variant="secondary" className="gap-1">
+                Location: {location}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={() => setLocation('')}
+                />
+              </Badge>
+            )}
+            {(salaryRange[0] !== 0 || salaryRange[1] !== 300000) && (
+              <Badge variant="secondary" className="gap-1">
+                ${salaryRange[0].toLocaleString()}-${salaryRange[1].toLocaleString()}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={() => setSalaryRange([0, 300000])}
+                />
+              </Badge>
+            )}
+            {selectedSkills.map(skill => (
+              <Badge key={skill} variant="secondary" className="gap-1">
+                {skill}
+                <X 
+                  className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                  onClick={() => setSelectedSkills(selectedSkills.filter(s => s !== skill))}
+                />
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {/* Results Count */}
+        <div className="mb-4 text-sm text-muted-foreground">
+          Showing {filteredJobs.length} of {jobListings.length} jobs
         </div>
 
         {/* Job Listings */}
