@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Actor {
   id: string;
@@ -48,6 +50,7 @@ export const NotificationBell = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -70,7 +73,10 @@ export const NotificationBell = () => {
   }, [user]);
 
   const fetchNotifications = async () => {
-    if (user) {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -80,6 +86,7 @@ export const NotificationBell = () => {
       
       if (error) {
         console.error('Error fetching notifications:', error);
+        toast.error('Failed to load notifications');
       } else {
         const notificationsWithActors = (data || []).map(n => ({
           ...n,
@@ -89,6 +96,8 @@ export const NotificationBell = () => {
         setNotifications(notificationsWithActors);
         setUnreadCount(notificationsWithActors.filter((n: Notification) => !n.is_read).length || 0);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -132,38 +141,54 @@ export const NotificationBell = () => {
   const handleNotificationClick = async (notification: Notification) => {
     if (!user) return;
 
-    // Mark as read
-    let query = supabase
-      .from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .eq('is_read', false)
-      .eq('type', notification.type);
+    try {
+      // Mark as read
+      let query = supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('id', notification.id);
 
-    // For aggregated notifications, we mark all related unread notifications as read.
-    if (!notification.is_read) {
-        if (notification.metadata?.listing_id) {
-            query = query.eq('metadata->>listing_id', notification.metadata.listing_id);
-        } else if (notification.metadata?.topic_id) {
-            query = query.eq('metadata->>topic_id', notification.metadata.topic_id);
-        } else if (notification.metadata?.insight_id) {
-            query = query.eq('metadata->>insight_id', notification.metadata.insight_id);
-        } else {
-            // For single notifications that were not aggregated
-            query = query.eq('id', notification.id);
-        }
-    } else {
-        // For already read notifications, we only need to match the ID
-        query = query.eq('id', notification.id);
+      const { error } = await query;
+      
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        toast.error('Failed to update notification');
+      } else {
+        fetchNotifications();
+      }
+
+      // Navigate to relevant page
+      const path = getNavigationPath(notification);
+      if (path) {
+        navigate(path);
+      }
+    } catch (error) {
+      console.error('Error handling notification:', error);
+      toast.error('Something went wrong');
     }
+  };
 
-    await query;
-    fetchNotifications();
+  const handleMarkAllAsRead = async () => {
+    if (!user) return;
 
-    // Navigate to relevant page
-    const path = getNavigationPath(notification);
-    if (path) {
-      navigate(path);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', user.id)
+        .eq('is_read', false);
+
+      if (error) {
+        console.error('Error marking all as read:', error);
+        toast.error('Failed to mark all as read');
+      } else {
+        toast.success('All notifications marked as read');
+        fetchNotifications();
+      }
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast.error('Something went wrong');
     }
   };
 
@@ -179,37 +204,58 @@ export const NotificationBell = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
-        <div className="p-2 flex justify-between items-center">
+      <DropdownMenuContent align="end" className="w-80 max-h-[500px] overflow-y-auto">
+        <div className="p-2 flex justify-between items-center sticky top-0 bg-background z-10">
           <div className="font-semibold">Notifications</div>
-          <Link to="/notification-settings">
-            <Button variant="ghost" size="icon" aria-label="Notification settings">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </Link>
+          <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleMarkAllAsRead}
+                className="text-xs h-7"
+              >
+                Mark all read
+              </Button>
+            )}
+            <Link to="/notification-settings">
+              <Button variant="ghost" size="icon" aria-label="Notification settings">
+                <Settings className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
         <DropdownMenuSeparator />
-        {notifications.length === 0 ? (
-          <div className="p-4 text-sm text-muted-foreground text-center">No new notifications</div>
+        {isLoading ? (
+          <div className="p-8 text-sm text-muted-foreground text-center">
+            <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2" />
+            Loading notifications...
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="p-8 text-center">
+            <Bell className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
+            <div className="text-sm text-muted-foreground font-medium">No notifications yet</div>
+            <div className="text-xs text-muted-foreground mt-1">We'll notify you when something happens</div>
+          </div>
         ) : (
           notifications.map((notification) => (
             <DropdownMenuItem 
               key={notification.id} 
               onSelect={() => handleNotificationClick(notification)}
-              className="cursor-pointer focus:outline-none"
+              className="cursor-pointer focus:outline-none p-0"
             >
-              <div className={`p-3 rounded-lg w-full transition-all duration-200 hover:scale-[0.98] active:scale-95 ${
+              <div className={`p-3 w-full transition-all duration-200 hover:bg-muted/50 relative ${
                 !notification.is_read 
-                  ? 'bg-primary/10 hover:bg-primary/15 border border-primary/20' 
-                  : 'hover:bg-muted/50'
+                  ? 'bg-primary/5 border-l-2 border-primary' 
+                  : ''
               }`}>
                 <div className="text-sm font-semibold capitalize">{notification.type.replace(/_/g, ' ')}</div>
-                <div className="text-sm mt-1">{renderNotificationMessage(notification)}</div>
+                <div className="text-sm mt-1 text-foreground/90">{renderNotificationMessage(notification)}</div>
                 <div className="text-xs text-muted-foreground mt-2">
-                  {new Date(notification.created_at).toLocaleString()}
+                  {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                 </div>
                 {!notification.is_read && (
-                  <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  <div className="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary" />
                 )}
               </div>
             </DropdownMenuItem>
