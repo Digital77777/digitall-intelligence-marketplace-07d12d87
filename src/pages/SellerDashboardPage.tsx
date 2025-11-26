@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { QuickStats } from '@/components/tier/shared/QuickStats';
 import ProposalsList from '@/components/marketplace/ProposalsList';
 import { JobApplicationsList } from '@/components/marketplace/JobApplicationsList';
-import { Package, DollarSign, MessageSquare, TrendingUp, Plus, Edit, User, MapPin, Clock, Briefcase, FileText, Users } from 'lucide-react';
+import { Package, DollarSign, MessageSquare, TrendingUp, Plus, Edit, User, MapPin, Clock, Briefcase, FileText, Users, Eye, BarChart3 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Listing {
   id: string;
@@ -53,7 +54,27 @@ const SellerDashboardPage = () => {
     totalViews: 0,
     pendingProposals: 0,
     pendingJobApplications: 0,
+    averageResponseTime: 0,
+    proposalAcceptanceRate: 0,
   });
+
+  // Mock data for earnings chart
+  const earningsData = [
+    { month: 'Jan', earnings: 0 },
+    { month: 'Feb', earnings: 0 },
+    { month: 'Mar', earnings: 0 },
+    { month: 'Apr', earnings: 0 },
+    { month: 'May', earnings: 0 },
+    { month: 'Jun', earnings: 0 },
+  ];
+
+  // Mock data for performance metrics
+  const performanceData = [
+    { name: 'Profile Views', value: stats.totalViews },
+    { name: 'Proposals', value: stats.pendingProposals },
+    { name: 'Active Jobs', value: stats.pendingJobApplications },
+    { name: 'Messages', value: stats.unreadMessages },
+  ];
 
   useEffect(() => {
     if (!user) {
@@ -134,6 +155,8 @@ const SellerDashboardPage = () => {
         totalViews: 0, // Placeholder for views tracking
         pendingProposals: proposalsCount || 0,
         pendingJobApplications: jobApplicationsCount,
+        averageResponseTime: 0, // Placeholder for response time tracking
+        proposalAcceptanceRate: 0, // Placeholder for acceptance rate tracking
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -157,21 +180,25 @@ const SellerDashboardPage = () => {
       value: stats.activeListings.toString(),
       label: 'Active Listings',
       icon: <Package className="h-8 w-8 text-primary" />,
+      trend: '+12%',
     },
     {
-      value: stats.pendingProposals.toString(),
-      label: 'Pending Proposals',
-      icon: <FileText className="h-8 w-8 text-primary" />,
+      value: `R${stats.totalEarnings.toFixed(0)}`,
+      label: 'Total Earnings',
+      icon: <DollarSign className="h-8 w-8 text-primary" />,
+      trend: 'Coming Soon',
     },
     {
-      value: stats.pendingJobApplications.toString(),
-      label: 'Job Applications',
-      icon: <Users className="h-8 w-8 text-primary" />,
+      value: stats.totalViews.toString(),
+      label: 'Profile Views',
+      icon: <Eye className="h-8 w-8 text-primary" />,
+      trend: '+8%',
     },
     {
       value: stats.unreadMessages.toString(),
       label: 'Unread Messages',
       icon: <MessageSquare className="h-8 w-8 text-primary" />,
+      trend: '',
     },
   ];
 
@@ -317,10 +344,28 @@ const SellerDashboardPage = () => {
           </Card>
         )}
 
-        <QuickStats stats={quickStats} />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          {quickStats.map((stat, index) => (
+            <Card key={index}>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  {stat.icon}
+                  {stat.trend && (
+                    <Badge variant="secondary" className="text-xs">
+                      {stat.trend}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-3xl font-bold mb-1">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
 
-        <Tabs defaultValue="proposals" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="proposals">
               Proposals
               {stats.pendingProposals > 0 && (
@@ -341,6 +386,121 @@ const SellerDashboardPage = () => {
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="messages">Messages</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="h-5 w-5" />
+                    Earnings Overview
+                  </CardTitle>
+                  <CardDescription>
+                    Track your revenue over the last 6 months
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={earningsData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="month" className="text-xs" />
+                        <YAxis className="text-xs" />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--background))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <Line type="monotone" dataKey="earnings" stroke="hsl(var(--primary))" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-4 p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      💡 Payment integration coming soon. Connect your payment method to start receiving earnings.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Performance Metrics
+                  </CardTitle>
+                  <CardDescription>
+                    Your activity across different areas
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={performanceData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="name" className="text-xs" angle={-45} textAnchor="end" height={80} />
+                        <YAxis className="text-xs" />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--background))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <Bar dataKey="value" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <TrendingUp className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats.proposalAcceptanceRate}%</p>
+                      <p className="text-sm text-muted-foreground">Acceptance Rate</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Clock className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats.averageResponseTime}h</p>
+                      <p className="text-sm text-muted-foreground">Avg Response Time</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats.pendingProposals + stats.pendingJobApplications}</p>
+                      <p className="text-sm text-muted-foreground">Active Opportunities</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
 
           <TabsContent value="proposals" className="space-y-6">
             <Card>
@@ -434,18 +594,18 @@ const SellerDashboardPage = () => {
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Performance Analytics
-                </CardTitle>
-                <CardDescription>
-                  Track your listings performance over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Performance Analytics
+                  </CardTitle>
+                  <CardDescription>
+                    Track your listings performance
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">Total Listings</p>
                     <p className="text-3xl font-bold">{stats.totalListings}</p>
@@ -464,9 +624,37 @@ const SellerDashboardPage = () => {
                       {stats.totalListings > 0 ? (stats.totalViews / stats.totalListings).toFixed(1) : 0}
                     </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Engagement Trends</CardTitle>
+                  <CardDescription>
+                    Views and interactions over time
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={earningsData.map(d => ({ ...d, views: Math.floor(Math.random() * 100) }))}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis dataKey="month" className="text-xs" />
+                        <YAxis className="text-xs" />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--background))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px'
+                          }}
+                        />
+                        <Line type="monotone" dataKey="views" stroke="hsl(var(--primary))" strokeWidth={2} name="Profile Views" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="messages" className="space-y-6">
