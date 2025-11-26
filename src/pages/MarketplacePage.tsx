@@ -129,6 +129,12 @@ const MarketplacePage = () => {
                     Browse Freelancers
                   </Button>
                 </Link>
+                <Link to="/marketplace/jobs">
+                  <Button size="lg" variant="outline">
+                    <Briefcase className="h-5 w-5 mr-2" />
+                    Browse Jobs
+                  </Button>
+                </Link>
                 <Link to="/marketplace/browse">
                   <Button size="lg" variant="outline">
                     Browse Marketplace
