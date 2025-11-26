@@ -111,6 +111,12 @@ const MarketplacePage = () => {
                 Buy, sell, and hire in the world's largest AI marketplace. Connect with experts, showcase your skills, and grow your business
               </p>
               <div className="flex flex-wrap justify-center gap-4">
+                <Link to="/marketplace/browse">
+                  <Button size="lg" variant="outline">
+                    Browse Marketplace
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                </Link>
                 <Link to={canSell ? "/start-selling" : "/subscription"}>
                   
                 </Link>
@@ -124,12 +130,6 @@ const MarketplacePage = () => {
                   <Button size="lg" variant="outline">
                     <Briefcase className="h-5 w-5 mr-2" />
                     Browse Jobs
-                  </Button>
-                </Link>
-                <Link to="/marketplace/browse">
-                  <Button size="lg" variant="outline">
-                    Browse Marketplace
-                    <ArrowRight className="h-5 w-5 ml-2" />
                   </Button>
                 </Link>
               </div>
