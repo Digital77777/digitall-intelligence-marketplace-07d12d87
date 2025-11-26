@@ -26,6 +26,9 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/notification-settings': () => import('@/pages/NotificationSettingsPage'),
   '/seller-dashboard': () => import('@/pages/SellerDashboardPage'),
   '/client-dashboard': () => import('@/pages/ClientDashboardPage'),
+  '/freelancer-profile': () => import('@/pages/FreelancerProfilePage'),
+  '/browse-freelancers': () => import('@/pages/BrowseFreelancersPage'),
+  '/job-listings': () => import('@/pages/JobListingsPage'),
 };
 
 // Cache to track which routes have been prefetched

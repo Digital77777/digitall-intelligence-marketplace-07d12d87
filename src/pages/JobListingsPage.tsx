@@ -373,12 +373,27 @@ const JobListingsPage = () => {
         {/* Job Listings */}
         {loading ? (
           <div className="grid grid-cols-1 gap-6">
-            {[1, 2, 3].map(i => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-6 bg-muted rounded w-1/3 mb-4" />
-                  <div className="h-4 bg-muted rounded w-full mb-2" />
-                  <div className="h-4 bg-muted rounded w-2/3" />
+            {[1, 2, 3, 4, 5].map(i => (
+              <Card key={i}>
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex justify-between">
+                    <div className="space-y-2 flex-1">
+                      <div className="h-6 bg-muted rounded w-1/3 animate-pulse" />
+                      <div className="flex gap-2">
+                        <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                        <div className="h-4 bg-muted rounded w-32 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="h-9 bg-muted rounded w-24 animate-pulse" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-full animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-5/6 animate-pulse" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-6 bg-muted rounded w-20 animate-pulse" />
+                    <div className="h-6 bg-muted rounded w-24 animate-pulse" />
+                  </div>
                 </CardContent>
               </Card>
             ))}

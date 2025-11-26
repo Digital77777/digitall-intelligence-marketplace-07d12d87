@@ -146,11 +146,46 @@ const FreelancerProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Navigation />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <main className="container mx-auto px-4 py-8 max-w-5xl">
+          <div className="h-10 bg-muted rounded w-24 mb-6 animate-pulse" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex gap-6">
+                    <div className="h-32 w-32 bg-muted rounded-full animate-pulse" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-7 bg-muted rounded w-48 animate-pulse" />
+                      <div className="h-5 bg-muted rounded w-40 animate-pulse" />
+                      <div className="flex gap-4">
+                        <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                        <div className="h-4 bg-muted rounded w-20 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              {[1, 2, 3].map(i => (
+                <Card key={i}>
+                  <CardContent className="pt-6 space-y-3">
+                    <div className="h-6 bg-muted rounded w-24 animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-full animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <div>
+              <Card className="sticky top-24">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="h-20 bg-muted rounded animate-pulse" />
+                  <div className="h-32 bg-muted rounded animate-pulse" />
+                  <div className="h-10 bg-muted rounded animate-pulse" />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </main>
         <MobileFooter />

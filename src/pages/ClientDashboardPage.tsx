@@ -225,17 +225,40 @@ const ClientDashboardPage = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
         <Navigation />
         <main className="container mx-auto px-4 py-8">
           <div className="space-y-6">
-            <Skeleton className="h-10 w-64" />
+            <div className="space-y-2">
+              <div className="h-8 bg-muted rounded w-64 animate-pulse" />
+              <div className="h-4 bg-muted rounded w-96 animate-pulse" />
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[1, 2, 3, 4].map(i => (
-                <Skeleton key={i} className="h-24" />
+                <Card key={i}>
+                  <CardContent className="pt-6 space-y-3">
+                    <div className="h-8 bg-muted rounded w-8 animate-pulse" />
+                    <div className="h-8 bg-muted rounded w-16 animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                  </CardContent>
+                </Card>
               ))}
             </div>
-            <Skeleton className="h-96" />
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="space-y-3">
+                    <div className="h-6 bg-muted rounded w-48 animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-full animate-pulse" />
+                    <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
+                    <div className="flex gap-2">
+                      <div className="h-6 bg-muted rounded w-20 animate-pulse" />
+                      <div className="h-6 bg-muted rounded w-24 animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
           </div>
         </main>
         <MobileFooter />
