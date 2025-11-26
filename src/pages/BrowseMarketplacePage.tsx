@@ -135,7 +135,50 @@ export default function BrowseMarketplacePage() {
 
         {/* Tab Content */}
         <div className="container mx-auto px-4">
-          {selectedTab === 'for-you' && (
+          {loading && page === 1 ? (
+            <div className="space-y-6">
+              {selectedTab === 'for-you' && (
+                <>
+                  {/* Suggested Section Skeleton */}
+                  <div>
+                    <div className="h-6 bg-muted rounded w-40 mb-4 animate-pulse" />
+                    <div className="flex space-x-4">
+                      {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="w-[160px] h-[200px] bg-muted rounded-lg animate-pulse flex-shrink-0" />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Category Sections Skeleton */}
+                  {[1, 2, 3].map(section => (
+                    <div key={section}>
+                      <div className="h-6 bg-muted rounded w-32 mb-4 animate-pulse" />
+                      <div className="flex space-x-4">
+                        {[1, 2, 3, 4].map(i => (
+                          <div key={i} className="w-[160px] h-[200px] bg-muted rounded-lg animate-pulse flex-shrink-0" />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+              {selectedTab === 'top-charts' && (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              )}
+              {selectedTab === 'categories' && (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                    <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              {selectedTab === 'for-you' && (
             <div className="space-y-6">
               {/* Suggested for you */}
               {suggestedListings.length > 0 && (
@@ -183,9 +226,11 @@ export default function BrowseMarketplacePage() {
                 </div>
               )}
             </div>
+              )}
+            </>
           )}
 
-          {selectedTab === 'top-charts' && (
+          {selectedTab === 'top-charts' && !(loading && page === 1) && (
             <div className="space-y-2">
               {topChartListings.map((listing, idx) => {
                 if (topChartListings.length === idx + 1) {
