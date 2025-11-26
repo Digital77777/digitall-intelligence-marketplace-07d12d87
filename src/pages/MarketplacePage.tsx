@@ -110,28 +110,27 @@ const MarketplacePage = () => {
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 Buy, sell, and hire in the world's largest AI marketplace. Connect with experts, showcase your skills, and grow your business
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link to="/marketplace/browse">
-                  <Button size="lg" variant="outline">
+              <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-3 md:gap-4">
+                <Link to="/marketplace/browse" className="w-full md:w-auto">
+                  <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
                     Browse Marketplace
-                    <ArrowRight className="h-5 w-5 ml-2" />
+                    <ArrowRight className="h-4 w-4 md:h-5 md:w-5 ml-2" />
                   </Button>
                 </Link>
-                <Link to={canSell ? "/start-selling" : "/subscription"}>
-                  
-                </Link>
-                <Link to="/marketplace/browse-freelancers">
-                  <Button size="lg" variant="outline">
-                    <Users className="h-5 w-5 mr-2" />
-                    Browse Freelancers
-                  </Button>
-                </Link>
-                <Link to="/marketplace/jobs">
-                  <Button size="lg" variant="outline">
-                    <Briefcase className="h-5 w-5 mr-2" />
-                    Browse Jobs
-                  </Button>
-                </Link>
+                <div className="flex gap-3 md:gap-4">
+                  <Link to="/marketplace/browse-freelancers" className="flex-1 md:flex-none">
+                    <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
+                      <Users className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+                      Browse Freelancers
+                    </Button>
+                  </Link>
+                  <Link to="/marketplace/jobs" className="flex-1 md:flex-none">
+                    <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
+                      <Briefcase className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+                      Browse Jobs
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
