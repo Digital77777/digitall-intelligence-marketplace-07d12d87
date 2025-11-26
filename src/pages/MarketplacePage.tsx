@@ -7,98 +7,92 @@ import { Badge } from "@/components/ui/badge";
 import { TierGate } from "@/components/tier/TierGate";
 import { useTier } from "@/contexts/TierContext";
 import { SEOHead } from "@/components/SEOHead";
-
 const MarketplacePage = () => {
   const navigate = useNavigate();
-  const { canAccessFeature } = useTier();
+  const {
+    canAccessFeature
+  } = useTier();
   const canSell = canAccessFeature('marketplace_sell');
-
-  const marketplaceCategories = [
-    {
-      id: 1,
-      title: "Sell Your Creations",
-      description: "Monetize your AI tools, templates, courses, and digital products",
-      feature: "No listing fees",
-      icon: <Store className="h-8 w-8" />,
-      category: "Products",
-      gradient: "from-emerald-500 to-teal-500"
-    },
-    {
-      id: 2,
-      title: "Freelance Services",
-      description: "Offer your AI expertise, consulting, and specialized skills to clients",
-      feature: "Set your rates",
-      icon: <Briefcase className="h-8 w-8" />,
-      category: "Services",
-      gradient: "from-blue-500 to-cyan-500"
-    },
-    {
-      id: 3,
-      title: "Post Job Opportunities",
-      description: "Find talented AI professionals and hire for your projects",
-      feature: "Verified profiles",
-      icon: <Users className="h-8 w-8" />,
-      category: "Jobs",
-      gradient: "from-purple-500 to-pink-500"
-    },
-    {
-      id: 4,
-      title: "AI Development",
-      description: "Custom AI solutions, model training, and integration services",
-      feature: "Enterprise ready",
-      icon: <Code className="h-8 w-8" />,
-      category: "Development",
-      gradient: "from-orange-500 to-red-500"
-    }
-  ];
-
-  const featuredListings = [
-    {
-      id: 1,
-      title: "GPT-4 Prompt Templates Pack",
-      seller: "AI_Expert_Pro",
-      price: "$29",
-      rating: 4.9,
-      sales: "1.2k",
-      type: "product",
-      category: "Templates"
-    },
-    {
-      id: 2,
-      title: "Machine Learning Consulting",
-      seller: "DataScience_Guru",
-      price: "$150/hr",
-      rating: 4.8,
-      reviews: "89",
-      type: "service",
-      category: "Consulting"
-    },
-    {
-      id: 3,
-      title: "Senior AI Engineer - Remote",
-      company: "TechInnovate Co.",
-      salary: "$120k-180k",
-      location: "Remote",
-      type: "job",
-      category: "Full-time"
-    }
-  ];
-
-  const stats = [
-    { label: "Active Sellers", value: "8,500+", icon: <Store className="h-5 w-5" /> },
-    { label: "Total Sales", value: "$2.8M+", icon: <DollarSign className="h-5 w-5" /> },
-    { label: "Jobs Posted", value: "1,200+", icon: <Briefcase className="h-5 w-5" /> },
-    { label: "Success Rate", value: "94%", icon: <TrendingUp className="h-5 w-5" /> }
-  ];
-
-  return (
-    <TierGate feature="marketplace_buy">
+  const marketplaceCategories = [{
+    id: 1,
+    title: "Sell Your Creations",
+    description: "Monetize your AI tools, templates, courses, and digital products",
+    feature: "No listing fees",
+    icon: <Store className="h-8 w-8" />,
+    category: "Products",
+    gradient: "from-emerald-500 to-teal-500"
+  }, {
+    id: 2,
+    title: "Freelance Services",
+    description: "Offer your AI expertise, consulting, and specialized skills to clients",
+    feature: "Set your rates",
+    icon: <Briefcase className="h-8 w-8" />,
+    category: "Services",
+    gradient: "from-blue-500 to-cyan-500"
+  }, {
+    id: 3,
+    title: "Post Job Opportunities",
+    description: "Find talented AI professionals and hire for your projects",
+    feature: "Verified profiles",
+    icon: <Users className="h-8 w-8" />,
+    category: "Jobs",
+    gradient: "from-purple-500 to-pink-500"
+  }, {
+    id: 4,
+    title: "AI Development",
+    description: "Custom AI solutions, model training, and integration services",
+    feature: "Enterprise ready",
+    icon: <Code className="h-8 w-8" />,
+    category: "Development",
+    gradient: "from-orange-500 to-red-500"
+  }];
+  const featuredListings = [{
+    id: 1,
+    title: "GPT-4 Prompt Templates Pack",
+    seller: "AI_Expert_Pro",
+    price: "$29",
+    rating: 4.9,
+    sales: "1.2k",
+    type: "product",
+    category: "Templates"
+  }, {
+    id: 2,
+    title: "Machine Learning Consulting",
+    seller: "DataScience_Guru",
+    price: "$150/hr",
+    rating: 4.8,
+    reviews: "89",
+    type: "service",
+    category: "Consulting"
+  }, {
+    id: 3,
+    title: "Senior AI Engineer - Remote",
+    company: "TechInnovate Co.",
+    salary: "$120k-180k",
+    location: "Remote",
+    type: "job",
+    category: "Full-time"
+  }];
+  const stats = [{
+    label: "Active Sellers",
+    value: "8,500+",
+    icon: <Store className="h-5 w-5" />
+  }, {
+    label: "Total Sales",
+    value: "$2.8M+",
+    icon: <DollarSign className="h-5 w-5" />
+  }, {
+    label: "Jobs Posted",
+    value: "1,200+",
+    icon: <Briefcase className="h-5 w-5" />
+  }, {
+    label: "Success Rate",
+    value: "94%",
+    icon: <TrendingUp className="h-5 w-5" />
+  }];
+  return <TierGate feature="marketplace_buy">
       <div className="min-h-screen bg-background">
-        <SEOHead 
-          title="AI Marketplace - Buy & Sell AI Products and Services"
-          description="Discover and monetize AI tools, templates, courses, and services. Connect with AI professionals, find freelance opportunities, and post job listings."
-          keywords={["AI marketplace", "AI products", "AI services", "freelance AI", "AI jobs", "sell AI tools", "AI consulting"]}
-        />
+        <SEOHead title="AI Marketplace - Buy & Sell AI Products and Services" description="Discover and monetize AI tools, templates, courses, and services. Connect with AI professionals, find freelance opportunities, and post job listings." keywords={["AI marketplace", "AI products", "AI services", "freelance AI", "AI jobs", "sell AI tools", "AI consulting"]} />
         
         {/* Hero Section */}
         <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 pt-20 pb-16">
@@ -118,10 +112,7 @@ const MarketplacePage = () => {
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link to={canSell ? "/start-selling" : "/subscription"}>
-                  <Button size="lg" className="bg-gradient-earn text-white hover:opacity-90">
-                    <Store className="h-5 w-5 mr-2" />
-                    Start Selling
-                  </Button>
+                  
                 </Link>
                 <Link to="/marketplace/browse-freelancers">
                   <Button size="lg" variant="outline">
@@ -150,15 +141,13 @@ const MarketplacePage = () => {
         <section className="py-12 border-b border-border/50">
           <div className="container mx-auto px-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
+              {stats.map((stat, index) => <div key={index} className="text-center">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <div className="text-primary">{stat.icon}</div>
                     <span className="text-2xl font-bold">{stat.value}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              ))}
+                </div>)}
             </div>
           </div>
         </section>
@@ -174,22 +163,10 @@ const MarketplacePage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {marketplaceCategories.map((category) => {
-                const isSellFeature = 
-                  category.title === "Sell Your Creations" || 
-                  category.title === "Freelance Services" || 
-                  category.title === "Post Job Opportunities" ||
-                  category.title === "AI Development";
-
-                const targetUrl = isSellFeature && !canSell 
-                  ? "/subscription"
-                  : category.title === "Sell Your Creations" ? "/marketplace/sell-products"
-                  : category.title === "Freelance Services" ? "/marketplace/freelance-services"
-                  : category.title === "Post Job Opportunities" ? "/marketplace/post-jobs"
-                  : "/marketplace/ai-development";
-
-                return (
-                  <Card key={category.id} className="group hover:shadow-ai transition-all duration-300 border-border/50">
+              {marketplaceCategories.map(category => {
+              const isSellFeature = category.title === "Sell Your Creations" || category.title === "Freelance Services" || category.title === "Post Job Opportunities" || category.title === "AI Development";
+              const targetUrl = isSellFeature && !canSell ? "/subscription" : category.title === "Sell Your Creations" ? "/marketplace/sell-products" : category.title === "Freelance Services" ? "/marketplace/freelance-services" : category.title === "Post Job Opportunities" ? "/marketplace/post-jobs" : "/marketplace/ai-development";
+              return <Card key={category.id} className="group hover:shadow-ai transition-all duration-300 border-border/50">
                     <CardHeader className="pb-4">
                       <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${category.gradient} flex items-center justify-center text-white mb-4`}>
                         {category.icon}
@@ -218,9 +195,8 @@ const MarketplacePage = () => {
                         </Button>
                       </Link>
                     </CardContent>
-                  </Card>
-                );
-              })}
+                  </Card>;
+            })}
             </div>
           </div>
         </section>
@@ -236,31 +212,24 @@ const MarketplacePage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredListings.map((listing) => (
-                <Card key={listing.id} className="border-border/50 hover:shadow-lg transition-all duration-300">
+              {featuredListings.map(listing => <Card key={listing.id} className="border-border/50 hover:shadow-lg transition-all duration-300">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <Badge variant="outline" className="text-xs">
                         {listing.category}
                       </Badge>
-                      {listing.type === "product" && (
-                        <div className="flex items-center gap-1">
+                      {listing.type === "product" && <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm font-medium">{listing.rating}</span>
-                        </div>
-                      )}
-                      {listing.type === "service" && (
-                        <div className="flex items-center gap-1">
+                        </div>}
+                      {listing.type === "service" && <div className="flex items-center gap-1">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                           <span className="text-sm font-medium">{listing.rating}</span>
-                        </div>
-                      )}
-                      {listing.type === "job" && (
-                        <div className="flex items-center gap-1">
+                        </div>}
+                      {listing.type === "job" && <div className="flex items-center gap-1">
                           <MapPin className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">{listing.location}</span>
-                        </div>
-                      )}
+                        </div>}
                     </div>
                     
                     <h3 className="font-semibold mb-2">{listing.title}</h3>
@@ -274,18 +243,15 @@ const MarketplacePage = () => {
                       </span>
                     </div>
                     
-                    {(listing.sales || listing.reviews) && (
-                      <p className="text-xs text-muted-foreground mb-4">
+                    {(listing.sales || listing.reviews) && <p className="text-xs text-muted-foreground mb-4">
                         {listing.sales ? `${listing.sales} sales` : `${listing.reviews} reviews`}
-                      </p>
-                    )}
+                      </p>}
                     
                     <Button size="sm" variant="outline" className="w-full">
                       {listing.type === "job" ? "Apply Now" : "View Details"}
                     </Button>
                   </CardContent>
-                </Card>
-              ))}
+                </Card>)}
             </div>
           </div>
         </section>
@@ -377,8 +343,6 @@ const MarketplacePage = () => {
           </div>
         </section>
       </div>
-    </TierGate>
-  );
+    </TierGate>;
 };
-
 export default MarketplacePage;
