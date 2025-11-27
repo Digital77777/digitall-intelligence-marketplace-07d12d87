@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +11,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { ToolCard } from '@/components/marketplace/ToolCard';
 import { TopChartCard } from '@/components/marketplace/TopChartCard';
 import { CategoryCard } from '@/components/marketplace/CategoryCard';
+import { useOptimisticFavorites } from '@/hooks/useOptimisticFavorites';
 
 // Memoized category section component
 const CategorySection = memo(({ 
@@ -50,9 +51,9 @@ export default function BrowseMarketplacePage() {
   const [selectedTab, setSelectedTab] = useState('for-you');
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const { listings, categories, suggestedListings, topChartListings, categoryListings, loading, hasMore, fetchListings, getUserFavorites } = useMarketplace();
+  const { listings, categories, suggestedListings, topChartListings, categoryListings, loading, hasMore, fetchListings } = useMarketplace();
   const { user } = useAuth();
-  const [userFavorites, setUserFavorites] = useState<any[]>([]);
+  const { isFavorited, toggleFavorite, isPending } = useOptimisticFavorites();
   const [page, setPage] = useState(1);
   const observer = useRef<IntersectionObserver>();
 
@@ -86,11 +87,6 @@ export default function BrowseMarketplacePage() {
     }
   }, [page, fetchListings, searchQuery, selectedTab]);
 
-  useEffect(() => {
-    if (user) {
-      getUserFavorites().then(setUserFavorites);
-    }
-  }, [user, getUserFavorites]);
 
   const handleViewDetails = useCallback((listing: MarketplaceListing) => {
     setSelectedListing(listing);
@@ -301,7 +297,9 @@ export default function BrowseMarketplacePage() {
           listing={selectedListing}
           isOpen={isDetailsModalOpen}
           onClose={() => setIsDetailsModalOpen(false)}
-          isFavorited={selectedListing ? userFavorites.some(fav => fav.listing_id === selectedListing.id) : false}
+          onFavorite={toggleFavorite}
+          isFavorited={selectedListing ? isFavorited(selectedListing.id) : false}
+          isPending={selectedListing ? isPending(selectedListing.id) : false}
         />
       </div>
     </TierGate>

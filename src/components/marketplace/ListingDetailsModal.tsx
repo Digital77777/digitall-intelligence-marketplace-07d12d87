@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, ExternalLink, Play, Image as ImageIcon } from 'lucide-react';
+import { Heart, ExternalLink, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
 import { MediaPreview } from '@/components/media/MediaPreview';
+import { cn } from '@/lib/utils';
 
 interface ListingDetailsModalProps {
   listing: MarketplaceListing | null;
@@ -13,6 +14,7 @@ interface ListingDetailsModalProps {
   onClose: () => void;
   onFavorite?: (listingId: string) => void;
   isFavorited?: boolean;
+  isPending?: boolean;
 }
 
 export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
@@ -20,7 +22,8 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
   isOpen,
   onClose,
   onFavorite,
-  isFavorited = false
+  isFavorited = false,
+  isPending = false
 }) => {
   if (!listing) return null;
 
@@ -48,10 +51,25 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => onFavorite(listing.id)}
-                className="h-8 w-8 p-0"
+                disabled={isPending}
+                className={cn(
+                  "h-8 w-8 p-0 transition-all duration-200",
+                  isFavorited && "text-red-500",
+                  isPending && "opacity-50"
+                )}
                 aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
               >
-                <Heart className={`h-5 w-5 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} aria-hidden="true" />
+                {isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Heart 
+                    className={cn(
+                      "h-5 w-5 transition-all duration-200",
+                      isFavorited && "fill-red-500 text-red-500 scale-110"
+                    )} 
+                    aria-hidden="true" 
+                  />
+                )}
               </Button>
             )}
           </div>
