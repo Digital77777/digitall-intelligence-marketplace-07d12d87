@@ -1,14 +1,16 @@
 import { Store, Briefcase, Users, Code, DollarSign, ArrowRight, Star, MapPin, Clock, TrendingUp, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TierGate } from "@/components/tier/TierGate";
 import { useTier } from "@/contexts/TierContext";
 import { SEOHead } from "@/components/SEOHead";
+import { PrefetchLink } from "@/components/PrefetchLink";
+import { usePrefetch } from "@/hooks/usePrefetch";
 const MarketplacePage = () => {
   const navigate = useNavigate();
+  const { handleMouseEnter, handleTouchStart } = usePrefetch();
   const {
     canAccessFeature
   } = useTier();
@@ -111,25 +113,25 @@ const MarketplacePage = () => {
                 Buy, sell, and hire in the world's largest AI marketplace. Connect with experts, showcase your skills, and grow your business
               </p>
               <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-3 md:gap-4">
-                <Link to="/marketplace/browse" className="w-full md:w-auto">
+                <PrefetchLink to="/marketplace/browse" className="w-full md:w-auto">
                   <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
                     Browse Marketplace
                     <ArrowRight className="h-4 w-4 md:h-5 md:w-5 ml-2" />
                   </Button>
-                </Link>
+                </PrefetchLink>
                 <div className="flex gap-3 md:gap-4">
-                  <Link to="/marketplace/browse-freelancers" className="flex-1 md:flex-none">
+                  <PrefetchLink to="/marketplace/browse-freelancers" className="flex-1 md:flex-none">
                     <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
                       <Users className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                       Browse Freelancers
                     </Button>
-                  </Link>
-                  <Link to="/marketplace/jobs" className="flex-1 md:flex-none">
+                  </PrefetchLink>
+                  <PrefetchLink to="/marketplace/jobs" className="flex-1 md:flex-none">
                     <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
                       <Briefcase className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                       Browse Jobs
                     </Button>
-                  </Link>
+                  </PrefetchLink>
                 </div>
               </div>
             </div>
@@ -187,12 +189,12 @@ const MarketplacePage = () => {
                     </CardHeader>
                     
                     <CardContent className="space-y-4">
-                      <Link to={targetUrl}>
+                      <PrefetchLink to={targetUrl}>
                         <Button className="w-full group/btn">
                           {isSellFeature && !canSell ? "Upgrade to Access" : "Get Started"}
                           <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
-                      </Link>
+                      </PrefetchLink>
                     </CardContent>
                   </Card>;
             })}
@@ -263,19 +265,43 @@ const MarketplacePage = () => {
               <p className="text-muted-foreground">Jump straight to what you need</p>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
-              <Button variant="outline" size="lg" onClick={() => navigate('/marketplace/browse')}>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => navigate('/marketplace/browse')}
+                onMouseEnter={() => handleMouseEnter('/marketplace/browse')}
+                onTouchStart={() => handleTouchStart('/marketplace/browse')}
+              >
                 <Store className="h-5 w-5 mr-2" />
                 Browse Products
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/marketplace/browse-freelancers')}>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => navigate('/marketplace/browse-freelancers')}
+                onMouseEnter={() => handleMouseEnter('/marketplace/browse-freelancers')}
+                onTouchStart={() => handleTouchStart('/marketplace/browse-freelancers')}
+              >
                 <Users className="h-5 w-5 mr-2" />
                 Find Freelancers
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/marketplace/jobs')}>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => navigate('/marketplace/jobs')}
+                onMouseEnter={() => handleMouseEnter('/marketplace/jobs')}
+                onTouchStart={() => handleTouchStart('/marketplace/jobs')}
+              >
                 <Briefcase className="h-5 w-5 mr-2" />
                 Browse Jobs
               </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/client-dashboard')}>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                onClick={() => navigate('/client-dashboard')}
+                onMouseEnter={() => handleMouseEnter('/client-dashboard')}
+                onTouchStart={() => handleTouchStart('/client-dashboard')}
+              >
                 <Clock className="h-5 w-5 mr-2" />
                 Client Dashboard
               </Button>

@@ -13,6 +13,10 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/marketplace/create': () => import('@/pages/CreateListingPage'),
   '/marketplace/my-listings': () => import('@/pages/MyListingsPage'),
   '/marketplace/jobs': () => import('@/pages/JobListingsPage'),
+  '/marketplace/sell-products': () => import('@/pages/SellProductsPage'),
+  '/marketplace/freelance-services': () => import('@/pages/FreelanceServicesPage'),
+  '/marketplace/post-jobs': () => import('@/pages/PostJobsPage'),
+  '/marketplace/ai-development': () => import('@/pages/AIDevelopmentPage'),
   '/community': () => import('@/pages/CommunityPage'),
   '/community/my-activity': () => import('@/pages/MyActivityPage'),
   '/referrals': () => import('@/pages/ReferralPage'),
@@ -29,6 +33,8 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/freelancer-profile': () => import('@/pages/FreelancerProfilePage'),
   '/browse-freelancers': () => import('@/pages/BrowseFreelancersPage'),
   '/job-listings': () => import('@/pages/JobListingsPage'),
+  '/create-freelancer-profile': () => import('@/pages/CreateFreelancerProfilePage'),
+  '/create-job-posting': () => import('@/pages/CreateJobPostingPage'),
 };
 
 // Cache to track which routes have been prefetched
