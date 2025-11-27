@@ -2,15 +2,17 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
+import { Heart, Loader2 } from 'lucide-react';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
 import { MediaPreview } from '@/components/media/MediaPreview';
 import { JobListingCard } from './JobListingCard';
+import { cn } from '@/lib/utils';
 
 interface SimpleListingCardProps {
   listing: MarketplaceListing;
   onFavorite?: (listingId: string) => void;
   isFavorited?: boolean;
+  isPending?: boolean;
   onViewDetails?: (listing: MarketplaceListing) => void;
 }
 
@@ -18,6 +20,7 @@ export const SimpleListingCard: React.FC<SimpleListingCardProps> = ({
   listing,
   onFavorite,
   isFavorited = false,
+  isPending = false,
   onViewDetails
 }) => {
   const formatPrice = (price: number, currency: string = 'USD') => {
@@ -41,13 +44,13 @@ export const SimpleListingCard: React.FC<SimpleListingCardProps> = ({
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'product':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
       case 'service':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'job':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -62,17 +65,34 @@ export const SimpleListingCard: React.FC<SimpleListingCardProps> = ({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onFavorite(listing.id)}
-              className="h-8 w-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onFavorite(listing.id);
+              }}
+              disabled={isPending}
+              className={cn(
+                "h-8 w-8 p-0 transition-all duration-200",
+                isFavorited && "text-red-500",
+                isPending && "opacity-50"
+              )}
             >
-              <Heart className={`h-4 w-4 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Heart 
+                  className={cn(
+                    "h-4 w-4 transition-all duration-200",
+                    isFavorited && "fill-red-500 text-red-500 scale-110"
+                  )} 
+                />
+              )}
             </Button>
           )}
         </div>
         
         <MediaPreview
           images={listing.images || []}
-          videos={[]} // Do not display demo videos on the marketplace grid
+          videos={[]}
           title={listing.title}
           category="tech"
           className="mb-3"
