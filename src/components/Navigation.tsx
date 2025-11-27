@@ -158,7 +158,10 @@ const Navigation = () => {
                     </p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem 
+                    asChild
+                    onMouseEnter={() => handleMouseEnter('/dashboard')}
+                  >
                     <Link to="/dashboard">
                       <div className="flex items-center">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -166,7 +169,10 @@ const Navigation = () => {
                       </div>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem 
+                    asChild
+                    onMouseEnter={() => handleMouseEnter('/subscription')}
+                  >
                     <Link to="/subscription">
                       <div className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
@@ -174,10 +180,16 @@ const Navigation = () => {
                       </div>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem 
+                    asChild
+                    onMouseEnter={() => handleMouseEnter('/marketplace/my-listings')}
+                  >
                     <Link to="/marketplace/my-listings">My Listings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem 
+                    asChild
+                    onMouseEnter={() => handleMouseEnter('/marketplace/create')}
+                  >
                     <Link to="/marketplace/create">Create Listing</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
