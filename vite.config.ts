@@ -19,16 +19,24 @@ export default defineConfig(({ mode }) => {
   
   plugins.push(
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       injectRegister: 'auto',
       workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
+        skipWaiting: false,
+        clientsClaim: false,
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === 'document',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'documents',
+              networkTimeoutSeconds: 3,
+            },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -50,7 +58,7 @@ export default defineConfig(({ mode }) => {
               cacheName: 'images',
               expiration: {
                 maxEntries: 60,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
             },
           },
@@ -65,11 +73,11 @@ export default defineConfig(({ mode }) => {
       },
       includeAssets: ['favicon.ico', 'apple-icon-180.png', 'robots.txt'],
       manifest: {
-        name: 'AI Learning Platform',
-        short_name: 'AI Platform',
+        name: 'Digital Intelligence Marketplace',
+        short_name: 'DI Market',
         description: 'Learn, Build & Earn with AI',
-        theme_color: '#000000',
-        background_color: '#000000',
+        theme_color: '#0EA5E9',
+        background_color: '#ffffff',
         display: 'standalone',
         start_url: '/',
         scope: '/',
@@ -78,7 +86,19 @@ export default defineConfig(({ mode }) => {
             src: '/icons/manifest-icon-192.maskable.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any'
+          },
+          {
+            src: '/icons/manifest-icon-192.maskable.png',
+            sizes: '192x192',
+            type: 'image/png',
             purpose: 'maskable'
+          },
+          {
+            src: '/icons/manifest-icon-512.maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: '/icons/manifest-icon-512.maskable.png',
