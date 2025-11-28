@@ -9,6 +9,38 @@ export const UpdatePrompt = () => {
   const [wb, setWb] = useState<Workbox | null>(null);
 
   useEffect(() => {
+    // Version check - runs immediately on mount
+    const checkVersion = async () => {
+      try {
+        const response = await fetch('/version.json?t=' + Date.now(), {
+          cache: 'no-cache',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        const data = await response.json();
+        const currentVersion = localStorage.getItem('app_version');
+        
+        if (currentVersion && currentVersion !== data.version) {
+          console.log('Version mismatch detected. Forcing reload...');
+          localStorage.setItem('app_version', data.version);
+          // Clear all caches and reload
+          if ('caches' in window) {
+            const cacheNames = await caches.keys();
+            await Promise.all(cacheNames.map(name => caches.delete(name)));
+          }
+          window.location.reload();
+        } else if (!currentVersion) {
+          localStorage.setItem('app_version', data.version);
+        }
+      } catch (error) {
+        console.error('Version check failed:', error);
+      }
+    };
+
+    checkVersion();
+
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       const workbox = new Workbox('/sw.js');
 
@@ -37,16 +69,22 @@ export const UpdatePrompt = () => {
 
       setWb(workbox);
 
-      // Check for updates every hour
+      // Check for updates every 5 minutes
       setInterval(() => {
         workbox.update();
-      }, 60 * 60 * 1000);
+        checkVersion();
+      }, 5 * 60 * 1000);
     }
   }, []);
 
   if (!showPrompt || !wb) return null;
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
+    // Clear all caches before updating
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map(name => caches.delete(name)));
+    }
     wb.messageSkipWaiting();
     setShowPrompt(false);
   };
