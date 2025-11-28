@@ -10,6 +10,7 @@ import Navigation from "./components/Navigation";
 import MobileFooter from "./components/MobileFooter";
 import { DeploymentDiagnostics } from "./components/DeploymentDiagnostics";
 import { SkipToContent } from "./components/SkipToContent";
+import { UpdatePrompt } from "./components/UpdatePrompt";
 
 // Eager-loaded pages for instant navigation
 import Index from "./pages/Index";
@@ -208,6 +209,7 @@ const App = () => {
           <TierProvider>
             <TooltipProvider>
               <DeploymentDiagnostics />
+              <UpdatePrompt />
               <Toaster position="top-right" />
               <BrowserRouter>
                 <div className="min-h-screen bg-background">
