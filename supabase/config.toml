@@ -33,11 +33,8 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 
-[functions.hugging-face-proxy]
-verify_jwt = false
-
-[functions.imagga-proxy]
-verify_jwt = false
+// JWT verification is now enabled by default for these functions
+// Only disable for specific webhook endpoints that validate differently
 
 [functions.send-job-application-notification]
 verify_jwt = false
