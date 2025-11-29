@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star } from 'lucide-react';
@@ -6,19 +7,19 @@ import { MarketplaceListing } from '@/hooks/useMarketplace';
 
 interface ToolCardProps {
   listing: MarketplaceListing;
-  onClick: () => void;
   colorIndex: number;
 }
 
 const colorClasses = ['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-orange-500', 'bg-pink-500', 'bg-teal-500'];
 
-export const ToolCard = memo(({ listing, onClick, colorIndex }: ToolCardProps) => {
+export const ToolCard = memo(({ listing, colorIndex }: ToolCardProps) => {
+  const navigate = useNavigate();
   const colorClass = colorClasses[colorIndex % colorClasses.length];
 
   return (
     <Card 
       className="inline-block w-[320px] cursor-pointer hover:shadow-lg transition-shadow"
-      onClick={onClick}
+      onClick={() => navigate(`/marketplace/listing/${listing.id}`)}
     >
       <CardContent className="p-4">
         <div className="flex gap-3">
