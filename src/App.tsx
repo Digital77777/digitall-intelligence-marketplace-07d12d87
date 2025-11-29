@@ -80,6 +80,7 @@ const NotificationSettingsPage = lazy(() => import("./pages/NotificationSettings
 const InstallPWAPage = lazy(() => import("./pages/InstallPWAPage"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const EditListingPage = lazy(() => import("./pages/EditListingPage"));
+const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
 
 // Optimized QueryClient with aggressive caching for instant data access
 const queryClient = new QueryClient({
@@ -148,6 +149,7 @@ const routeGroups: AppRoute[] = [
   // Marketplace
   { path: "/marketplace", component: MarketplacePage, protected: true },
   { path: "/marketplace/browse", component: BrowseMarketplacePage, protected: true },
+  { path: "/marketplace/listing/:id", component: ListingDetailPage, protected: true },
   { path: "/marketplace/sell-products", component: SellProductsPage, protected: true },
   { path: "/marketplace/freelance-services", component: FreelanceServicesPage, protected: true },
   { path: "/marketplace/create-freelancer-profile", component: CreateFreelancerProfilePage, protected: true },

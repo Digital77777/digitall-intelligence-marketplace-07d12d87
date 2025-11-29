@@ -34,7 +34,6 @@ const CategorySection = memo(({
           <ToolCard
             key={listing.id}
             listing={listing}
-            onClick={() => onViewDetails(listing)}
             colorIndex={idx}
           />
         ))}
@@ -189,7 +188,6 @@ export default function BrowseMarketplacePage() {
                         <ToolCard
                           key={listing.id}
                           listing={listing}
-                          onClick={() => handleViewDetails(listing)}
                           colorIndex={idx}
                         />
                       ))}
@@ -234,7 +232,6 @@ export default function BrowseMarketplacePage() {
                     <div ref={lastListingElementRef} key={listing.id}>
                        <TopChartCard
                         listing={listing}
-                        onClick={() => handleViewDetails(listing)}
                         rank={idx + 1}
                         colorIndex={idx}
                       />
@@ -244,7 +241,6 @@ export default function BrowseMarketplacePage() {
                 return <TopChartCard
                   key={listing.id}
                   listing={listing}
-                  onClick={() => handleViewDetails(listing)}
                   rank={idx + 1}
                   colorIndex={idx}
                 />
