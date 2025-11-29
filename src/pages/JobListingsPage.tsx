@@ -34,6 +34,20 @@ const JobListingsPage = () => {
   // Filter only job listings
   const jobListings = listings.filter(listing => listing.listing_type === 'job');
 
+  // Helper function to parse job details from requirements
+  const parseJobDetails = (requirements: string | null) => {
+    if (!requirements) return {};
+    const lines = requirements.split('\n');
+    const details: Record<string, string> = {};
+    lines.forEach(line => {
+      const [key, value] = line.split(':').map(s => s.trim());
+      if (key && value) {
+        details[key.toLowerCase()] = value;
+      }
+    });
+    return details;
+  };
+
   // Extract all unique skills from job listings
   const allSkills = Array.from(new Set(
     jobListings.flatMap(job => job.tags || [])
@@ -104,19 +118,6 @@ const JobListingsPage = () => {
     setSalaryRange([0, 300000]);
     setJobType('all');
     setLocation('');
-  };
-
-  const parseJobDetails = (requirements: string | null) => {
-    if (!requirements) return {};
-    const lines = requirements.split('\n');
-    const details: Record<string, string> = {};
-    lines.forEach(line => {
-      const [key, value] = line.split(':').map(s => s.trim());
-      if (key && value) {
-        details[key.toLowerCase()] = value;
-      }
-    });
-    return details;
   };
 
   const handleApply = (job: any) => {
