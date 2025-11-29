@@ -3,6 +3,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TierProvider } from "@/contexts/TierContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -204,33 +205,35 @@ const App = () => {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TierProvider>
-            <TooltipProvider>
-              <DeploymentDiagnostics />
-              <UpdatePrompt />
-              <Toaster position="top-right" />
-              <BrowserRouter>
-                <div className="min-h-screen bg-background">
-                  <SkipToContent />
-                  <ScrollToTop />
-                  <Navigation />
-                  <main id="main-content" tabIndex={-1} className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 focus:outline-none">
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
-                      <Routes>
-                        {routeGroups.map(renderRoute)}
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-                  </main>
-                  <MobileFooter />
-                </div>
-              </BrowserRouter>
-            </TooltipProvider>
-          </TierProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+      <HelmetProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <TierProvider>
+              <TooltipProvider>
+                <DeploymentDiagnostics />
+                <UpdatePrompt />
+                <Toaster position="top-right" />
+                <BrowserRouter>
+                  <div className="min-h-screen bg-background">
+                    <SkipToContent />
+                    <ScrollToTop />
+                    <Navigation />
+                    <main id="main-content" tabIndex={-1} className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 focus:outline-none">
+                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+                        <Routes>
+                          {routeGroups.map(renderRoute)}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </main>
+                    <MobileFooter />
+                  </div>
+                </BrowserRouter>
+              </TooltipProvider>
+            </TierProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 };
