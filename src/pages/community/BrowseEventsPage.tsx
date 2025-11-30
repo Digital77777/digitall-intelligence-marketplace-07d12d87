@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCommunity } from "@/hooks/useCommunity";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO, isToday, isBefore, isAfter, addMinutes } from "date-fns";
+import { EventDetailModal } from "@/components/community/EventDetailModal";
+import type { CommunityEvent } from "@/types/community";
 import {
   Select,
   SelectContent,
@@ -27,6 +29,7 @@ const BrowseEventsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
   const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const { useEvents, registerForEvent } = useCommunity();
@@ -200,11 +203,12 @@ const BrowseEventsPage = () => {
                   <Card 
                     key={event.id} 
                     ref={(el) => eventRefs.current[event.id] = el}
-                    className={`hover:shadow-lg transition-all ${
+                    className={`hover:shadow-lg transition-all cursor-pointer ${
                       highlightedEventId === event.id 
                         ? 'ring-2 ring-primary shadow-xl' 
                         : ''
                     }`}
+                    onClick={() => setSelectedEvent(event)}
                   >
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -243,7 +247,10 @@ const BrowseEventsPage = () => {
                         </div>
                         {user?.id === event.user_id ? (
                           <Button 
-                            onClick={() => navigate('/community/my-activity')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate('/community/my-activity');
+                            }}
                             variant="outline"
                             className="md:self-start"
                           >
@@ -252,7 +259,10 @@ const BrowseEventsPage = () => {
                           </Button>
                         ) : (
                           <Button 
-                            onClick={() => handleJoinEvent(event.id, false)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleJoinEvent(event.id, false);
+                            }}
                             className="bg-gradient-ai text-white md:self-start"
                             disabled={event.is_registered}
                           >
@@ -280,11 +290,12 @@ const BrowseEventsPage = () => {
                   <Card 
                     key={event.id} 
                     ref={(el) => eventRefs.current[event.id] = el}
-                    className={`hover:shadow-lg transition-all border-primary ${
+                    className={`hover:shadow-lg transition-all border-primary cursor-pointer ${
                       highlightedEventId === event.id 
                         ? 'ring-2 ring-primary shadow-xl' 
                         : ''
                     }`}
+                    onClick={() => setSelectedEvent(event)}
                   >
                     <CardContent className="p-6">
                       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -320,7 +331,10 @@ const BrowseEventsPage = () => {
                         </div>
                         {user?.id === event.user_id ? (
                           <Button 
-                            onClick={() => navigate('/community/my-activity')}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate('/community/my-activity');
+                            }}
                             variant="outline"
                             className="md:self-start"
                           >
@@ -329,7 +343,10 @@ const BrowseEventsPage = () => {
                           </Button>
                         ) : (
                           <Button 
-                            onClick={() => handleJoinEvent(event.id, true)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleJoinEvent(event.id, true);
+                            }}
                             className="bg-gradient-ai text-white md:self-start"
                             disabled={event.is_registered}
                           >
@@ -345,6 +362,17 @@ const BrowseEventsPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {selectedEvent && (
+        <EventDetailModal
+          event={selectedEvent}
+          isOpen={!!selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onJoinEvent={async (eventId) => {
+            await handleJoinEvent(eventId, false);
+          }}
+        />
+      )}
     </div>
   );
 };

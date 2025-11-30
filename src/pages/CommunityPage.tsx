@@ -14,13 +14,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
+import { EventDetailModal } from "@/components/community/EventDetailModal";
 import { TopicCard } from "@/components/community/TopicCard";
 import { EventCard } from "@/components/community/EventCard";
 import { InsightCard } from "@/components/community/InsightCard";
 import { useCommunity } from "@/hooks/useCommunity";
 import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
-import type { CommunityInsight } from "@/types/community";
+import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
 
 const CommunityPage = () => {
@@ -32,6 +33,7 @@ const CommunityPage = () => {
   const [eventType, setEventType] = useState("all");
   const [insightCategory, setInsightCategory] = useState("all");
   const [selectedInsight, setSelectedInsight] = useState<CommunityInsight | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
   const [topicsPage, setTopicsPage] = useState(0);
   const [insightsPage, setInsightsPage] = useState(0);
   const { user } = useAuth();
@@ -439,6 +441,7 @@ const CommunityPage = () => {
                         key={event.id}
                         event={event}
                         onJoinEvent={handleJoinEventClick}
+                        onViewDetails={(event) => setSelectedEvent(event)}
                       />
                     ))
                   ) : (
@@ -632,6 +635,15 @@ const CommunityPage = () => {
           insight={selectedInsight}
           open={!!selectedInsight}
           onOpenChange={(open) => !open && setSelectedInsight(null)}
+        />
+      )}
+
+      {selectedEvent && (
+        <EventDetailModal
+          event={selectedEvent}
+          isOpen={!!selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onJoinEvent={handleJoinEventClick}
         />
       )}
     </div>

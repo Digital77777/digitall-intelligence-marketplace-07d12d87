@@ -9,16 +9,24 @@ import type { CommunityEvent } from "@/types/community";
 interface EventCardProps {
   event: CommunityEvent;
   onJoinEvent: (eventId: string, isRegistered: boolean) => Promise<void>;
+  onViewDetails?: (event: CommunityEvent) => void;
 }
 
-export const EventCard = memo(({ event, onJoinEvent }: EventCardProps) => {
+export const EventCard = memo(({ event, onJoinEvent, onViewDetails }: EventCardProps) => {
   const handleJoinClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     await onJoinEvent(event.id, event.is_registered || false);
   }, [event.id, event.is_registered, onJoinEvent]);
 
+  const handleCardClick = useCallback(() => {
+    onViewDetails?.(event);
+  }, [event, onViewDetails]);
+
   return (
-    <Card className="hover:shadow-md transition-shadow overflow-hidden">
+    <Card 
+      className="hover:shadow-md transition-shadow overflow-hidden cursor-pointer" 
+      onClick={handleCardClick}
+    >
       <CardContent className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
           <div className="flex-1 min-w-0">
