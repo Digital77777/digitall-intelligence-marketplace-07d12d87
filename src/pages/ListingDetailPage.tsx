@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Heart, MapPin, Calendar, Clock, ExternalLink, Share2 } from 'lucide-react';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
+import { SimpleListingCard } from '@/components/marketplace/SimpleListingCard';
 import { toast } from 'sonner';
 
 interface ListingWithSeller extends MarketplaceListing {
@@ -26,6 +27,7 @@ export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [listing, setListing] = useState<ListingWithSeller | null>(null);
+  const [relatedListings, setRelatedListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const { isFavorited, toggleFavorite, isPending } = useOptimisticFavorites();
 
@@ -70,6 +72,45 @@ export default function ListingDetailPage() {
 
     fetchListing();
   }, [id, navigate]);
+
+  useEffect(() => {
+    if (!listing) return;
+
+    const fetchRelatedListings = async () => {
+      try {
+        let query = supabase
+          .from('marketplace_listings')
+          .select('*')
+          .eq('status', 'active')
+          .neq('id', listing.id)
+          .limit(4);
+
+        // Prioritize same category
+        if (listing.category_id) {
+          query = query.eq('category_id', listing.category_id);
+        } else if (listing.tags && listing.tags.length > 0) {
+          // Fall back to matching tags
+          query = query.overlaps('tags', listing.tags);
+        }
+
+        const { data } = await query;
+        
+        if (data) {
+          setRelatedListings(
+            data.map((item) => ({
+              ...item,
+              listing_type: item.listing_type as 'product' | 'service' | 'job',
+              status: item.status as 'active' | 'draft' | 'expired' | 'paused' | 'sold',
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching related listings:', error);
+      }
+    };
+
+    fetchRelatedListings();
+  }, [listing]);
 
   const handleFavorite = async () => {
     if (!id) return;
@@ -335,6 +376,28 @@ export default function ListingDetailPage() {
             </Card>
           </div>
         </div>
+
+        {/* Related Products Section */}
+        {relatedListings.length > 0 && (
+          <div className="mt-12">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold tracking-tight mb-2">Similar Products</h2>
+              <p className="text-muted-foreground">Discover more items you might like</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {relatedListings.map((relatedListing) => (
+                <SimpleListingCard
+                  key={relatedListing.id}
+                  listing={relatedListing}
+                  onFavorite={toggleFavorite}
+                  isFavorited={isFavorited(relatedListing.id)}
+                  isPending={isPending(relatedListing.id)}
+                  onViewDetails={(l) => navigate(`/marketplace/listing/${l.id}`)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Mobile Sticky Action Bar */}
