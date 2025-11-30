@@ -9,9 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Calendar, Clock, Users, MapPin, ExternalLink, Check } from "lucide-react";
 import type { CommunityEvent } from "@/types/community";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EventDetailModalProps {
   event: CommunityEvent | null;
@@ -27,6 +30,32 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   onJoinEvent,
 }) => {
   if (!event) return null;
+
+  // Fetch event attendees with their profiles
+  const { data: attendees = [] } = useQuery({
+    queryKey: ["event-attendees", event.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("event_attendees")
+        .select(`
+          id,
+          user_id,
+          joined_at,
+          profiles:user_id (
+            user_id,
+            full_name,
+            avatar_url,
+            headline
+          )
+        `)
+        .eq("event_id", event.id)
+        .order("joined_at", { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: isOpen,
+  });
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
@@ -145,6 +174,52 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 {event.description}
               </p>
             </div>
+          )}
+
+          {/* Attendees List */}
+          {attendees.length > 0 && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="font-semibold text-lg mb-3">
+                  Attendees ({attendees.length})
+                </h3>
+                <ScrollArea className="h-64 pr-4">
+                  <div className="space-y-3">
+                    {attendees.map((attendee) => (
+                      <div
+                        key={attendee.id}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                      >
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage
+                            src={attendee.profiles?.avatar_url || undefined}
+                          />
+                          <AvatarFallback>
+                            {getInitials(attendee.profiles?.full_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {attendee.profiles?.full_name || "Anonymous User"}
+                          </p>
+                          {attendee.profiles?.headline && (
+                            <p className="text-sm text-muted-foreground truncate">
+                              {attendee.profiles.headline}
+                            </p>
+                          )}
+                        </div>
+                        {attendee.joined_at && (
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(attendee.joined_at), "MMM d")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+            </>
           )}
 
           {/* Host Information */}
