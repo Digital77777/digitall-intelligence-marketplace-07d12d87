@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Users, Clock } from "lucide-react";
+import { ArrowLeft, Calendar, Users, Clock, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,8 @@ const HostEventPage = () => {
     time: "",
     duration: "",
     maxAttendees: "",
-    location: "virtual"
+    location: "virtual",
+    meetingLink: ""
   });
 
   const handleChange = (field: string, value: string) => {
@@ -53,7 +54,7 @@ const HostEventPage = () => {
         duration_minutes: formData.duration ? parseInt(formData.duration) : 60,
         max_attendees: formData.maxAttendees ? parseInt(formData.maxAttendees) : undefined,
         is_online: formData.location === "virtual" || formData.location === "hybrid",
-        meeting_link: undefined,
+        meeting_link: formData.meetingLink.trim() || undefined,
         location: formData.location === "in-person" ? "TBD" : undefined,
       });
       navigate("/community");
@@ -193,6 +194,24 @@ const HostEventPage = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="meetingLink">Meeting Link</Label>
+                <div className="relative">
+                  <Link className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="meetingLink"
+                    type="url"
+                    placeholder="https://zoom.us/j/..."
+                    className="pl-10"
+                    value={formData.meetingLink}
+                    onChange={(e) => handleChange("meetingLink", e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Add a Zoom, Google Meet, or other video conferencing link
+                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
