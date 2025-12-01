@@ -15,6 +15,7 @@ import type { CommunityEvent } from "@/types/community";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface EventDetailModalProps {
   event: CommunityEvent | null;
@@ -29,6 +30,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   onClose,
   onJoinEvent,
 }) => {
+  const navigate = useNavigate();
+  
   if (!event) return null;
 
   // Fetch event attendees with their profiles
@@ -189,7 +192,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                     {attendees.map((attendee) => (
                       <div
                         key={attendee.id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                        onClick={() => navigate(`/profile/${attendee.user_id}`)}
+                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                       >
                         <Avatar className="h-10 w-10">
                           <AvatarImage
