@@ -25,7 +25,7 @@ const BrowseEventsPage = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const highlightedEventId = searchParams.get("eventId");
+  const highlightedEventId = searchParams.get("eventId") || searchParams.get("event");
   const [searchQuery, setSearchQuery] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);

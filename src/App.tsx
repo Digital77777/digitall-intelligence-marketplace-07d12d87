@@ -173,6 +173,7 @@ const routeGroups: AppRoute[] = [
   { path: "/community/my-activity", component: MyActivityPage, protected: true },
   { path: "/community/topic/:topicId", component: TopicDetailPage, protected: true },
   { path: "/community/browse-events", component: BrowseEventsPage, protected: true },
+  { path: "/community/events", component: BrowseEventsPage, protected: true }, // Redirect alias for browse-events
   { path: "/community/find-members", component: FindMembersPage, protected: true },
   { path: "/community/host-event", component: HostEventPage, protected: true },
   { path: "/community/inbox", component: InboxPage, protected: true },
