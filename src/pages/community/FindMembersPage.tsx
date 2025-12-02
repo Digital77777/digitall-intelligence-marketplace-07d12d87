@@ -118,9 +118,6 @@ const FindMembersPage = () => {
                   </Badge>
                 )}
               </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-2 truncate">
-                {member.email}
-              </p>
               <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
                 <span className="font-medium">{member.contributions} contributions</span>
                 <span>•</span>
@@ -173,7 +170,7 @@ const FindMembersPage = () => {
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name or email..."
+              placeholder="Search by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
