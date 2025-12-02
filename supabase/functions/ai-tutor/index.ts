@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,15 +11,43 @@ interface Message {
   content: string;
 }
 
+// Input validation schema
+const messageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1).max(10000),
+});
+
+const requestSchema = z.object({
+  messages: z.array(messageSchema).min(1).max(50),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { messages } = await req.json();
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
     
-    console.log("AI Tutor request received with", messages?.length || 0, "messages");
+    if (!validation.success) {
+      console.error("Validation error:", validation.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request data",
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    const { messages } = validation.data;
+    
+    console.log("AI Tutor request received with", messages.length, "messages");
     
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
