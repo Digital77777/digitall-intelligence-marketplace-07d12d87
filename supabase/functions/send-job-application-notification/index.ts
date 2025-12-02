@@ -74,11 +74,6 @@ const handler = async (req: Request): Promise<Response> => {
       job_title,
       employer_email
     });
-      return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
-        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
-      );
-    }
 
     // Send notification email to employer
     const employerEmailResponse = await resend.emails.send({
