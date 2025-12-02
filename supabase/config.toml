@@ -33,17 +33,5 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 
-// JWT verification is now enabled by default for these functions
-// Only disable for specific webhook endpoints that validate differently
-
-[functions.send-job-application-notification]
-verify_jwt = false
-
-[functions.send-quote-notification]
-verify_jwt = false
-
-[functions.send-session-notification]
-verify_jwt = false
-
-[functions.ai-tutor]
-verify_jwt = false
+// JWT verification is now enabled by default for all functions
+// This protects against unauthorized API usage and spam abuse

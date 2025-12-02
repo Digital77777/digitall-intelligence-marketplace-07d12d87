@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -7,6 +8,15 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  userEmail: z.string().email().max(255),
+  userName: z.string().min(1).max(100),
+  sessionDate: z.string().min(1).max(50),
+  sessionTime: z.string().min(1).max(50),
+  consultant: z.string().min(1).max(100),
+});
 
 interface SessionNotificationRequest {
   userEmail: string;
@@ -25,7 +35,25 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { userEmail, userName, sessionDate, sessionTime, consultant }: SessionNotificationRequest = await req.json();
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      console.error("Validation error:", validation.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request data",
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
+    const { userEmail, userName, sessionDate, sessionTime, consultant } = validation.data;
     
     console.log("Sending session notifications for:", { userEmail, sessionDate, sessionTime, consultant });
 

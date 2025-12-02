@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -8,6 +9,17 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  job_listing_id: z.string().uuid("Invalid job listing ID"),
+  applicant_name: z.string().min(1).max(100),
+  applicant_email: z.string().email().max(255),
+  job_title: z.string().min(1).max(200),
+  employer_email: z.string().email().max(255),
+  employer_name: z.string().min(1).max(100),
+  cover_letter: z.string().max(5000).optional(),
+});
 
 interface JobApplicationRequest {
   job_listing_id: string;
@@ -28,6 +40,24 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      console.error("Validation error:", validation.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request data",
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+
     const { 
       job_listing_id,
       applicant_name, 
@@ -36,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
       employer_email,
       employer_name,
       cover_letter 
-    }: JobApplicationRequest = await req.json();
+    } = validation.data;
 
     console.log("Sending notification for job application:", {
       job_listing_id,
@@ -44,10 +74,6 @@ const handler = async (req: Request): Promise<Response> => {
       job_title,
       employer_email
     });
-
-    // Validate required fields
-    if (!job_listing_id || !applicant_name || !applicant_email || !job_title || !employer_email) {
-      console.error("Missing required fields");
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }

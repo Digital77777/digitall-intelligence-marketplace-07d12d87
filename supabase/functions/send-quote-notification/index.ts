@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -7,6 +8,19 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const requestSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  company: z.string().max(100).optional(),
+  phone: z.string().max(20).optional(),
+  serviceTitle: z.string().min(1).max(200),
+  projectDescription: z.string().min(1).max(5000),
+  timeline: z.string().max(100).optional(),
+  budget: z.string().max(100).optional(),
+  requirements: z.string().max(5000).optional(),
+});
 
 interface QuoteNotificationRequest {
   name: string;
@@ -29,10 +43,26 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const data: QuoteNotificationRequest = await req.json();
-    console.log("Received quote request data:", { ...data, email: data.email.substring(0, 3) + "***" });
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = requestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      console.error("Validation error:", validation.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid request data",
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
 
-    const { name, email, company, phone, serviceTitle, projectDescription, timeline, budget, requirements } = data;
+    const { name, email, company, phone, serviceTitle, projectDescription, timeline, budget, requirements } = validation.data;
+    console.log("Received quote request data:", { ...validation.data, email: email.substring(0, 3) + "***" });
 
     // Admin email - you should replace this with your actual admin email
     const adminEmail = "admin@digitalintelligence.com";
