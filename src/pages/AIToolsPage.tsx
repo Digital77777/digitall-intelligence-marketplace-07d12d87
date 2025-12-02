@@ -303,7 +303,7 @@ const AIToolsPage = () => {
                     ) : (
                       <Button 
                         className="w-full" 
-                        onClick={() => navigate('/subscription')}
+                        onClick={() => navigate(`/challenge/${challenge.id}`)}
                       >
                         Join Challenge
                         <ArrowRight className="h-4 w-4 ml-2" />

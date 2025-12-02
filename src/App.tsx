@@ -36,6 +36,7 @@ const AICodeAssistant = lazy(() => import("./pages/tools/AICodeAssistant"));
 const NeuralImageGenerator = lazy(() => import("./pages/tools/NeuralImageGenerator"));
 const SmartAnalytics = lazy(() => import("./pages/tools/SmartAnalytics"));
 const ConversationalAI = lazy(() => import("./pages/tools/ConversationalAI"));
+const ChallengePage = lazy(() => import("./pages/ChallengePage"));
 
 // Marketplace - Lazy loaded
 const BrowseMarketplacePage = lazy(() => import("./pages/BrowseMarketplacePage"));
@@ -141,6 +142,7 @@ const routeGroups: AppRoute[] = [
 
   // AI Tools
   { path: "/ai-tools", component: AIToolsPage, protected: true },
+  { path: "/challenge/:id", component: ChallengePage, protected: true },
   { path: "/tools/ai-code-assistant", component: AICodeAssistant, protected: true },
   { path: "/tools/neural-image-generator", component: NeuralImageGenerator, protected: true },
   { path: "/tools/smart-analytics", component: SmartAnalytics, protected: true },
