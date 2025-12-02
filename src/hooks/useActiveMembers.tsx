@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ActiveMember {
   user_id: string;
   full_name: string | null;
-  email: string | null;
   contributions: number;
   is_top_contributor: boolean;
   joined_at: string;
@@ -14,16 +13,14 @@ export const useActiveMembers = (searchQuery?: string) => {
   return useQuery({
     queryKey: ["active-members", searchQuery],
     queryFn: async () => {
-      // Fetch all profiles
+      // Fetch all profiles from public_profiles view (RLS-compliant for discovery)
       let query = supabase
-        .from("profiles")
-        .select("user_id, full_name, email, created_at")
+        .from("public_profiles")
+        .select("user_id, full_name, created_at")
         .not("user_id", "is", null);
 
       if (searchQuery && searchQuery.trim()) {
-        query = query.or(
-          `full_name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
-        );
+        query = query.ilike("full_name", `%${searchQuery}%`);
       }
 
       const { data: profiles, error } = await query;
@@ -43,7 +40,6 @@ export const useActiveMembers = (searchQuery?: string) => {
             return {
               user_id: profile.user_id,
               full_name: profile.full_name,
-              email: profile.email,
               contributions: 0,
               is_top_contributor: false,
               joined_at: profile.created_at,
@@ -53,7 +49,6 @@ export const useActiveMembers = (searchQuery?: string) => {
           return {
             user_id: profile.user_id,
             full_name: profile.full_name,
-            email: profile.email,
             contributions: contributions || 0,
             is_top_contributor: (contributions || 0) >= 10,
             joined_at: profile.created_at,
