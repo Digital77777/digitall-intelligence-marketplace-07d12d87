@@ -178,6 +178,39 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_submissions: {
+        Row: {
+          challenge_id: number
+          created_at: string
+          id: string
+          notes: string | null
+          project_url: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          project_url: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          project_url?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_events: {
         Row: {
           attendees_count: number | null

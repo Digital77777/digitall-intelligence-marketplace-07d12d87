@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { SEOHead } from "@/components/SEOHead";
+import { ChallengeSubmissionForm } from "@/components/challenges/ChallengeSubmissionForm";
 
 const ChallengePage = () => {
   const { id } = useParams();
@@ -287,32 +288,39 @@ const ChallengePage = () => {
 
         <Separator className="my-8" />
 
-        <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <h3 className="text-xl font-bold mb-2">Ready to Start?</h3>
-              <p className="text-muted-foreground mb-6">
-                Choose a tool above and start building your solution. Good luck!
-              </p>
-              <div className="flex flex-wrap gap-4 justify-center">
-                <Button 
-                  size="lg"
-                  className="bg-gradient-ai text-white"
-                  onClick={() => window.open(challenge.resources[0].url, '_blank', 'noopener,noreferrer')}
-                >
-                  Start Building
-                </Button>
-                <Button 
-                  size="lg"
-                  variant="outline"
-                  onClick={() => navigate("/ai-tools")}
-                >
-                  View Other Challenges
-                </Button>
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <h3 className="text-xl font-bold mb-2">Ready to Start?</h3>
+                <p className="text-muted-foreground mb-6">
+                  Choose a tool above and start building your solution. Good luck!
+                </p>
+                <div className="flex flex-wrap gap-4 justify-center">
+                  <Button 
+                    size="lg"
+                    className="bg-gradient-ai text-white"
+                    onClick={() => window.open(challenge.resources[0].url, '_blank', 'noopener,noreferrer')}
+                  >
+                    Start Building
+                  </Button>
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    onClick={() => navigate("/ai-tools")}
+                  >
+                    View Other Challenges
+                  </Button>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <ChallengeSubmissionForm 
+            challengeId={challenge.id} 
+            challengeTitle={challenge.title} 
+          />
+        </div>
       </div>
     </div>
   );
