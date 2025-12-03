@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, Mail, MessageCircle, Lightbulb, Calendar } from "lucide-react";
+import { ArrowLeft, User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, MessageCircle, Lightbulb, Calendar } from "lucide-react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SEOHead } from "@/components/SEOHead";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
@@ -28,10 +28,9 @@ const PublicProfilePage = () => {
         .from("community_insights")
         .select(`
           *,
-          profiles:user_id (
+          public_profiles:user_id (
             user_id,
             full_name,
-            email,
             avatar_url
           ),
           insight_likes (
@@ -52,7 +51,7 @@ const PublicProfilePage = () => {
     queryKey: ["public-profile", userId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
+        .from("public_profiles")
         .select("*")
         .eq("user_id", userId)
         .single();
@@ -155,9 +154,9 @@ const PublicProfilePage = () => {
             <CardContent className="p-4 sm:p-6 md:p-8">
               <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-start">
                 <Avatar className="w-20 h-20 sm:w-24 sm:h-24 md:w-32 md:h-32 mx-auto md:mx-0">
-                  <AvatarImage src={profile.avatar_url} />
+                  <AvatarImage src={profile.avatar_url || undefined} />
                   <AvatarFallback className="text-xl sm:text-2xl md:text-3xl">
-                    {getInitials(profile.full_name, profile.email)}
+                    {getInitials(profile.full_name || undefined, undefined)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-3 md:space-y-4 w-full">
@@ -221,39 +220,26 @@ const PublicProfilePage = () => {
             </Card>
           )}
 
-          {/* Links & Contact */}
-          {(profile.website || profile.linkedin_url || profile.github_url || profile.twitter_url || profile.email) && (
+          {/* Links */}
+          {(profile.website || profile.linkedin_url || profile.github_url || profile.twitter_url) && (
             <Card>
               <CardHeader className="p-4 sm:p-6">
                 <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
                   <LinkIcon className="w-4 sm:w-5 h-4 sm:h-5" />
-                  Links & Contact
+                  Links
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 p-4 sm:p-6 pt-0">
-                {profile.email && (
+                {profile.website && (
                   <a
-                    href={`mailto:${profile.email}`}
+                    href={profile.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-3 text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors break-all"
                   >
-                    <Mail className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
-                    <span className="break-all">{profile.email}</span>
+                    <LinkIcon className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
+                    <span className="break-all">{profile.website}</span>
                   </a>
-                )}
-
-                {profile.website && (
-                  <>
-                    <Separator />
-                    <a
-                      href={profile.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sm sm:text-base text-muted-foreground hover:text-primary transition-colors break-all"
-                    >
-                      <LinkIcon className="w-4 sm:w-5 h-4 sm:h-5 flex-shrink-0" />
-                      <span className="break-all">{profile.website}</span>
-                    </a>
-                  </>
                 )}
 
                 {profile.linkedin_url && (
