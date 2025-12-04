@@ -413,7 +413,7 @@ export const useCommunity = () => {
         const [topicsResult, eventsResult, profilesResult] = await Promise.all([
           supabase.from("community_topics").select("id", { count: "exact", head: true }),
           supabase.from("community_events").select("id", { count: "exact", head: true }),
-          supabase.from("profiles").select("id", { count: "exact", head: true }),
+          supabase.from("public_profiles").select("user_id", { count: "exact", head: true }).not("user_id", "is", null),
         ]);
 
         return {
