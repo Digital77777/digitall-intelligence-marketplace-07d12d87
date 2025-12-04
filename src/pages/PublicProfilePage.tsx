@@ -12,12 +12,16 @@ import { SEOHead } from "@/components/SEOHead";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useConnections } from "@/hooks/useConnections";
+import { UserPlus, Clock, Check } from "lucide-react";
 
 const PublicProfilePage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null);
+  const { useConnectionStatus, sendConnectionRequest } = useConnections();
+  const { data: connectionStatus, isLoading: connectionLoading } = useConnectionStatus(userId || "");
 
   const { data: selectedInsight } = useQuery({
     queryKey: ["insight-detail", selectedInsightId],
@@ -185,9 +189,33 @@ const PublicProfilePage = () => {
                     </div>
                   )}
 
-                  {/* Message Button - Only show if viewing another user's profile */}
+                  {/* Action Buttons - Only show if viewing another user's profile */}
                   {user && user.id !== userId && (
-                    <div className="pt-2 flex justify-center md:justify-start">
+                    <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center md:justify-start">
+                      {/* Connect Button */}
+                      {!connectionStatus ? (
+                        <Button
+                          onClick={() => sendConnectionRequest.mutate(userId!)}
+                          disabled={sendConnectionRequest.isPending}
+                          variant="outline"
+                          className="w-full sm:w-auto"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          {sendConnectionRequest.isPending ? "Sending..." : "Connect"}
+                        </Button>
+                      ) : connectionStatus.status === "pending" ? (
+                        <Button variant="outline" disabled className="w-full sm:w-auto">
+                          <Clock className="w-4 h-4 mr-2" />
+                          {connectionStatus.requester_id === user.id ? "Request Sent" : "Pending"}
+                        </Button>
+                      ) : connectionStatus.status === "accepted" ? (
+                        <Button variant="outline" disabled className="w-full sm:w-auto">
+                          <Check className="w-4 h-4 mr-2" />
+                          Connected
+                        </Button>
+                      ) : null}
+                      
+                      {/* Message Button */}
                       <Button
                         onClick={() => navigate(`/community/inbox?userId=${userId}`)}
                         className="bg-gradient-ai text-white w-full sm:w-auto"
