@@ -158,9 +158,16 @@ const FindMembersPage = () => {
         </Button>
 
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4 bg-gradient-ai bg-clip-text text-transparent">
-            Find Active Members
-          </h1>
+          <div className="flex items-center gap-3 mb-3 sm:mb-4">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-ai bg-clip-text text-transparent">
+              Find Active Members
+            </h1>
+            {!isLoading && (
+              <Badge variant="secondary" className="text-sm px-3 py-1">
+                {members.length} {members.length === 1 ? "member" : "members"}
+              </Badge>
+            )}
+          </div>
           <p className="text-muted-foreground text-base sm:text-lg">
             Connect with AI enthusiasts, experts, and fellow learners
           </p>
@@ -182,13 +189,13 @@ const FindMembersPage = () => {
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="all" className="data-[state=active]:bg-primary/10">
               <Search className="h-4 w-4 mr-1.5 shrink-0" />
-              <span className="hidden sm:inline">All Members</span>
-              <span className="sm:hidden text-xs">All</span>
+              <span className="hidden sm:inline">All Members ({members.length})</span>
+              <span className="sm:hidden text-xs">All ({members.length})</span>
             </TabsTrigger>
             <TabsTrigger value="top" className="gap-1.5 data-[state=active]:bg-primary/10">
               <Award className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">Top Contributors</span>
-              <span className="sm:hidden text-xs">Top</span>
+              <span className="hidden sm:inline">Top Contributors ({topContributors.length})</span>
+              <span className="sm:hidden text-xs">Top ({topContributors.length})</span>
             </TabsTrigger>
           </TabsList>
 
