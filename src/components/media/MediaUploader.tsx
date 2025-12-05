@@ -12,11 +12,13 @@ import {
   Link,
   AlertCircle,
   CheckCircle,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { EnhancedImage } from './EnhancedImage';
 import { VideoPlayer } from './VideoPlayer';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MediaItem {
   id: string;
@@ -24,6 +26,7 @@ interface MediaItem {
   type: 'image' | 'video';
   file?: File;
   isValid: boolean;
+  isUploading?: boolean;
   error?: string;
 }
 
@@ -35,6 +38,7 @@ interface MediaUploaderProps {
   maxImages?: number;
   maxVideos?: number;
   maxFileSize?: number; // in MB
+  bucket?: string;
 }
 
 export const MediaUploader: React.FC<MediaUploaderProps> = ({
@@ -44,7 +48,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   onVideosChange,
   maxImages = 10,
   maxVideos = 5,
-  maxFileSize = 50
+  maxFileSize = 50,
+  bucket = 'community-insights'
 }) => {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(() => [
     ...images.map((url, index) => ({
@@ -63,16 +68,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   
   const [urlInput, setUrlInput] = useState('');
   const [urlType, setUrlType] = useState<'image' | 'video'>('image');
+  const [isUploading, setIsUploading] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const updateParentState = (items: MediaItem[]) => {
     const validImages = items
-      .filter(item => item.type === 'image' && item.isValid)
+      .filter(item => item.type === 'image' && item.isValid && !item.isUploading)
       .map(item => item.url);
     const validVideos = items
-      .filter(item => item.type === 'video' && item.isValid)
+      .filter(item => item.type === 'video' && item.isValid && !item.isUploading)
       .map(item => item.url);
     
     onImagesChange(validImages);
@@ -138,7 +144,41 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
   };
 
-  const handleFileUpload = (files: FileList | null, type: 'image' | 'video') => {
+  const uploadFileToStorage = async (file: File, type: 'image' | 'video'): Promise<string | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('You must be logged in to upload files');
+        return null;
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${type}s/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(data.path);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      return null;
+    }
+  };
+
+  const handleFileUpload = async (files: FileList | null, type: 'image' | 'video') => {
     if (!files) return;
 
     const currentCount = mediaItems.filter(item => item.type === type).length;
@@ -151,12 +191,13 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
 
     const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    setIsUploading(true);
     
-    filesToProcess.forEach(file => {
+    for (const file of filesToProcess) {
       // Validate file size
       if (file.size > maxFileSize * 1024 * 1024) {
         toast.error(`File "${file.name}" is too large. Maximum size is ${maxFileSize}MB`);
-        return;
+        continue;
       }
 
       // Validate file type
@@ -166,30 +207,70 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
       if (!isValidType) {
         toast.error(`Invalid file type for "${file.name}"`);
-        return;
+        continue;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const url = e.target?.result as string;
-        const newItem: MediaItem = {
-          id: `${type}-${Date.now()}-${Math.random()}`,
-          url,
-          type,
-          file,
-          isValid: true
-        };
-
-        const updatedItems = [...mediaItems, newItem];
-        setMediaItems(updatedItems);
-        updateParentState(updatedItems);
-        toast.success(`${type} uploaded successfully`);
+      // Add temporary item with uploading state
+      const tempId = `${type}-${Date.now()}-${Math.random()}`;
+      const tempUrl = URL.createObjectURL(file);
+      
+      const tempItem: MediaItem = {
+        id: tempId,
+        url: tempUrl,
+        type,
+        file,
+        isValid: false,
+        isUploading: true
       };
-      reader.readAsDataURL(file);
-    });
+
+      setMediaItems(prev => [...prev, tempItem]);
+
+      // Upload to Supabase storage
+      const publicUrl = await uploadFileToStorage(file, type);
+
+      if (publicUrl) {
+        setMediaItems(prev => {
+          const updated = prev.map(item => 
+            item.id === tempId 
+              ? { ...item, url: publicUrl, isValid: true, isUploading: false }
+              : item
+          );
+          updateParentState(updated);
+          return updated;
+        });
+        toast.success(`${type} uploaded successfully`);
+      } else {
+        setMediaItems(prev => {
+          const updated = prev.filter(item => item.id !== tempId);
+          return updated;
+        });
+        toast.error(`Failed to upload ${file.name}`);
+      }
+
+      // Clean up object URL
+      URL.revokeObjectURL(tempUrl);
+    }
+
+    setIsUploading(false);
   };
 
-  const removeMedia = (id: string) => {
+  const removeMedia = async (id: string) => {
+    const item = mediaItems.find(m => m.id === id);
+    
+    // Try to delete from storage if it's a Supabase URL
+    if (item?.url.includes('supabase.co/storage')) {
+      try {
+        const url = new URL(item.url);
+        const pathParts = url.pathname.split('/storage/v1/object/public/');
+        if (pathParts.length > 1) {
+          const [bucketName, ...filePath] = pathParts[1].split('/');
+          await supabase.storage.from(bucketName).remove([filePath.join('/')]);
+        }
+      } catch (error) {
+        console.error('Failed to delete from storage:', error);
+      }
+    }
+
     const updatedItems = mediaItems.filter(item => item.id !== id);
     setMediaItems(updatedItems);
     updateParentState(updatedItems);
@@ -226,7 +307,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               <Label className="text-sm font-medium">Add Media from URL</Label>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <div className="flex gap-1">
                 <Button
                   type="button"
@@ -252,7 +333,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 placeholder={`Enter ${urlType} URL`}
-                className="flex-1"
+                className="flex-1 min-w-[200px]"
                 onKeyPress={(e) => e.key === 'Enter' && addUrlMedia()}
               />
               
@@ -284,9 +365,13 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={imageCount >= maxImages}
+                  disabled={imageCount >= maxImages || isUploading}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
                   Choose Files
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -320,9 +405,13 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => videoInputRef.current?.click()}
-                  disabled={videoCount >= maxVideos}
+                  disabled={videoCount >= maxVideos || isUploading}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
                   Choose Files
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
@@ -367,11 +456,20 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                       />
                     </div>
                   )}
+                  
+                  {/* Uploading Overlay */}
+                  {item.isUploading && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 text-white animate-spin" />
+                    </div>
+                  )}
                 </div>
 
                 {/* Status Indicator */}
                 <div className="absolute top-1 left-1">
-                  {item.isValid ? (
+                  {item.isUploading ? (
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  ) : item.isValid ? (
                     <CheckCircle className="h-4 w-4 text-green-500 bg-white rounded-full" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-red-500 bg-white rounded-full" />
@@ -379,15 +477,17 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                 </div>
 
                 {/* Remove Button */}
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => removeMedia(item.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
+                {!item.isUploading && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => removeMedia(item.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
 
                 {/* File Info */}
                 {item.file && (
