@@ -36,6 +36,7 @@ const TechnicalDeveloper = () => {
       duration: "4 weeks",
       lessons: 12,
       completed: false,
+      route: "/course/advanced-technical-ai",
       topics: [
         "Introduction to Machine Learning",
         "Supervised Learning Algorithms",
@@ -58,6 +59,7 @@ const TechnicalDeveloper = () => {
       duration: "5 weeks",
       lessons: 15,
       completed: false,
+      route: "/course/ai-research-leadership",
       topics: [
         "Neural Network Fundamentals",
         "TensorFlow & Keras Setup",
@@ -83,6 +85,7 @@ const TechnicalDeveloper = () => {
       duration: "4 weeks",
       lessons: 12,
       completed: false,
+      route: "/course/ai-human-augmentation",
       topics: [
         "Text Preprocessing & Tokenization",
         "Bag of Words & TF-IDF",
@@ -105,6 +108,7 @@ const TechnicalDeveloper = () => {
       duration: "4 weeks",
       lessons: 11,
       completed: false,
+      route: "/course/robotics-autonomous",
       topics: [
         "Image Processing Fundamentals",
         "OpenCV Library Mastery",
@@ -126,6 +130,7 @@ const TechnicalDeveloper = () => {
       duration: "3 weeks",
       lessons: 10,
       completed: false,
+      route: "/course/ai-global-impact",
       topics: [
         "Model Serialization & Versioning",
         "Docker for ML Applications",
@@ -330,7 +335,7 @@ const TechnicalDeveloper = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-0 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {module.topics.map((topic, topicIndex) => (
                           <div key={topicIndex} className="flex items-center gap-2 text-sm">
@@ -339,6 +344,14 @@ const TechnicalDeveloper = () => {
                           </div>
                         ))}
                       </div>
+                      <Button 
+                        variant="outline" 
+                        className="w-full md:w-auto"
+                        onClick={() => navigate(module.route)}
+                      >
+                        View Full Course
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}

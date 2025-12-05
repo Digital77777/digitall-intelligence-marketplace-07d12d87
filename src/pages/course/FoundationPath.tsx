@@ -34,6 +34,7 @@ const FoundationPath = () => {
       duration: "2 weeks",
       lessons: 8,
       completed: false,
+      route: "/course/responsible-ai",
       topics: [
         "What is Artificial Intelligence?",
         "History of AI Development", 
@@ -52,6 +53,7 @@ const FoundationPath = () => {
       duration: "3 weeks",
       lessons: 12,
       completed: false,
+      route: "/course/advanced-technical-ai",
       topics: [
         "Statistics Made Simple",
         "Understanding Probability", 
@@ -74,6 +76,7 @@ const FoundationPath = () => {
       duration: "4 weeks", 
       lessons: 16,
       completed: false,
+      route: "/course/practical-skills",
       topics: [
         "Python Installation & Setup",
         "Variables and Data Types",
@@ -100,6 +103,7 @@ const FoundationPath = () => {
       duration: "2 weeks",
       lessons: 8,
       completed: false,
+      route: "/course/applied-ai-industry",
       topics: [
         "AI in Healthcare",
         "AI in Finance & Banking",
@@ -307,7 +311,7 @@ const FoundationPath = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="pt-0">
+                    <CardContent className="pt-0 space-y-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         {module.topics.map((topic, topicIndex) => (
                           <div key={topicIndex} className="flex items-center gap-2 text-sm">
@@ -316,6 +320,14 @@ const FoundationPath = () => {
                           </div>
                         ))}
                       </div>
+                      <Button 
+                        variant="outline" 
+                        className="w-full md:w-auto"
+                        onClick={() => navigate(module.route)}
+                      >
+                        View Full Course
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
