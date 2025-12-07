@@ -67,6 +67,11 @@ const ShareInsightPage = () => {
     }
     
     if (!formData.title || !formData.content || !formData.category) {
+      toast({
+        title: "Missing required fields",
+        description: "Please fill in the title, content, and category.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -82,6 +87,9 @@ const ShareInsightPage = () => {
         video_thumbnails: videoThumbnails.length > 0 ? videoThumbnails : undefined,
       });
       navigate("/community");
+    } catch (error) {
+      console.error('Error creating insight:', error);
+      // Error toast is already shown by the mutation's onError handler
     } finally {
       setIsSubmitting(false);
     }
