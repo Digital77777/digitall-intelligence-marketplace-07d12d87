@@ -33,5 +33,5 @@ refresh_token_reuse_interval = 10
 enable_signup = true
 enable_anonymous_sign_ins = false
 
-// JWT verification is now enabled by default for all functions
-// This protects against unauthorized API usage and spam abuse
+[functions.paystack-webhook]
+verify_jwt = false
