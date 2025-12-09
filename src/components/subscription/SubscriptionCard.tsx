@@ -94,7 +94,13 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       
       <CardFooter>
         <Button
-          onClick={onSelect}
+          onClick={() => {
+            if (tier.name.toLowerCase() === 'creator' && !isCurrentTier && !isAdminEmail) {
+              window.open('https://paystack.shop/pay/xlgcwqb3jq', '_blank');
+            } else {
+              onSelect();
+            }
+          }}
           disabled={isCurrentTier || loading}
           className={`w-full ${isPopular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90' : ''}`}
           variant={isCurrentTier ? 'outline' : 'default'}
