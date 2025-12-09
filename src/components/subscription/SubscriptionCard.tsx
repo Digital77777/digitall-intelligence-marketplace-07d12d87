@@ -95,11 +95,18 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
       <CardFooter>
         <Button
           onClick={() => {
-            if (tier.name.toLowerCase() === 'creator' && !isCurrentTier && !isAdminEmail) {
-              window.open('https://paystack.shop/pay/xlgcwqb3jq', '_blank');
-            } else {
-              onSelect();
+            const tierName = tier.name.toLowerCase();
+            if (!isCurrentTier && !isAdminEmail) {
+              if (tierName === 'creator') {
+                window.open('https://paystack.shop/pay/xlgcwqb3jq', '_blank');
+                return;
+              }
+              if (tierName === 'career') {
+                window.open('https://paystack.shop/pay/p8i77ax7q3', '_blank');
+                return;
+              }
             }
+            onSelect();
           }}
           disabled={isCurrentTier || loading}
           className={`w-full ${isPopular ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:opacity-90' : ''}`}
