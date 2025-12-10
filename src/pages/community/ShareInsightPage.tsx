@@ -60,18 +60,43 @@ const ShareInsightPage = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
     
     if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to publish your insight.",
+        variant: "destructive",
+      });
       navigate("/auth");
       return;
     }
     
-    if (!formData.title || !formData.content || !formData.category) {
+    if (!formData.title.trim()) {
       toast({
-        title: "Missing required fields",
-        description: "Please fill in the title, content, and category.",
+        title: "Title Required",
+        description: "Please enter a title for your insight.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.content.trim()) {
+      toast({
+        title: "Content Required", 
+        description: "Please add some content to your insight.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.category) {
+      toast({
+        title: "Category Required",
+        description: "Please select a category for your insight.",
         variant: "destructive",
       });
       return;
@@ -88,10 +113,18 @@ const ShareInsightPage = () => {
         videos: coverVideos.length > 0 ? coverVideos : undefined,
         video_thumbnails: videoThumbnails.length > 0 ? videoThumbnails : undefined,
       });
+      toast({
+        title: "Success!",
+        description: "Your insight has been published.",
+      });
       navigate("/community");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating insight:', error);
-      // Error toast is already shown by the mutation's onError handler
+      toast({
+        title: "Failed to Publish",
+        description: error?.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
