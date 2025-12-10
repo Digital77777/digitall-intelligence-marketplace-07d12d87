@@ -1599,6 +1599,7 @@ export type Database = {
         Args: { p_required_documents?: Json; p_seller_profile_id: number }
         Returns: number
       }
+      expire_old_job_listings: { Args: never; Returns: undefined }
       generate_referral_code: { Args: never; Returns: string }
       get_current_user_roles: {
         Args: never
