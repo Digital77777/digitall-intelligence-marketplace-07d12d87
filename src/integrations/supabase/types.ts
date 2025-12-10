@@ -1585,6 +1585,7 @@ export type Database = {
         }[]
       }
       create_notification:
+        | { Args: { p_message: string; p_user_id: number }; Returns: number }
         | {
             Args: {
               p_message: string
@@ -1594,7 +1595,6 @@ export type Database = {
             }
             Returns: number
           }
-        | { Args: { p_message: string; p_user_id: number }; Returns: number }
       create_seller_verification_task: {
         Args: { p_required_documents?: Json; p_seller_profile_id: number }
         Returns: number
