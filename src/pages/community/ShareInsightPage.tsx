@@ -93,6 +93,15 @@ const ShareInsightPage = () => {
       return;
     }
     
+    if (formData.content.trim().length < 50) {
+      toast({
+        title: "Content Too Short",
+        description: "Your insight content must be at least 50 characters long.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!formData.category) {
       toast({
         title: "Category Required",
