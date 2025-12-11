@@ -35,3 +35,12 @@ enable_anonymous_sign_ins = false
 
 [functions.paystack-webhook]
 verify_jwt = false
+
+[functions.send-job-application-notification]
+verify_jwt = true
+
+[functions.send-quote-notification]
+verify_jwt = true
+
+[functions.send-session-notification]
+verify_jwt = true

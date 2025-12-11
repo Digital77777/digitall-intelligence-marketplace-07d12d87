@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -18,14 +19,6 @@ const requestSchema = z.object({
   consultant: z.string().min(1).max(100),
 });
 
-interface SessionNotificationRequest {
-  userEmail: string;
-  userName: string;
-  sessionDate: string;
-  sessionTime: string;
-  consultant: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   console.log("Session notification function called");
 
@@ -35,6 +28,35 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the JWT token and get user
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Authentication failed" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Authenticated user:", user.id);
+
     // Parse and validate request body
     const body = await req.json();
     const validation = requestSchema.safeParse(body);
@@ -55,6 +77,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     const { userEmail, userName, sessionDate, sessionTime, consultant } = validation.data;
     
+    // Verify the authenticated user's email matches the session user email
+    if (user.email !== userEmail) {
+      console.error("User email mismatch - authenticated:", user.email, "provided:", userEmail);
+      return new Response(
+        JSON.stringify({ error: "You can only book sessions with your own email" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("Sending session notifications for:", { userEmail, sessionDate, sessionTime, consultant });
 
     // Send confirmation email to user
@@ -154,7 +185,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-session-notification function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

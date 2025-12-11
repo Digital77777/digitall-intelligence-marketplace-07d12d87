@@ -21,16 +21,6 @@ const requestSchema = z.object({
   cover_letter: z.string().max(5000).optional(),
 });
 
-interface JobApplicationRequest {
-  job_listing_id: string;
-  applicant_name: string;
-  applicant_email: string;
-  job_title: string;
-  employer_email: string;
-  employer_name: string;
-  cover_letter?: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
   console.log("Job application notification function called");
   
@@ -40,6 +30,35 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+      console.error("Missing authorization header");
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Verify the JWT token and get user
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error("Authentication failed:", authError?.message);
+      return new Response(
+        JSON.stringify({ error: "Authentication failed" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Authenticated user:", user.id);
+
     // Parse and validate request body
     const body = await req.json();
     const validation = requestSchema.safeParse(body);
@@ -67,6 +86,15 @@ const handler = async (req: Request): Promise<Response> => {
       employer_name,
       cover_letter 
     } = validation.data;
+
+    // Verify the authenticated user's email matches the applicant email
+    if (user.email !== applicant_email) {
+      console.error("User email mismatch - authenticated:", user.email, "provided:", applicant_email);
+      return new Response(
+        JSON.stringify({ error: "You can only send applications from your own email" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     console.log("Sending notification for job application:", {
       job_listing_id,
@@ -196,7 +224,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error("Error in send-job-application-notification function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: "Internal server error" }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
