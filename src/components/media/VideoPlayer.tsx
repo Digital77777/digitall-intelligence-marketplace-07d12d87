@@ -20,6 +20,7 @@ interface VideoPlayerProps {
   muted?: boolean;
   loop?: boolean;
   onError?: () => void;
+  autoPlayOnScroll?: boolean;
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -29,13 +30,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   autoPlay = false,
   muted = false,
   loop = false,
-  onError
+  onError,
+  autoPlayOnScroll = true
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(muted);
+  const [isMuted, setIsMuted] = useState(muted || autoPlayOnScroll);
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -43,6 +45,46 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [showControls, setShowControls] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+
+  // Intersection Observer for autoplay on scroll
+  useEffect(() => {
+    if (!autoPlayOnScroll) return;
+    
+    const video = videoRef.current;
+    const container = containerRef.current;
+    if (!video || !container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            // Video is at least 50% visible - play it
+            if (!hasUserInteracted) {
+              video.muted = true;
+              setIsMuted(true);
+            }
+            video.play().catch(() => {
+              // Autoplay was prevented
+            });
+          } else {
+            // Video is out of view - pause it
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: [0.5],
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [autoPlayOnScroll, hasUserInteracted]);
 
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -57,6 +99,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
     
+    setHasUserInteracted(true);
     if (isPlaying) {
       videoRef.current.pause();
     } else {

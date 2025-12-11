@@ -14,6 +14,7 @@ interface EnhancedVideoPlayerProps {
   src: string;
   poster?: string;
   className?: string;
+  autoPlayOnScroll?: boolean;
 }
 
 const QUALITY_OPTIONS = [
@@ -26,12 +27,12 @@ const QUALITY_OPTIONS = [
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export const EnhancedVideoPlayer = ({ src, poster, className = "" }: EnhancedVideoPlayerProps) => {
+export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScroll = true }: EnhancedVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay
   const [volume, setVolume] = useState(1);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -40,7 +41,49 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "" }: EnhancedVid
   const [showControls, setShowControls] = useState(true);
   const [quality, setQuality] = useState("auto");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const hideControlsTimeout = useRef<NodeJS.Timeout>();
+
+  // Intersection Observer for autoplay on scroll
+  useEffect(() => {
+    if (!autoPlayOnScroll) return;
+    
+    const video = videoRef.current;
+    const container = containerRef.current;
+    if (!video || !container) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+            // Video is at least 50% visible - play it
+            if (!hasUserInteracted) {
+              video.muted = true; // Ensure muted for autoplay
+              setIsMuted(true);
+            }
+            video.play().catch(() => {
+              // Autoplay was prevented, that's okay
+            });
+          } else {
+            // Video is out of view - pause it
+            if (!document.pictureInPictureElement || document.pictureInPictureElement !== video) {
+              video.pause();
+            }
+          }
+        });
+      },
+      {
+        threshold: [0.5], // Trigger when 50% visible
+        rootMargin: "0px",
+      }
+    );
+
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [autoPlayOnScroll, hasUserInteracted]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -85,6 +128,7 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "" }: EnhancedVid
     const video = videoRef.current;
     if (!video) return;
 
+    setHasUserInteracted(true);
     if (isPlaying) {
       video.pause();
     } else {
