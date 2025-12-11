@@ -318,13 +318,17 @@ export const ListingForm: React.FC<ListingFormProps> = ({
 
           {/* Media Upload */}
           <div>
-            <Label>Media (Images & Videos)</Label>
+            <Label>Logo & Media (Images & Videos)</Label>
+            <p className="text-sm text-muted-foreground mb-2">
+              Upload your listing logo/icon as the first image. Additional images and videos showcase your product.
+            </p>
             <MediaUploader
               images={formData.images}
               videos={formData.videos}
               onImagesChange={(images) => handleInputChange('images', images)}
               onVideosChange={(videos) => handleInputChange('videos', videos)}
               maxImages={10}
+              bucket="marketplace-listings"
               maxVideos={5}
               maxFileSize={50}
             />
