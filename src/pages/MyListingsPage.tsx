@@ -180,7 +180,7 @@ const MyListingsPage = () => {
                         size="sm"
                         variant="outline"
                         className="flex-1"
-                        onClick={() => navigate(`/marketplace/edit/${listing.id}`)}
+                        onClick={() => navigate(`/edit-listing/${listing.id}`)}
                       >
                         <Edit className="h-3 w-3 mr-1" />
                         Edit
