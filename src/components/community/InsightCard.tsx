@@ -27,10 +27,10 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
 
   return (
     <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden max-w-full group"
+      className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden max-w-full group"
       onClick={handleCardClick}
     >
-      <CardContent className="p-0">
+      <CardContent className="p-0 rounded-xl overflow-hidden">
         {/* Media section - full height on mobile, constrained on desktop */}
         {insight.cover_image && (
           <div className="w-full relative overflow-hidden h-auto md:h-40">
