@@ -42,7 +42,9 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
   const [quality, setQuality] = useState("auto");
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [showMuteIndicator, setShowMuteIndicator] = useState(false);
   const hideControlsTimeout = useRef<NodeJS.Timeout>();
+  const muteIndicatorTimeout = useRef<NodeJS.Timeout>();
 
   // Intersection Observer for autoplay on scroll
   useEffect(() => {
@@ -141,8 +143,28 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
     const video = videoRef.current;
     if (!video) return;
 
+    setHasUserInteracted(true);
     video.muted = !isMuted;
     setIsMuted(!isMuted);
+    
+    // Show mute indicator animation
+    setShowMuteIndicator(true);
+    if (muteIndicatorTimeout.current) {
+      clearTimeout(muteIndicatorTimeout.current);
+    }
+    muteIndicatorTimeout.current = setTimeout(() => {
+      setShowMuteIndicator(false);
+    }, 800);
+  };
+
+  // Handle tap on video to toggle mute (Instagram-style)
+  const handleVideoTap = (e: React.MouseEvent) => {
+    // If video is playing, toggle mute on tap. If not playing, toggle play.
+    if (isPlaying) {
+      toggleMute();
+    } else {
+      togglePlay();
+    }
   };
 
   const handleVolumeChange = (value: number[]) => {
@@ -256,8 +278,21 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
         src={src}
         poster={poster}
         className="w-full h-full object-contain"
-        onClick={togglePlay}
+        onClick={handleVideoTap}
       />
+
+      {/* Instagram-style mute indicator */}
+      {showMuteIndicator && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center animate-in zoom-in-50 fade-in duration-200">
+            {isMuted ? (
+              <VolumeX className="w-8 h-8 text-white" />
+            ) : (
+              <Volume2 className="w-8 h-8 text-white" />
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Play button overlay */}
       {!isPlaying && (
