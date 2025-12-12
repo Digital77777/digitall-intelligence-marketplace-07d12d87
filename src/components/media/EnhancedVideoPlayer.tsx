@@ -294,19 +294,6 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
         </div>
       )}
 
-      {/* Play button overlay */}
-      {!isPlaying && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Button
-            size="lg"
-            variant="ghost"
-            className="w-20 h-20 rounded-full bg-white/90 hover:bg-white hover:scale-110 transition-all"
-            onClick={togglePlay}
-          >
-            <Play className="w-10 h-10 text-primary ml-1" fill="currentColor" />
-          </Button>
-        </div>
-      )}
 
       {/* Controls */}
       <div
