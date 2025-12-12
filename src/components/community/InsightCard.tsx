@@ -1,12 +1,12 @@
 import React, { memo, useCallback } from "react";
-import { Heart, Eye, Play } from "lucide-react";
+import { Heart, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
 import type { CommunityInsight } from "@/types/community";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
+import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
 
 interface InsightCardProps {
   insight: CommunityInsight;
@@ -25,43 +25,39 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
     onViewClick(insight);
   }, [insight, onViewClick]);
 
+  const handleVideoClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   return (
     <Card 
       className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden max-w-full group"
       onClick={handleCardClick}
     >
       <CardContent className="p-0 rounded-xl overflow-hidden">
-        {/* Media section - full height on mobile, constrained on desktop */}
+        {/* Media section - Instagram-style full width on mobile, constrained on desktop */}
         {insight.cover_image && (
-          <div className="w-full relative overflow-hidden h-auto md:h-40">
+          <div className="w-full relative overflow-hidden rounded-t-xl h-auto md:h-40">
             <EnhancedImage 
               src={insight.cover_image} 
               alt={insight.title}
-              className="w-full h-full object-contain md:object-cover"
+              className="w-full h-full object-contain md:object-cover rounded-t-xl"
             />
           </div>
         )}
         {!insight.cover_image && insight.videos && insight.videos.length > 0 && (
-          <div className="w-full relative overflow-hidden h-auto md:h-40 cursor-pointer">
-            {insight.video_thumbnails && insight.video_thumbnails[0] ? (
-              <div className="relative aspect-video md:aspect-auto md:h-full">
-                <img 
-                  src={insight.video_thumbnails[0]} 
-                  alt={`${insight.title} video preview`}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors flex items-center justify-center">
-                  <div className="w-14 h-14 md:w-12 md:h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                    <Play className="w-7 h-7 md:w-6 md:h-6 text-primary ml-0.5" fill="currentColor" />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <video 
-                src={insight.videos[0]} 
-                className="w-full h-full object-cover"
+          <div 
+            className="w-full relative overflow-hidden rounded-t-xl"
+            onClick={handleVideoClick}
+          >
+            <div className="aspect-video md:h-40 md:aspect-auto rounded-t-xl overflow-hidden">
+              <EnhancedVideoPlayer
+                src={insight.videos[0]}
+                poster={insight.video_thumbnails?.[0]}
+                className="w-full h-full rounded-t-xl"
+                autoPlayOnScroll={true}
               />
-            )}
+            </div>
           </div>
         )}
         
