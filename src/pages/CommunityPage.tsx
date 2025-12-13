@@ -18,6 +18,7 @@ import { EventDetailModal } from "@/components/community/EventDetailModal";
 import { TopicCard } from "@/components/community/TopicCard";
 import { EventCard } from "@/components/community/EventCard";
 import { InsightCard } from "@/components/community/InsightCard";
+import { InsightSkeletonGrid } from "@/components/community/InsightCardSkeleton";
 import { useCommunity } from "@/hooks/useCommunity";
 import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
@@ -478,18 +479,7 @@ const CommunityPage = () => {
               </div>
 
               {insightsLoading ? (
-                <div className="space-y-6">
-                  {[1, 2].map((i) => (
-                    <Card key={i}>
-                      <CardContent className="p-6">
-                        <Skeleton className="h-6 w-3/4 mb-4" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-2/3" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <InsightSkeletonGrid count={6} />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {visibleInsights.length > 0 ? (
