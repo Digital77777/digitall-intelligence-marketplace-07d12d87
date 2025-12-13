@@ -216,61 +216,69 @@ export const useCommunity = () => {
     },
   });
 
-  // Insights queries
+  // Insights queries - optimized for fast loading
   const useInsights = (searchQuery?: string) => {
     return useQuery({
       queryKey: ["community-insights", searchQuery],
       queryFn: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        // Start user auth check in parallel with main query
+        const userPromise = supabase.auth.getUser();
         
         let query = supabase
           .from("community_insights")
           .select("*")
           .eq("is_published", true)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .limit(50); // Limit initial load for speed
 
         if (searchQuery) {
           query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
         }
 
+        // Execute main query
         const { data, error } = await query;
         if (error) throw error;
+        if (!data || data.length === 0) return [] as CommunityInsight[];
 
-        if (data && data.length > 0) {
-          // Fetch profiles separately
-          const userIds = [...new Set(data.map(i => i.user_id))];
-          const { data: profiles } = await supabase
+        // Get user result (should be ready by now)
+        const { data: { user } } = await userPromise;
+
+        // Prepare parallel queries for profiles and likes
+        const userIds = [...new Set(data.map(i => i.user_id))];
+        const insightIds = data.map(i => i.id);
+
+        // Execute profiles and likes queries in parallel
+        const [profilesResult, likesResult] = await Promise.all([
+          supabase
             .from("profiles")
             .select("user_id, full_name, email, avatar_url")
-            .in("user_id", userIds);
+            .in("user_id", userIds),
+          user 
+            ? supabase
+                .from("insight_likes")
+                .select("insight_id")
+                .eq("user_id", user.id)
+                .in("insight_id", insightIds)
+            : Promise.resolve({ data: null }),
+        ]);
 
-          const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-
-          // Check like status for each insight if user is logged in
-          let likedIds = new Set<string>();
-          if (user) {
-            const insightIds = data.map(i => i.id);
-            const { data: likes } = await supabase
-              .from("insight_likes")
-              .select("insight_id")
-              .eq("user_id", user.id)
-              .in("insight_id", insightIds);
-
-            likedIds = new Set(likes?.map(l => l.insight_id) || []);
-          }
-          
-          const insightsWithProfiles = data.map(insight => ({
-            ...insight,
-            profiles: profilesMap.get(insight.user_id),
-            is_liked: likedIds.has(insight.id),
-          })) as CommunityInsight[];
-          
-          // Apply recommendation algorithm
-          return scoreInsights(insightsWithProfiles);
-        }
-
-        return scoreInsights(data as CommunityInsight[]);
+        const profilesMap = new Map(profilesResult.data?.map(p => [p.user_id, p]) || []);
+        const likedIds = new Set(likesResult.data?.map(l => l.insight_id) || []);
+        
+        const insightsWithProfiles = data.map(insight => ({
+          ...insight,
+          profiles: profilesMap.get(insight.user_id),
+          is_liked: likedIds.has(insight.id),
+        })) as CommunityInsight[];
+        
+        // Apply recommendation algorithm
+        return scoreInsights(insightsWithProfiles);
       },
+      // Performance optimizations
+      staleTime: 30 * 1000, // Data stays fresh for 30 seconds
+      gcTime: 5 * 60 * 1000, // Cache for 5 minutes (renamed from cacheTime)
+      refetchOnWindowFocus: false, // Don't refetch on tab focus
+      placeholderData: (previousData) => previousData, // Show stale data while fetching
     });
   };
 
