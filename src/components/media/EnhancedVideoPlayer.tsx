@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Settings, PictureInPicture2 } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Settings, PictureInPicture2, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -9,12 +9,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { useReelsGestures } from "@/hooks/useReelsGestures";
 
 interface EnhancedVideoPlayerProps {
   src: string;
   poster?: string;
   className?: string;
   autoPlayOnScroll?: boolean;
+  onLikeToggle?: () => void;
 }
 
 const QUALITY_OPTIONS = [
@@ -27,7 +29,7 @@ const QUALITY_OPTIONS = [
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScroll = true }: EnhancedVideoPlayerProps) => {
+export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScroll = true, onLikeToggle }: EnhancedVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -43,8 +45,33 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showMuteIndicator, setShowMuteIndicator] = useState(false);
+  const [showLikeIndicator, setShowLikeIndicator] = useState(false);
   const hideControlsTimeout = useRef<NodeJS.Timeout>();
   const muteIndicatorTimeout = useRef<NodeJS.Timeout>();
+  const likeIndicatorTimeout = useRef<NodeJS.Timeout>();
+
+  // Handle like toggle with visual feedback
+  const handleLikeToggle = () => {
+    setShowLikeIndicator(true);
+    if (likeIndicatorTimeout.current) {
+      clearTimeout(likeIndicatorTimeout.current);
+    }
+    likeIndicatorTimeout.current = setTimeout(() => {
+      setShowLikeIndicator(false);
+    }, 800);
+    
+    // Call external handler if provided
+    onLikeToggle?.();
+  };
+
+  // Integrate reels gestures (only activates on mobile fullscreen)
+  useReelsGestures({
+    videoRef,
+    containerRef,
+    isFullscreen,
+    onLikeToggle: handleLikeToggle,
+    enabled: true,
+  });
 
   // Intersection Observer for autoplay on scroll
   useEffect(() => {
@@ -290,6 +317,15 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
             ) : (
               <Volume2 className="w-8 h-8 text-white" />
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Double-tap like indicator (reels gesture) */}
+      {showLikeIndicator && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="animate-in zoom-in-50 fade-in duration-200">
+            <Heart className="w-20 h-20 text-red-500 fill-red-500" />
           </div>
         </div>
       )}
