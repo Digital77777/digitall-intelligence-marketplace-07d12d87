@@ -1,13 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Settings, PictureInPicture2, Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Play, Pause, Volume2, VolumeX, PictureInPicture2, Heart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReelsGestures } from "@/hooks/useReelsGestures";
 import { useReels } from "@/hooks/useReels";
@@ -21,16 +13,6 @@ interface EnhancedVideoPlayerProps {
   enableReelNavigation?: boolean;
 }
 
-const QUALITY_OPTIONS = [
-  { label: "Auto", value: "auto" },
-  { label: "1080p", value: "1080p" },
-  { label: "720p", value: "720p" },
-  { label: "480p", value: "480p" },
-  { label: "360p", value: "360p" },
-];
-
-const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-
 export const EnhancedVideoPlayer = ({ 
   src, 
   poster, 
@@ -43,15 +25,11 @@ export const EnhancedVideoPlayer = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay
-  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPiP, setIsPiP] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [quality, setQuality] = useState("auto");
-  const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showMuteIndicator, setShowMuteIndicator] = useState(false);
   const [showLikeIndicator, setShowLikeIndicator] = useState(false);
@@ -59,67 +37,44 @@ export const EnhancedVideoPlayer = ({
   const muteIndicatorTimeout = useRef<NodeJS.Timeout>();
   const likeIndicatorTimeout = useRef<NodeJS.Timeout>();
 
-  // Use reels hook for navigation
   const { findReelByVideoUrl, nextReel, prevReel, hasNext, hasPrev } = useReels();
 
-  // Handle reel navigation
   const handleNextReel = () => {
     if (!enableReelNavigation) return;
-    
-    // Find current reel by video URL
     const currentReel = findReelByVideoUrl(src);
     if (currentReel && hasNext) {
       nextReel();
-      // The parent component should handle updating the video source
-      toast({
-        title: "Next Reel",
-        description: "Swipe up for next video",
-      });
     }
   };
 
   const handlePrevReel = () => {
     if (!enableReelNavigation) return;
-    
     const currentReel = findReelByVideoUrl(src);
     if (currentReel && hasPrev) {
       prevReel();
-      toast({
-        title: "Previous Reel",
-        description: "Swipe down for previous video",
-      });
     }
   };
 
-  // Handle like toggle with visual feedback
   const handleLikeToggle = () => {
     setShowLikeIndicator(true);
-    if (likeIndicatorTimeout.current) {
-      clearTimeout(likeIndicatorTimeout.current);
-    }
-    likeIndicatorTimeout.current = setTimeout(() => {
-      setShowLikeIndicator(false);
-    }, 800);
-    
-    // Call external handler if provided
+    if (likeIndicatorTimeout.current) clearTimeout(likeIndicatorTimeout.current);
+    likeIndicatorTimeout.current = setTimeout(() => setShowLikeIndicator(false), 800);
     onLikeToggle?.();
   };
 
-  // Integrate reels gestures (only activates on mobile fullscreen)
   useReelsGestures({
     videoRef,
     containerRef,
-    isFullscreen,
+    isFullscreen: false,
     onNextReel: handleNextReel,
     onPrevReel: handlePrevReel,
     onLikeToggle: handleLikeToggle,
     enabled: enableReelNavigation,
   });
 
-  // Intersection Observer for autoplay on scroll
+  // Autoplay on scroll
   useEffect(() => {
     if (!autoPlayOnScroll) return;
-    
     const video = videoRef.current;
     const container = containerRef.current;
     if (!video || !container) return;
@@ -128,33 +83,23 @@ export const EnhancedVideoPlayer = ({
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
-            // Video is at least 50% visible - play it
             if (!hasUserInteracted) {
-              video.muted = true; // Ensure muted for autoplay
+              video.muted = true;
               setIsMuted(true);
             }
-            video.play().catch(() => {
-              // Autoplay was prevented, that's okay
-            });
+            video.play().catch(() => {});
           } else {
-            // Video is out of view - pause it
             if (!document.pictureInPictureElement || document.pictureInPictureElement !== video) {
               video.pause();
             }
           }
         });
       },
-      {
-        threshold: [0.5], // Trigger when 50% visible
-        rootMargin: "0px",
-      }
+      { threshold: [0.5] }
     );
 
     observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [autoPlayOnScroll, hasUserInteracted]);
 
   useEffect(() => {
@@ -164,33 +109,33 @@ export const EnhancedVideoPlayer = ({
     const handleTimeUpdate = () => setCurrentTime(video.currentTime);
     const handleDurationChange = () => setDuration(video.duration);
     const handleEnded = () => setIsPlaying(false);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
 
     video.addEventListener("timeupdate", handleTimeUpdate);
     video.addEventListener("durationchange", handleDurationChange);
     video.addEventListener("ended", handleEnded);
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
 
     return () => {
       video.removeEventListener("timeupdate", handleTimeUpdate);
       video.removeEventListener("durationchange", handleDurationChange);
       video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
     };
   }, []);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
     const handlePiPChange = () => {
       setIsPiP(document.pictureInPictureElement === videoRef.current);
     };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
     videoRef.current?.addEventListener("enterpictureinpicture", handlePiPChange);
     videoRef.current?.addEventListener("leavepictureinpicture", handlePiPChange);
     
     return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
       videoRef.current?.removeEventListener("enterpictureinpicture", handlePiPChange);
       videoRef.current?.removeEventListener("leavepictureinpicture", handlePiPChange);
     };
@@ -199,37 +144,27 @@ export const EnhancedVideoPlayer = ({
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
-
     setHasUserInteracted(true);
     if (isPlaying) {
       video.pause();
     } else {
       video.play();
     }
-    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
     const video = videoRef.current;
     if (!video) return;
-
     setHasUserInteracted(true);
     video.muted = !isMuted;
     setIsMuted(!isMuted);
     
-    // Show mute indicator animation
     setShowMuteIndicator(true);
-    if (muteIndicatorTimeout.current) {
-      clearTimeout(muteIndicatorTimeout.current);
-    }
-    muteIndicatorTimeout.current = setTimeout(() => {
-      setShowMuteIndicator(false);
-    }, 800);
+    if (muteIndicatorTimeout.current) clearTimeout(muteIndicatorTimeout.current);
+    muteIndicatorTimeout.current = setTimeout(() => setShowMuteIndicator(false), 800);
   };
 
-  // Handle tap on video to toggle mute (Instagram-style)
-  const handleVideoTap = (e: React.MouseEvent) => {
-    // If video is playing, toggle mute on tap. If not playing, toggle play.
+  const handleVideoTap = () => {
     if (isPlaying) {
       toggleMute();
     } else {
@@ -237,86 +172,23 @@ export const EnhancedVideoPlayer = ({
     }
   };
 
-  const handleVolumeChange = (value: number[]) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const newVolume = value[0];
-    video.volume = newVolume;
-    setVolume(newVolume);
-    setIsMuted(newVolume === 0);
-  };
-
-  const handleSeek = (value: number[]) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.currentTime = value[0];
-    setCurrentTime(value[0]);
-  };
-
-  const toggleFullscreen = () => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    if (!document.fullscreenElement) {
-      container.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-  };
-
   const togglePiP = async () => {
     const video = videoRef.current;
-    if (!video) return;
-
-    // Check if PiP is supported
-    if (!document.pictureInPictureEnabled) {
-      toast({
-        title: "Not Supported",
-        description: "Picture-in-Picture is not supported in your browser.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!video || !document.pictureInPictureEnabled) return;
 
     try {
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
       } else {
-        // Ensure video has started playing at least once for PiP to work
         if (video.readyState < 2) {
           await video.play();
           video.pause();
         }
         await video.requestPictureInPicture();
-        toast({
-          title: "Picture-in-Picture",
-          description: "Video is now playing in a floating window. Browse other insights while watching!",
-        });
       }
     } catch (error) {
       console.error("PiP error:", error);
-      toast({
-        title: "PiP Failed",
-        description: "Could not enable Picture-in-Picture mode.",
-        variant: "destructive",
-      });
     }
-  };
-
-  const handleQualityChange = (newQuality: string) => {
-    setQuality(newQuality);
-    // In a real implementation, you would switch video sources here
-    console.log("Quality changed to:", newQuality);
-  };
-
-  const handleSpeedChange = (speed: number) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.playbackRate = speed;
-    setPlaybackSpeed(speed);
   };
 
   const formatTime = (seconds: number) => {
@@ -328,18 +200,18 @@ export const EnhancedVideoPlayer = ({
 
   const handleMouseMove = () => {
     setShowControls(true);
-    if (hideControlsTimeout.current) {
-      clearTimeout(hideControlsTimeout.current);
-    }
+    if (hideControlsTimeout.current) clearTimeout(hideControlsTimeout.current);
     hideControlsTimeout.current = setTimeout(() => {
       if (isPlaying) setShowControls(false);
-    }, 3000);
+    }, 2500);
   };
+
+  const progress = duration ? (currentTime / duration) * 100 : 0;
 
   return (
     <div
       ref={containerRef}
-      className={`relative bg-black group ${className}`}
+      className={`relative bg-black rounded-lg overflow-hidden group ${className}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
@@ -347,171 +219,84 @@ export const EnhancedVideoPlayer = ({
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full h-full object-contain"
+        className="w-full h-full object-contain cursor-pointer"
         onClick={handleVideoTap}
+        playsInline
       />
 
-      {/* Instagram-style mute indicator */}
+      {/* Progress bar - minimal bottom line */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+        <div 
+          className="h-full bg-primary transition-all duration-150 ease-linear"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      {/* Center play button - only when paused */}
+      {!isPlaying && (
+        <button
+          onClick={togglePlay}
+          className="absolute inset-0 flex items-center justify-center bg-black/20 transition-opacity"
+        >
+          <div className="w-16 h-16 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/20">
+            <Play className="w-7 h-7 text-white ml-1" fill="white" />
+          </div>
+        </button>
+      )}
+
+      {/* Mute indicator */}
       {showMuteIndicator && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center animate-in zoom-in-50 fade-in duration-200">
-            {isMuted ? (
-              <VolumeX className="w-8 h-8 text-white" />
-            ) : (
-              <Volume2 className="w-8 h-8 text-white" />
-            )}
+          <div className="w-14 h-14 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center animate-in zoom-in-50 fade-in duration-150">
+            {isMuted ? <VolumeX className="w-7 h-7 text-white" /> : <Volume2 className="w-7 h-7 text-white" />}
           </div>
         </div>
       )}
 
-      {/* Double-tap like indicator (reels gesture) */}
+      {/* Like indicator */}
       {showLikeIndicator && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="animate-in zoom-in-50 fade-in duration-200">
-            <Heart className="w-20 h-20 text-red-500 fill-red-500" />
-          </div>
+          <Heart className="w-20 h-20 text-red-500 fill-red-500 animate-in zoom-in-50 fade-in duration-150" />
         </div>
       )}
 
-
-      {/* Controls */}
+      {/* Minimal top controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${
+        className={`absolute top-0 left-0 right-0 p-3 flex items-center justify-between transition-opacity duration-200 ${
           showControls ? "opacity-100" : "opacity-0"
         }`}
       >
-        {/* Progress bar */}
-        <div className="mb-3">
-          <Slider
-            value={[currentTime]}
-            min={0}
-            max={duration || 100}
-            step={0.1}
-            onValueChange={handleSeek}
-            className="cursor-pointer"
-          />
-        </div>
+        {/* Time */}
+        <span className="text-white/90 text-xs font-medium bg-black/40 backdrop-blur-sm px-2 py-1 rounded">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </span>
 
-        {/* Control buttons */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {/* Play/Pause */}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-white hover:bg-white/20"
-              onClick={togglePlay}
-            >
-              {isPlaying ? (
-                <Pause className="w-5 h-5" />
-              ) : (
-                <Play className="w-5 h-5" />
-              )}
-            </Button>
+        {/* PiP button */}
+        <button
+          onClick={togglePiP}
+          className={`p-2 rounded-full transition-colors ${
+            isPiP 
+              ? "bg-primary text-primary-foreground" 
+              : "bg-black/40 backdrop-blur-sm text-white/90 hover:bg-black/60"
+          }`}
+          title="Picture-in-Picture"
+        >
+          <PictureInPicture2 className="w-4 h-4" />
+        </button>
+      </div>
 
-            {/* Volume */}
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-white hover:bg-white/20"
-                onClick={toggleMute}
-              >
-                {isMuted || volume === 0 ? (
-                  <VolumeX className="w-5 h-5" />
-                ) : (
-                  <Volume2 className="w-5 h-5" />
-                )}
-              </Button>
-              <div className="w-20 hidden sm:block">
-                <Slider
-                  value={[isMuted ? 0 : volume]}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  onValueChange={handleVolumeChange}
-                  className="cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Time */}
-            <span className="text-white text-sm hidden sm:inline">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Playback speed */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white hover:bg-white/20 text-xs"
-                >
-                  {playbackSpeed}x
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {PLAYBACK_SPEEDS.map((speed) => (
-                  <DropdownMenuItem
-                    key={speed}
-                    onClick={() => handleSpeedChange(speed)}
-                    className={playbackSpeed === speed ? "bg-accent" : ""}
-                  >
-                    {speed}x
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Quality selector */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-white hover:bg-white/20"
-                >
-                  <Settings className="w-5 h-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {QUALITY_OPTIONS.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onClick={() => handleQualityChange(option.value)}
-                    className={quality === option.value ? "bg-accent" : ""}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Picture-in-Picture */}
-            <Button
-              size="sm"
-              variant="ghost"
-              className={`text-white hover:bg-white/20 ${isPiP ? "bg-white/30" : ""}`}
-              onClick={togglePiP}
-              title="Picture-in-Picture"
-            >
-              <PictureInPicture2 className="w-5 h-5" />
-            </Button>
-
-            {/* Fullscreen */}
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-white hover:bg-white/20"
-              onClick={toggleFullscreen}
-            >
-              <Maximize className="w-5 h-5" />
-            </Button>
-          </div>
-        </div>
+      {/* Minimal bottom controls - only mute indicator */}
+      <div
+        className={`absolute bottom-3 right-3 transition-opacity duration-200 ${
+          showControls ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <button
+          onClick={toggleMute}
+          className="p-2 rounded-full bg-black/40 backdrop-blur-sm text-white/90 hover:bg-black/60 transition-colors"
+        >
+          {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+        </button>
       </div>
     </div>
   );
