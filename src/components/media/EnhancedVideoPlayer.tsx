@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useReelsGestures } from "@/hooks/useReelsGestures";
+import { useReels } from "@/hooks/useReels";
 
 interface EnhancedVideoPlayerProps {
   src: string;
@@ -17,6 +18,7 @@ interface EnhancedVideoPlayerProps {
   className?: string;
   autoPlayOnScroll?: boolean;
   onLikeToggle?: () => void;
+  enableReelNavigation?: boolean;
 }
 
 const QUALITY_OPTIONS = [
@@ -29,7 +31,14 @@ const QUALITY_OPTIONS = [
 
 const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScroll = true, onLikeToggle }: EnhancedVideoPlayerProps) => {
+export const EnhancedVideoPlayer = ({ 
+  src, 
+  poster, 
+  className = "", 
+  autoPlayOnScroll = true, 
+  onLikeToggle,
+  enableReelNavigation = true 
+}: EnhancedVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -50,6 +59,38 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
   const muteIndicatorTimeout = useRef<NodeJS.Timeout>();
   const likeIndicatorTimeout = useRef<NodeJS.Timeout>();
 
+  // Use reels hook for navigation
+  const { findReelByVideoUrl, nextReel, prevReel, hasNext, hasPrev } = useReels();
+
+  // Handle reel navigation
+  const handleNextReel = () => {
+    if (!enableReelNavigation) return;
+    
+    // Find current reel by video URL
+    const currentReel = findReelByVideoUrl(src);
+    if (currentReel && hasNext) {
+      nextReel();
+      // The parent component should handle updating the video source
+      toast({
+        title: "Next Reel",
+        description: "Swipe up for next video",
+      });
+    }
+  };
+
+  const handlePrevReel = () => {
+    if (!enableReelNavigation) return;
+    
+    const currentReel = findReelByVideoUrl(src);
+    if (currentReel && hasPrev) {
+      prevReel();
+      toast({
+        title: "Previous Reel",
+        description: "Swipe down for previous video",
+      });
+    }
+  };
+
   // Handle like toggle with visual feedback
   const handleLikeToggle = () => {
     setShowLikeIndicator(true);
@@ -69,8 +110,10 @@ export const EnhancedVideoPlayer = ({ src, poster, className = "", autoPlayOnScr
     videoRef,
     containerRef,
     isFullscreen,
+    onNextReel: handleNextReel,
+    onPrevReel: handlePrevReel,
     onLikeToggle: handleLikeToggle,
-    enabled: true,
+    enabled: enableReelNavigation,
   });
 
   // Intersection Observer for autoplay on scroll
