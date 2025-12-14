@@ -352,6 +352,50 @@ export type Database = {
           },
         ]
       }
+      community_reels: {
+        Row: {
+          created_at: string | null
+          id: string
+          insight_id: string
+          likes_count: number | null
+          thumbnail_url: string | null
+          title: string | null
+          user_id: string
+          video_url: string
+          views_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          insight_id: string
+          likes_count?: number | null
+          thumbnail_url?: string | null
+          title?: string | null
+          user_id: string
+          video_url: string
+          views_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          insight_id?: string
+          likes_count?: number | null
+          thumbnail_url?: string | null
+          title?: string | null
+          user_id?: string
+          video_url?: string
+          views_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_reels_insight_id_fkey"
+            columns: ["insight_id"]
+            isOneToOne: false
+            referencedRelation: "community_insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       community_topics: {
         Row: {
           content: string
