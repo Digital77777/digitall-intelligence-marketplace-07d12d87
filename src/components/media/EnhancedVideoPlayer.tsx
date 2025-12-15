@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, PictureInPicture2, Heart } from "lucide-react";
+import { Play, Volume2, VolumeX, PictureInPicture2, Heart, Maximize, Minimize } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useReelsGestures } from "@/hooks/useReelsGestures";
 import { useReels } from "@/hooks/useReels";
@@ -29,6 +29,7 @@ export const EnhancedVideoPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isPiP, setIsPiP] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [showMuteIndicator, setShowMuteIndicator] = useState(false);
@@ -65,7 +66,7 @@ export const EnhancedVideoPlayer = ({
   useReelsGestures({
     videoRef,
     containerRef,
-    isFullscreen: false,
+    isFullscreen,
     onNextReel: handleNextReel,
     onPrevReel: handlePrevReel,
     onLikeToggle: handleLikeToggle,
@@ -127,6 +128,21 @@ export const EnhancedVideoPlayer = ({
     };
   }, []);
 
+  // Fullscreen change listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
   useEffect(() => {
     const handlePiPChange = () => {
       setIsPiP(document.pictureInPictureElement === videoRef.current);
@@ -172,6 +188,21 @@ export const EnhancedVideoPlayer = ({
     }
   };
 
+  const toggleFullscreen = async () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await container.requestFullscreen();
+      }
+    } catch (error) {
+      console.error("Fullscreen error:", error);
+    }
+  };
+
   const togglePiP = async () => {
     const video = videoRef.current;
     if (!video || !document.pictureInPictureEnabled) return;
@@ -211,7 +242,7 @@ export const EnhancedVideoPlayer = ({
   return (
     <div
       ref={containerRef}
-      className={`relative bg-black rounded-lg overflow-hidden group ${className}`}
+      className={`relative bg-black rounded-lg overflow-hidden group ${isFullscreen ? 'w-screen h-screen' : ''} ${className}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isPlaying && setShowControls(false)}
     >
@@ -219,7 +250,7 @@ export const EnhancedVideoPlayer = ({
         ref={videoRef}
         src={src}
         poster={poster}
-        className="w-full h-full object-contain cursor-pointer"
+        className={`w-full h-full object-contain cursor-pointer ${isFullscreen ? 'max-h-screen' : ''}`}
         onClick={handleVideoTap}
         playsInline
       />
@@ -271,18 +302,34 @@ export const EnhancedVideoPlayer = ({
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 
-        {/* PiP button */}
-        <button
-          onClick={togglePiP}
-          className={`p-2 rounded-full transition-colors ${
-            isPiP 
-              ? "bg-primary text-primary-foreground" 
-              : "bg-black/40 backdrop-blur-sm text-white/90 hover:bg-black/60"
-          }`}
-          title="Picture-in-Picture"
-        >
-          <PictureInPicture2 className="w-4 h-4" />
-        </button>
+        {/* Top right controls */}
+        <div className="flex items-center gap-2">
+          {/* PiP button */}
+          <button
+            onClick={togglePiP}
+            className={`p-2 rounded-full transition-colors ${
+              isPiP 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-black/40 backdrop-blur-sm text-white/90 hover:bg-black/60"
+            }`}
+            title="Picture-in-Picture"
+          >
+            <PictureInPicture2 className="w-4 h-4" />
+          </button>
+
+          {/* Fullscreen button */}
+          <button
+            onClick={toggleFullscreen}
+            className={`p-2 rounded-full transition-colors ${
+              isFullscreen 
+                ? "bg-primary text-primary-foreground" 
+                : "bg-black/40 backdrop-blur-sm text-white/90 hover:bg-black/60"
+            }`}
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          >
+            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Minimal bottom controls - only mute indicator */}
