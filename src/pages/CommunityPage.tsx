@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, ChevronDown, Heart, Clock, Check } from "lucide-react";
+import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, ChevronDown, Heart, Clock, Check, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -196,10 +196,14 @@ const CommunityPage = () => {
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Connect with AI enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
               <Button size="lg" className="bg-gradient-ai text-white" onClick={handleStartTopic}>
                 <Plus className="mr-2 h-5 w-5" />
                 Start a Topic
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => navigate('/community/reels')}>
+                <Play className="mr-2 h-5 w-5" />
+                Watch Reels
               </Button>
               <Button variant="outline" size="lg" onClick={handleBrowseEvents}>
                 <Calendar className="mr-2 h-5 w-5" />
