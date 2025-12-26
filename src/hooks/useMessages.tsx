@@ -19,6 +19,7 @@ export interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  voice_note_url?: string | null;
   sender_profile?: {
     user_id: string;
     full_name?: string;
@@ -159,7 +160,8 @@ export const useMessages = () => {
             receiver_id,
             content,
             is_read,
-            created_at
+            created_at,
+            voice_note_url
           `)
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
@@ -183,11 +185,13 @@ export const useMessages = () => {
 
   // Send a message
   const sendMessage = useMutation({
-    mutationFn: async ({ receiverId, content }: { receiverId: string; content: string }) => {
-      // Validate input
-      const validation = messageSchema.safeParse({ content });
-      if (!validation.success) {
-        throw new Error(validation.error.errors[0].message);
+    mutationFn: async ({ receiverId, content, voiceNoteUrl }: { receiverId: string; content: string; voiceNoteUrl?: string }) => {
+      // Validate input - allow empty content if voice note is present
+      if (!voiceNoteUrl) {
+        const validation = messageSchema.safeParse({ content });
+        if (!validation.success) {
+          throw new Error(validation.error.errors[0].message);
+        }
       }
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -196,7 +200,8 @@ export const useMessages = () => {
       const { error } = await supabase.from('messages').insert({
         sender_id: user.id,
         receiver_id: receiverId,
-        content: validation.data.content,
+        content: voiceNoteUrl ? '🎤 Voice note' : content,
+        voice_note_url: voiceNoteUrl || null,
       });
 
       if (error) throw error;

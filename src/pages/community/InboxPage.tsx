@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users } from 'lucide-react';
+import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Square } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useConnections } from '@/hooks/useConnections';
 import { Separator } from '@/components/ui/separator';
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -39,6 +41,26 @@ const InboxPage = () => {
 
   // Enable real-time message notifications
   useRealtimeMessages();
+
+  // Voice recording
+  const { isRecording, recordingDuration, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
+
+  const formatRecordingTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleSendVoiceNote = async () => {
+    const voiceNoteUrl = await stopRecording();
+    if (voiceNoteUrl && selectedUserId) {
+      await sendMessage.mutateAsync({
+        receiverId: selectedUserId,
+        content: '🎤 Voice note',
+        voiceNoteUrl,
+      });
+    }
+  };
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -398,7 +420,11 @@ const InboxPage = () => {
                               : 'bg-muted text-foreground'
                           }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                          {msg.voice_note_url ? (
+                            <VoiceNotePlayer audioUrl={msg.voice_note_url} isSender={isSender} />
+                          ) : (
+                            <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                          )}
                           <p
                             className={`text-xs mt-1 ${
                               isSender ? 'text-primary-foreground/70' : 'text-muted-foreground'
@@ -416,27 +442,53 @@ const InboxPage = () => {
             </ScrollArea>
 
             {/* Message Input */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-border bg-card">
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    className="flex-1"
-                    maxLength={2000}
-                  />
-                  <Button type="submit" size="icon" disabled={!messageText.trim()}>
+            <div className="p-4 border-t border-border bg-card">
+              {isRecording ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center gap-3">
+                    <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                    <span className="text-sm font-medium">Recording... {formatRecordingTime(recordingDuration)}</span>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={cancelRecording}>
+                    <X className="h-5 w-5" />
+                  </Button>
+                  <Button size="icon" onClick={handleSendVoiceNote} className="bg-primary">
                     <Send className="h-5 w-5" />
                   </Button>
                 </div>
-                <div className="flex justify-end">
-                  <span className={`text-xs ${messageText.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                    {messageText.length}/2000
-                  </span>
-                </div>
-              </div>
-            </form>
+              ) : (
+                <form onSubmit={handleSendMessage}>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Type a message..."
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        className="flex-1"
+                        maxLength={2000}
+                      />
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="ghost"
+                        onClick={startRecording}
+                        disabled={!!messageText.trim()}
+                      >
+                        <Mic className="h-5 w-5" />
+                      </Button>
+                      <Button type="submit" size="icon" disabled={!messageText.trim()}>
+                        <Send className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <div className="flex justify-end">
+                      <span className={`text-xs ${messageText.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                        {messageText.length}/2000
+                      </span>
+                    </div>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         ) : (
           <div className="hidden md:flex flex-1 items-center justify-center bg-background">
