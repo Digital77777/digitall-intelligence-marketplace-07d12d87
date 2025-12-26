@@ -77,11 +77,14 @@ export const useMessages = () => {
 
         if (error) throw error;
 
-        // Group messages by conversation partner
+        // Group messages by conversation partner, excluding self-messages
         const conversationsMap = new Map<string, Conversation>();
 
         for (const msg of messages || []) {
           const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+          
+          // Skip self-messages (where sender and receiver are the same)
+          if (partnerId === user.id) continue;
           
           if (!conversationsMap.has(partnerId)) {
             // Fetch partner profile - use public_profiles for display data

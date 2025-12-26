@@ -29,13 +29,29 @@ const InboxPage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [messageText, setMessageText] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(
-    searchParams.get('userId') || undefined
-  );
+  
+  // Get userId from URL, but prevent self-messaging
+  const urlUserId = searchParams.get('userId');
+  const initialUserId = urlUserId && urlUserId !== user?.id ? urlUserId : undefined;
+  
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(initialUserId);
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [activeTab, setActiveTab] = useState<string>('messages');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Prevent selecting self
+  const handleSelectUser = (userId: string | undefined) => {
+    if (userId && userId === user?.id) {
+      toast({
+        title: 'Cannot message yourself',
+        description: 'Please select another user to message.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setSelectedUserId(userId);
+  };
 
   const { useConversations, useConversationMessages, sendMessage, editMessage, deleteMessage, canModifyMessage } = useMessages();
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
@@ -128,12 +144,17 @@ const InboxPage = () => {
     return 'U';
   };
 
+  // Filter out self from conversations
   const filteredConversations = conversations?.filter((conv) => {
+    // Exclude self
+    if (conv.user_id === user?.id) return false;
     const searchLower = searchQuery.toLowerCase();
     return conv.full_name?.toLowerCase().includes(searchLower);
   });
 
   const filteredConnections = acceptedConnections?.filter((conn) => {
+    // Exclude self
+    if (conn.connected_user?.user_id === user?.id) return false;
     const searchLower = searchQuery.toLowerCase();
     return (
       conn.connected_user?.full_name?.toLowerCase().includes(searchLower)
@@ -235,7 +256,7 @@ const InboxPage = () => {
                     {filteredConversations.map((conv) => (
                       <button
                         key={conv.user_id}
-                        onClick={() => setSelectedUserId(conv.user_id)}
+                        onClick={() => handleSelectUser(conv.user_id)}
                         className={`w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
                           selectedUserId === conv.user_id 
                             ? 'bg-primary/10 border border-primary/20' 
@@ -382,7 +403,7 @@ const InboxPage = () => {
                         <button
                           key={conn.id}
                           onClick={() => {
-                            setSelectedUserId(conn.connected_user?.user_id);
+                            handleSelectUser(conn.connected_user?.user_id);
                             setActiveTab('messages');
                           }}
                           className={`w-full flex items-center gap-3 p-3 rounded-xl hover:bg-accent/50 transition-all duration-200 ${
