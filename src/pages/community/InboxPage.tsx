@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useConnections } from '@/hooks/useConnections';
 import { Separator } from '@/components/ui/separator';
+import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -35,6 +36,9 @@ const InboxPage = () => {
   const { data: acceptedConnections = [], isLoading: connectionsLoading } = useAcceptedConnections();
 
   const selectedConversation = conversations?.find((c) => c.user_id === selectedUserId);
+
+  // Enable real-time message notifications
+  useRealtimeMessages();
 
   // Scroll to bottom when messages change
   useEffect(() => {
