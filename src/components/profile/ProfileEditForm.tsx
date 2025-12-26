@@ -2,7 +2,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, Plus, X } from "lucide-react";
+import { User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, Plus, X, Upload, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -42,9 +43,12 @@ interface ProfileEditFormProps {
 }
 
 export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) => {
+  const { user } = useAuth();
   const [skills, setSkills] = React.useState<string[]>(profile?.skills || []);
   const [newSkill, setNewSkill] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -70,6 +74,59 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
 
   const removeSkill = (skillToRemove: string) => {
     setSkills(skills.filter(skill => skill !== skillToRemove));
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Please upload a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase storage
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update form value
+      form.setValue('avatar_url', publicUrl);
+      toast.success('Avatar uploaded successfully!');
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error('Failed to upload avatar. Please try again.');
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
   };
 
   const onSubmit = async (data: ProfileFormData) => {
@@ -121,23 +178,56 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
         <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
           {/* Avatar Section */}
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
-            <Avatar className="w-20 h-20 sm:w-24 sm:h-24 shrink-0">
-              <AvatarImage src={form.watch("avatar_url")} />
-              <AvatarFallback className="text-lg sm:text-xl">
-                {form.watch("full_name") ? getInitials(form.watch("full_name")) : "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 w-full space-y-1.5">
-              <Label htmlFor="avatar_url" className="text-xs sm:text-sm">Profile Picture URL</Label>
-              <Input
-                id="avatar_url"
-                placeholder="https://example.com/avatar.jpg"
-                {...form.register("avatar_url")}
-                className="text-sm"
-              />
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                Enter a URL to your profile picture
-              </p>
+            <div className="relative">
+              <Avatar className="w-20 h-20 sm:w-24 sm:h-24 shrink-0">
+                <AvatarImage src={form.watch("avatar_url")} />
+                <AvatarFallback className="text-lg sm:text-xl">
+                  {form.watch("full_name") ? getInitials(form.watch("full_name")) : "U"}
+                </AvatarFallback>
+              </Avatar>
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 w-full space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs sm:text-sm">Profile Picture</Label>
+                <div className="flex gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    id="avatar-upload"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="gap-2"
+                  >
+                    <Upload className="w-4 h-4" />
+                    {isUploadingAvatar ? 'Uploading...' : 'Upload Photo'}
+                  </Button>
+                </div>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">
+                  Max 5MB. Supported: JPEG, PNG, GIF, WebP
+                </p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="avatar_url" className="text-xs sm:text-sm">Or enter URL</Label>
+                <Input
+                  id="avatar_url"
+                  placeholder="https://example.com/avatar.jpg"
+                  {...form.register("avatar_url")}
+                  className="text-sm"
+                />
+              </div>
             </div>
           </div>
 

@@ -3,7 +3,7 @@ import { Heart, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { CommunityInsight } from "@/types/community";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
@@ -66,6 +66,7 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
           {/* Author info - larger on mobile, smaller on desktop */}
           <div className="flex items-center gap-3 md:gap-2 mb-3 md:mb-2">
             <Avatar className="w-10 h-10 md:w-8 md:h-8 shrink-0">
+              <AvatarImage src={insight.profiles?.avatar_url || undefined} />
               <AvatarFallback className="text-sm md:text-xs bg-primary/10 text-primary">
                 {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
               </AvatarFallback>

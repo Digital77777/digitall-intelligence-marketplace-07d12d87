@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Heart, Eye, Calendar } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { CommunityInsight } from "@/types/community";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
@@ -119,6 +119,7 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
                 {likedByUsers.map((profile) => (
                   <div key={profile.user_id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
                     <Avatar className="w-10 h-10">
+                      <AvatarImage src={profile.avatar_url || undefined} />
                       <AvatarFallback className="text-xs bg-primary/10">
                         {getInitials(profile.full_name, profile.email)}
                       </AvatarFallback>

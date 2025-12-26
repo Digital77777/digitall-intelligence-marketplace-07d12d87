@@ -4,7 +4,7 @@ import { ArrowLeft, MessageCircle, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCommunity } from "@/hooks/useCommunity";
@@ -178,10 +178,11 @@ const TopicDetailPage = () => {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Avatar className="w-8 h-8">
-              <AvatarFallback>
-                {getInitials(topic.profiles?.full_name, topic.profiles?.email)}
-              </AvatarFallback>
-            </Avatar>
+                <AvatarImage src={topic.profiles?.avatar_url || undefined} />
+                <AvatarFallback>
+                  {getInitials(topic.profiles?.full_name, topic.profiles?.email)}
+                </AvatarFallback>
+              </Avatar>
             <span className="font-medium">
               {topic.profiles?.full_name || "Community Member"}
               </span>
@@ -223,6 +224,7 @@ const TopicDetailPage = () => {
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Avatar className="w-8 h-8">
+                          <AvatarImage src={reply.profiles?.avatar_url || undefined} />
                           <AvatarFallback>
                             {getInitials(reply.profiles?.full_name, reply.profiles?.email)}
                           </AvatarFallback>
