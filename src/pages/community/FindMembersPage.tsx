@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MessageCircle, UserPlus, Award, Loader2, Check, Clock } from "lucide-react";
+import { ArrowLeft, Search, MessageCircle, UserPlus, Award, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
 import { useConnections } from "@/hooks/useConnections";
 import { useAuth } from "@/hooks/useAuth";
+import { MemberSkeletonGrid } from "@/components/community/MemberCardSkeleton";
 
 const FindMembersPage = () => {
   const navigate = useNavigate();
@@ -201,9 +202,7 @@ const FindMembersPage = () => {
 
           <TabsContent value="all" className="space-y-3 sm:space-y-4 mt-6">
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <MemberSkeletonGrid count={5} />
             ) : members.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
@@ -219,9 +218,7 @@ const FindMembersPage = () => {
 
           <TabsContent value="top" className="space-y-3 sm:space-y-4 mt-6">
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
+              <MemberSkeletonGrid count={3} />
             ) : topContributors.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">

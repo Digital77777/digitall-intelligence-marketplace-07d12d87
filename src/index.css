@@ -219,6 +219,10 @@ All colors MUST be HSL.
   }
 }
 
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
 /* Hide scrollbar utility for reels */
 .scrollbar-hide {
   -ms-overflow-style: none;

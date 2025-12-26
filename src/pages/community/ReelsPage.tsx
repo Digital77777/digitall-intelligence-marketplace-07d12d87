@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SEOHead } from "@/components/SEOHead";
+import { ReelSkeleton } from "@/components/community/ReelSkeleton";
 
 interface ReelItemProps {
   reel: {
@@ -294,11 +295,7 @@ const ReelsPage = () => {
   }, [activeIndex, reels.length, scrollToReel]);
 
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
-        <div className="animate-pulse text-white">Loading reels...</div>
-      </div>
-    );
+    return <ReelSkeleton />;
   }
 
   if (reels.length === 0) {

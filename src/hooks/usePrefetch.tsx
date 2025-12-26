@@ -17,8 +17,17 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/marketplace/freelance-services': () => import('@/pages/FreelanceServicesPage'),
   '/marketplace/post-jobs': () => import('@/pages/PostJobsPage'),
   '/marketplace/ai-development': () => import('@/pages/AIDevelopmentPage'),
+  // Community routes - full prefetch support
   '/community': () => import('@/pages/CommunityPage'),
   '/community/my-activity': () => import('@/pages/MyActivityPage'),
+  '/community/inbox': () => import('@/pages/community/InboxPage'),
+  '/community/browse-events': () => import('@/pages/community/BrowseEventsPage'),
+  '/community/find-members': () => import('@/pages/community/FindMembersPage'),
+  '/community/reels': () => import('@/pages/community/ReelsPage'),
+  '/community/share-insight': () => import('@/pages/community/ShareInsightPage'),
+  '/community/start-topic': () => import('@/pages/community/StartTopicPage'),
+  '/community/host-event': () => import('@/pages/community/HostEventPage'),
+  // Other routes
   '/referrals': () => import('@/pages/ReferralPage'),
   '/subscription': () => import('@/pages/SubscriptionPage'),
   '/analytics': () => import('@/pages/AnalyticsPage'),
