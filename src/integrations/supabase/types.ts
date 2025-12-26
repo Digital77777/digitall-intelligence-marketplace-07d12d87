@@ -225,8 +225,10 @@ export type Database = {
           event_time: string
           event_type: string
           full_address: string | null
+          hosted_by: string | null
           id: string
           is_online: boolean | null
+          is_personal_host: boolean | null
           language: string | null
           location: string | null
           max_attendees: number | null
@@ -253,8 +255,10 @@ export type Database = {
           event_time: string
           event_type: string
           full_address?: string | null
+          hosted_by?: string | null
           id?: string
           is_online?: boolean | null
+          is_personal_host?: boolean | null
           language?: string | null
           location?: string | null
           max_attendees?: number | null
@@ -281,8 +285,10 @@ export type Database = {
           event_time?: string
           event_type?: string
           full_address?: string | null
+          hosted_by?: string | null
           id?: string
           is_online?: boolean | null
+          is_personal_host?: boolean | null
           language?: string | null
           location?: string | null
           max_attendees?: number | null

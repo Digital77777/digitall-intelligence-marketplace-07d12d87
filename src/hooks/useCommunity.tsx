@@ -174,6 +174,8 @@ export const useCommunity = () => {
       requirements?: string;
       language?: string;
       contact_email?: string;
+      hosted_by?: string;
+      is_personal_host?: boolean;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -230,6 +232,8 @@ export const useCommunity = () => {
         requirements?: string | null;
         language?: string;
         contact_email?: string | null;
+        hosted_by?: string | null;
+        is_personal_host?: boolean;
       };
     }) => {
       const { data: { user } } = await supabase.auth.getUser();

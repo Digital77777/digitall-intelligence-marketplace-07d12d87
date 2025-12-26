@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { 
   ArrowLeft, Calendar, Users, Clock, Link, MapPin, 
-  Globe, Tag, FileText, Mail, Image, X, Plus, Loader2
+  Globe, Tag, FileText, Mail, Image, X, Plus, Loader2, Building2, User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +67,9 @@ const EditEventPage = () => {
     tags: [] as string[],
     requirements: "",
     language: "English",
-    contactEmail: ""
+    contactEmail: "",
+    isPersonalHost: true,
+    hostedBy: ""
   });
 
   // Fetch existing event data
@@ -118,7 +120,9 @@ const EditEventPage = () => {
         tags: event.tags || [],
         requirements: event.requirements || "",
         language: event.language || "English",
-        contactEmail: event.contact_email || ""
+        contactEmail: event.contact_email || "",
+        isPersonalHost: event.is_personal_host !== false,
+        hostedBy: event.hosted_by || ""
       });
     }
   }, [event, user, navigate, toast]);
@@ -220,6 +224,8 @@ const EditEventPage = () => {
           requirements: formData.requirements.trim() || null,
           language: formData.language,
           contact_email: formData.contactEmail.trim() || null,
+          is_personal_host: formData.isPersonalHost,
+          hosted_by: formData.isPersonalHost ? null : formData.hostedBy.trim() || null,
         }
       });
       navigate("/community");
@@ -339,6 +345,70 @@ const EditEventPage = () => {
                     rows={5}
                     maxLength={2000}
                   />
+                </div>
+              </div>
+
+              {/* Section: Host Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-primary" />
+                  Host Information
+                </h3>
+                <Separator />
+
+                <div className="space-y-4">
+                  <Label>Who is hosting this event?</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.isPersonalHost 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-muted-foreground"
+                      }`}
+                      onClick={() => handleChange("isPersonalHost", true as unknown as string)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${formData.isPersonalHost ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          <User className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">I'm hosting personally</p>
+                          <p className="text-sm text-muted-foreground">As an individual</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        !formData.isPersonalHost 
+                          ? "border-primary bg-primary/5" 
+                          : "border-border hover:border-muted-foreground"
+                      }`}
+                      onClick={() => handleChange("isPersonalHost", false as unknown as string)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-full ${!formData.isPersonalHost ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                          <Building2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Organization hosting</p>
+                          <p className="text-sm text-muted-foreground">Company or group</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {!formData.isPersonalHost && (
+                    <div className="space-y-2">
+                      <Label htmlFor="hostedBy">Organization Name *</Label>
+                      <Input
+                        id="hostedBy"
+                        placeholder="e.g., TechCorp, AI Community Group, University..."
+                        value={formData.hostedBy}
+                        onChange={(e) => handleChange("hostedBy", e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
