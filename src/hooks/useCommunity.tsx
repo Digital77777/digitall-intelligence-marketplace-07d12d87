@@ -164,6 +164,14 @@ export const useCommunity = () => {
       meeting_link?: string;
       location?: string;
       is_online: boolean;
+      cover_image?: string;
+      venue_name?: string;
+      full_address?: string;
+      timezone?: string;
+      tags?: string[];
+      requirements?: string;
+      language?: string;
+      contact_email?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");

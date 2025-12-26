@@ -10,7 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Calendar, Clock, Users, MapPin, ExternalLink, Check } from "lucide-react";
+import { 
+  Calendar, Clock, Users, MapPin, ExternalLink, Check, 
+  Globe, Tag, FileText, Mail 
+} from "lucide-react";
 import type { CommunityEvent } from "@/types/community";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
@@ -74,6 +77,13 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
     await onJoinEvent(event.id, event.is_registered || false);
   };
 
+  const formatTimezone = (tz?: string | null) => {
+    if (!tz) return "";
+    // Get just the last part of timezone for cleaner display
+    const parts = tz.split("/");
+    return parts[parts.length - 1].replace(/_/g, " ");
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -98,13 +108,36 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           {/* Event Badges */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="secondary">{event.event_type}</Badge>
-            {event.is_online && (
-              <Badge variant="outline">Online</Badge>
+            {event.is_online ? (
+              <Badge variant="outline">
+                <Globe className="w-3 h-3 mr-1" />
+                Online
+              </Badge>
+            ) : (
+              <Badge variant="outline">
+                <MapPin className="w-3 h-3 mr-1" />
+                In-Person
+              </Badge>
             )}
             <Badge variant={event.status === 'upcoming' ? 'default' : 'secondary'}>
               {event.status}
             </Badge>
+            {event.language && event.language !== "English" && (
+              <Badge variant="outline">{event.language}</Badge>
+            )}
           </div>
+
+          {/* Tags */}
+          {event.tags && event.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {event.tags.map(tag => (
+                <Badge key={tag} variant="secondary" className="gap-1">
+                  <Tag className="w-3 h-3" />
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
 
           {/* Event Details */}
           <div className="space-y-3">
@@ -114,6 +147,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 <p className="font-medium">Date & Time</p>
                 <p className="text-sm text-muted-foreground">
                   {format(new Date(event.event_date), "EEEE, MMMM d, yyyy")} at {event.event_time}
+                  {event.timezone && (
+                    <span className="ml-1">({formatTimezone(event.timezone)})</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -139,12 +175,18 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </div>
             </div>
 
-            {!event.is_online && event.location && (
+            {/* In-person location details */}
+            {!event.is_online && (event.venue_name || event.full_address) && (
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
                   <p className="font-medium">Location</p>
-                  <p className="text-sm text-muted-foreground">{event.location}</p>
+                  {event.venue_name && (
+                    <p className="text-sm font-medium text-foreground">{event.venue_name}</p>
+                  )}
+                  {event.full_address && (
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{event.full_address}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -165,6 +207,21 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 </div>
               </div>
             )}
+
+            {event.contact_email && (
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium">Contact</p>
+                  <a
+                    href={`mailto:${event.contact_email}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {event.contact_email}
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -175,6 +232,19 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
               <h3 className="font-semibold text-lg mb-2">About This Event</h3>
               <p className="text-muted-foreground whitespace-pre-wrap">
                 {event.description}
+              </p>
+            </div>
+          )}
+
+          {/* Requirements */}
+          {event.requirements && (
+            <div>
+              <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Prerequisites / Requirements
+              </h3>
+              <p className="text-muted-foreground whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">
+                {event.requirements}
               </p>
             </div>
           )}
