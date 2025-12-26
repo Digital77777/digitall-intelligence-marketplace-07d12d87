@@ -30,8 +30,8 @@ export const useCommunity = () => {
         if (data && data.length > 0) {
           const userIds = [...new Set(data.map(t => t.user_id))];
           const { data: profiles } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, email, avatar_url")
+            .from("public_profiles")
+            .select("user_id, full_name, avatar_url")
             .in("user_id", userIds);
 
           const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
@@ -116,8 +116,8 @@ export const useCommunity = () => {
           // Fetch profiles separately
           const userIds = [...new Set(data.map(e => e.user_id))];
           const { data: profiles } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, email, avatar_url")
+            .from("public_profiles")
+            .select("user_id, full_name, avatar_url")
             .in("user_id", userIds);
 
           const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
@@ -375,8 +375,8 @@ export const useCommunity = () => {
         // Execute profiles and likes queries in parallel
         const [profilesResult, likesResult] = await Promise.all([
           supabase
-            .from("profiles")
-            .select("user_id, full_name, email, avatar_url")
+            .from("public_profiles")
+            .select("user_id, full_name, avatar_url")
             .in("user_id", userIds),
           user 
             ? supabase

@@ -14,12 +14,10 @@ export interface Connection {
   updated_at: string;
   requester?: {
     full_name: string | null;
-    email: string | null;
     avatar_url: string | null;
   };
   recipient?: {
     full_name: string | null;
-    email: string | null;
     avatar_url: string | null;
   };
 }
@@ -27,7 +25,6 @@ export interface Connection {
 export interface ConnectionWithProfile extends Connection {
   requester?: {
     full_name: string | null;
-    email: string | null;
     avatar_url: string | null;
   } | null;
 }
@@ -79,8 +76,8 @@ export const useConnections = () => {
         if (data && data.length > 0) {
           const requesterIds = data.map((conn) => conn.requester_id);
           const { data: profiles } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, email, avatar_url")
+            .from("public_profiles")
+            .select("user_id, full_name, avatar_url")
             .in("user_id", requesterIds);
 
           return data.map((conn) => ({
@@ -119,8 +116,8 @@ export const useConnections = () => {
         );
 
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, full_name, email, avatar_url, headline")
+          .from("public_profiles")
+          .select("user_id, full_name, avatar_url, headline")
           .in("user_id", otherUserIds);
 
         return data.map((conn) => {

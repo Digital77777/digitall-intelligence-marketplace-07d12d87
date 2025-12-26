@@ -33,12 +33,9 @@ const TopicDetailPage = () => {
 
   const { data: topic, isLoading } = useTopicDetail(topicId || "");
 
-  const getInitials = (name: string | undefined, email: string | undefined) => {
+  const getInitials = (name: string | undefined) => {
     if (name) {
       return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    }
-    if (email) {
-      return email.slice(0, 2).toUpperCase();
     }
     return "U";
   };
@@ -181,7 +178,7 @@ const TopicDetailPage = () => {
               <Avatar className="w-8 h-8">
                 <AvatarImage src={topic.profiles?.avatar_url || undefined} />
                 <AvatarFallback>
-                  {getInitials(topic.profiles?.full_name, topic.profiles?.email)}
+                  {getInitials(topic.profiles?.full_name)}
                 </AvatarFallback>
               </Avatar>
             <span className="font-medium">
@@ -229,7 +226,7 @@ const TopicDetailPage = () => {
                         <Avatar className="w-8 h-8">
                           <AvatarImage src={reply.profiles?.avatar_url || undefined} />
                           <AvatarFallback>
-                            {getInitials(reply.profiles?.full_name, reply.profiles?.email)}
+                            {getInitials(reply.profiles?.full_name)}
                           </AvatarFallback>
                         </Avatar>
                         <div
