@@ -26,7 +26,6 @@ import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
-
 const CommunityPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,7 +38,9 @@ const CommunityPage = () => {
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
   const [topicsPage, setTopicsPage] = useState(0);
   const [insightsPage, setInsightsPage] = useState(0);
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const {
     useTopics,
     useEvents,
@@ -47,19 +48,28 @@ const CommunityPage = () => {
     useStats,
     registerForEvent,
     toggleInsightLike,
-    trackContentView,
+    trackContentView
   } = useCommunity();
-
-  const { data: topics, isLoading: topicsLoading } = useTopics(searchQuery);
-  const { data: events, isLoading: eventsLoading } = useEvents(searchQuery);
-  const { data: insights, isLoading: insightsLoading } = useInsights(searchQuery);
-  const { data: stats } = useStats();
+  const {
+    data: topics,
+    isLoading: topicsLoading
+  } = useTopics(searchQuery);
+  const {
+    data: events,
+    isLoading: eventsLoading
+  } = useEvents(searchQuery);
+  const {
+    data: insights,
+    isLoading: insightsLoading
+  } = useInsights(searchQuery);
+  const {
+    data: stats
+  } = useStats();
 
   // Reset pagination when search query or filters change
   useEffect(() => {
     setTopicsPage(0);
   }, [searchQuery]);
-
   useEffect(() => {
     setInsightsPage(0);
   }, [searchQuery, insightCategory]);
@@ -68,37 +78,29 @@ const CommunityPage = () => {
   const handleStartTopic = useCallback(() => {
     navigate("/community/start-topic");
   }, [navigate]);
-
   const handleBrowseEvents = useCallback(() => {
     navigate("/community/browse-events");
   }, [navigate]);
-
   const handleResetFilters = useCallback(() => {
     setSortBy("recent");
     setEventType("all");
     setInsightCategory("all");
   }, []);
-
   const handleHostEvent = useCallback(() => {
     navigate("/community/host-event");
   }, [navigate]);
-
   const handleShareInsight = useCallback(() => {
     navigate("/community/share-insight");
   }, [navigate]);
-
   const handleFindMembers = useCallback(() => {
     navigate("/community/find-members");
   }, [navigate]);
-
   const handleStartDiscussion = useCallback(() => {
     navigate("/community/start-topic");
   }, [navigate]);
-
   const handleCreateEvent = useCallback(() => {
     navigate("/community/host-event");
   }, [navigate]);
-
   const handleJoinEventClick = useCallback(async (eventId: string, isRegistered: boolean) => {
     if (!user) {
       navigate("/auth");
@@ -108,30 +110,29 @@ const CommunityPage = () => {
       await registerForEvent.mutateAsync(eventId);
     }
   }, [user, navigate, registerForEvent]);
-
   const handleLikeInsight = useCallback(async (insightId: string, isLiked: boolean, category?: string) => {
     if (!user) {
       navigate("/auth");
       return;
     }
-    await toggleInsightLike.mutateAsync({ insightId, isLiked });
-    
+    await toggleInsightLike.mutateAsync({
+      insightId,
+      isLiked
+    });
+
     // Track interaction for recommendation algorithm
     if (!isLiked) {
       trackContentView(insightId, 'insight', category);
     }
   }, [user, navigate, toggleInsightLike, trackContentView]);
-
   const handleTopicClick = useCallback((topicId: string, tags?: string[]) => {
     trackContentView(topicId, 'topic', undefined, tags);
     navigate(`/community/topic/${topicId}`);
   }, [trackContentView, navigate]);
-
   const handleInsightView = useCallback((insight: CommunityInsight) => {
     setSelectedInsight(insight);
     trackContentView(insight.id, 'insight', insight.category);
   }, [trackContentView]);
-
   const getInitials = useCallback((name: string | undefined, email: string | undefined) => {
     if (name) {
       return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
@@ -146,7 +147,6 @@ const CommunityPage = () => {
   const loadMoreTopics = useCallback(() => {
     setTopicsPage(prev => prev + 1);
   }, []);
-
   const loadMoreInsights = useCallback(() => {
     setInsightsPage(prev => prev + 1);
   }, []);
@@ -157,43 +157,33 @@ const CommunityPage = () => {
     const endTopicIndex = startTopicIndex + 5;
     return topics?.slice(startTopicIndex, endTopicIndex) || [];
   }, [topics, topicsPage]);
-
   const hasMoreTopics = useMemo(() => {
     const endTopicIndex = (topicsPage + 1) * 5;
     return (topics?.length || 0) > endTopicIndex;
   }, [topics, topicsPage]);
-
   const filteredInsights = useMemo(() => {
-    return insights?.filter((insight) => {
+    return insights?.filter(insight => {
       const matchesCategory = insightCategory === "all" || insight.category === insightCategory;
       return matchesCategory;
     }) || [];
   }, [insights, insightCategory]);
-  
   const visibleInsights = useMemo(() => {
     const startInsightIndex = insightsPage * 5;
     const endInsightIndex = startInsightIndex + 5;
     return filteredInsights.slice(startInsightIndex, endInsightIndex);
   }, [filteredInsights, insightsPage]);
-
   const hasMoreInsights = useMemo(() => {
     const endInsightIndex = (insightsPage + 1) * 5;
     return filteredInsights.length > endInsightIndex;
   }, [filteredInsights, insightsPage]);
-
-  return (
-    <div className="min-h-screen bg-background">
-      <SEOHead 
-        title="AI Community - Connect, Learn & Collaborate"
-        description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence."
-        keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]}
-      />
+  return <div className="min-h-screen bg-background">
+      <SEOHead title="AI Community - Connect, Learn & Collaborate" description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence." keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]} />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary/10 via-secondary/5 to-accent/10 py-16">
         <div className="container mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-ai bg-clip-text text-transparent">
-              Join Our AI Community
+               Welcome To Our AI Community
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               Connect with AI enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence.
@@ -229,12 +219,7 @@ const CommunityPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search topics, events, or insights..." 
-                  className="pl-10"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+                <Input placeholder="Search topics, events, or insights..." className="pl-10" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
               </div>
               <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                 <SheetTrigger asChild>
@@ -270,8 +255,7 @@ const CommunityPage = () => {
                     <Separator />
 
                     {/* Event Type Filter - Only for events tab */}
-                    {activeTab === "events" && (
-                      <div className="space-y-3">
+                    {activeTab === "events" && <div className="space-y-3">
                         <Label htmlFor="event-type">Event Type</Label>
                         <Select value={eventType} onValueChange={setEventType}>
                           <SelectTrigger id="event-type">
@@ -285,12 +269,10 @@ const CommunityPage = () => {
                             <SelectItem value="Conference">Conferences</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                    )}
+                      </div>}
 
                     {/* Category Filter - Only for insights tab */}
-                    {activeTab === "insights" && (
-                      <div className="space-y-3">
+                    {activeTab === "insights" && <div className="space-y-3">
                         <Label htmlFor="category">Category</Label>
                         <Select value={insightCategory} onValueChange={setInsightCategory}>
                           <SelectTrigger id="category">
@@ -304,24 +286,16 @@ const CommunityPage = () => {
                             <SelectItem value="Best Practice">Best Practices</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
-                    )}
+                      </div>}
 
                     <Separator />
 
                     <div className="flex gap-3 pt-4">
-                      <Button 
-                        variant="outline" 
-                        className="flex-1"
-                        onClick={handleResetFilters}
-                      >
+                      <Button variant="outline" className="flex-1" onClick={handleResetFilters}>
                         <X className="mr-2 h-4 w-4" />
                         Reset
                       </Button>
-                      <Button 
-                        className="flex-1"
-                        onClick={() => setFilterOpen(false)}
-                      >
+                      <Button className="flex-1" onClick={() => setFilterOpen(false)}>
                         Apply Filters
                       </Button>
                     </div>
@@ -360,37 +334,17 @@ const CommunityPage = () => {
               </Button>
             </div>
             
-            {topicsLoading ? (
-              <TopicSkeletonGrid count={3} />
-            ) : (
-              <div className="space-y-3">
-                {visibleTopics.length > 0 ? (
-                  <>
-                    {visibleTopics.map((topic) => (
-                      <TopicCard
-                        key={topic.id}
-                        topic={topic}
-                        onTopicClick={handleTopicClick}
-                        getInitials={getInitials}
-                      />
-                    ))}
+            {topicsLoading ? <TopicSkeletonGrid count={3} /> : <div className="space-y-3">
+                {visibleTopics.length > 0 ? <>
+                    {visibleTopics.map(topic => <TopicCard key={topic.id} topic={topic} onTopicClick={handleTopicClick} getInitials={getInitials} />)}
                     
-                    {hasMoreTopics && (
-                      <div className="flex justify-center py-8">
-                        <Button
-                          onClick={loadMoreTopics}
-                          variant="outline"
-                          size="lg"
-                          className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all"
-                        >
+                    {hasMoreTopics && <div className="flex justify-center py-8">
+                        <Button onClick={loadMoreTopics} variant="outline" size="lg" className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all">
                           <ChevronDown className="w-5 h-5" />
                           Load More Discussions
                         </Button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <Card>
+                      </div>}
+                  </> : <Card>
                     <CardContent className="p-12 text-center">
                       <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-lg font-semibold mb-2">No discussions found</h3>
@@ -402,10 +356,8 @@ const CommunityPage = () => {
                         Start a Topic
                       </Button>
                     </CardContent>
-                  </Card>
-                )}
-              </div>
-            )}
+                  </Card>}
+              </div>}
               </TabsContent>
 
               {/* Events Tab */}
@@ -418,21 +370,8 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              {eventsLoading ? (
-                <EventSkeletonGrid count={3} />
-              ) : (
-                <div className="grid gap-3 sm:gap-4">
-                  {events && events.length > 0 ? (
-                    events.map((event) => (
-                      <EventCard
-                        key={event.id}
-                        event={event}
-                        onJoinEvent={handleJoinEventClick}
-                        onViewDetails={(event) => setSelectedEvent(event)}
-                      />
-                    ))
-                  ) : (
-                    <Card className="shadow-sm">
+              {eventsLoading ? <EventSkeletonGrid count={3} /> : <div className="grid gap-3 sm:gap-4">
+                  {events && events.length > 0 ? events.map(event => <EventCard key={event.id} event={event} onJoinEvent={handleJoinEventClick} onViewDetails={event => setSelectedEvent(event)} />) : <Card className="shadow-sm">
                       <CardContent className="p-8 sm:p-12 text-center">
                         <div className="flex flex-col items-center">
                           <div className="p-3 bg-primary/10 rounded-full mb-4">
@@ -448,10 +387,8 @@ const CommunityPage = () => {
                           </Button>
                         </div>
                       </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
+                    </Card>}
+                </div>}
               </TabsContent>
 
               {/* Insights Tab */}
@@ -464,38 +401,17 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              {insightsLoading ? (
-                <InsightSkeletonGrid count={6} />
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {visibleInsights.length > 0 ? (
-                    <>
-                      {visibleInsights.map((insight) => (
-                        <InsightCard
-                          key={insight.id}
-                          insight={insight}
-                          onLikeClick={handleLikeInsight}
-                          onViewClick={handleInsightView}
-                          getInitials={getInitials}
-                        />
-                      ))}
+              {insightsLoading ? <InsightSkeletonGrid count={6} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleInsights.length > 0 ? <>
+                      {visibleInsights.map(insight => <InsightCard key={insight.id} insight={insight} onLikeClick={handleLikeInsight} onViewClick={handleInsightView} getInitials={getInitials} />)}
                       
-                      {hasMoreInsights && (
-                        <div className="flex justify-center py-8">
-                          <Button
-                            onClick={loadMoreInsights}
-                            variant="outline"
-                            size="lg"
-                            className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all"
-                          >
+                      {hasMoreInsights && <div className="flex justify-center py-8">
+                          <Button onClick={loadMoreInsights} variant="outline" size="lg" className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all">
                             <ChevronDown className="w-5 h-5" />
                             Load More Insights
                           </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <Card>
+                        </div>}
+                    </> : <Card>
                       <CardContent className="p-12 text-center">
                         <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                         <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
@@ -505,10 +421,8 @@ const CommunityPage = () => {
                           Share an Insight
                         </Button>
                       </CardContent>
-                    </Card>
-                  )}
-                </div>
-              )}
+                    </Card>}
+                </div>}
               </TabsContent>
             </Tabs>
           </div>
@@ -557,45 +471,23 @@ const CommunityPage = () => {
                 <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {user && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" 
-                    onClick={() => navigate("/community/my-activity")}
-                  >
+                {user && <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={() => navigate("/community/my-activity")}>
                     <TrendingUp className="mr-2 h-4 w-4" />
                     <span className="font-medium">My Activity</span>
-                  </Button>
-                )}
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" 
-                  onClick={handleStartDiscussion}
-                >
+                  </Button>}
+                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleStartDiscussion}>
                   <MessageCircle className="mr-2 h-4 w-4" />
                   <span className="font-medium">Start Discussion</span>
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" 
-                  onClick={handleCreateEvent}
-                >
+                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleCreateEvent}>
                   <Calendar className="mr-2 h-4 w-4" />
                   <span className="font-medium">Create Event</span>
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" 
-                  onClick={handleShareInsight}
-                >
+                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleShareInsight}>
                   <TrendingUp className="mr-2 h-4 w-4" />
                   <span className="font-medium">Share Insight</span>
                 </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" 
-                  onClick={handleFindMembers}
-                >
+                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleFindMembers}>
                   <Users className="mr-2 h-4 w-4" />
                   <span className="font-medium">Find Members</span>
                 </Button>
@@ -606,24 +498,9 @@ const CommunityPage = () => {
       </div>
 
       {/* Insight Detail Modal */}
-      {selectedInsight && (
-        <InsightDetailModal
-          insight={selectedInsight}
-          open={!!selectedInsight}
-          onOpenChange={(open) => !open && setSelectedInsight(null)}
-        />
-      )}
+      {selectedInsight && <InsightDetailModal insight={selectedInsight} open={!!selectedInsight} onOpenChange={open => !open && setSelectedInsight(null)} />}
 
-      {selectedEvent && (
-        <EventDetailModal
-          event={selectedEvent}
-          isOpen={!!selectedEvent}
-          onClose={() => setSelectedEvent(null)}
-          onJoinEvent={handleJoinEventClick}
-        />
-      )}
-    </div>
-  );
+      {selectedEvent && <EventDetailModal event={selectedEvent} isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} onJoinEvent={handleJoinEventClick} />}
+    </div>;
 };
-
 export default CommunityPage;
