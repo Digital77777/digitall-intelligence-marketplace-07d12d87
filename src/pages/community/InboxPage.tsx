@@ -20,6 +20,7 @@ import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
 import { ReplyPreview } from '@/components/chat/ReplyPreview';
 import { QuotedMessage } from '@/components/chat/QuotedMessage';
+import { MessageActions } from '@/components/chat/MessageActions';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const InboxPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { useConversations, useConversationMessages, sendMessage } = useMessages();
+  const { useConversations, useConversationMessages, sendMessage, editMessage, deleteMessage, canModifyMessage } = useMessages();
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
   const { data: messages, isLoading: messagesLoading } = useConversationMessages(selectedUserId);
   
@@ -429,6 +430,7 @@ const InboxPage = () => {
                   {messages?.map((msg) => {
                     const isSender = msg.sender_id === user?.id;
                     const isReplyFromCurrentUser = msg.reply_to?.sender_id === user?.id;
+                    const canModify = isSender && !msg.voice_note_url && canModifyMessage(msg.created_at);
                     return (
                       <div key={msg.id} className={`group flex items-start gap-2 ${isSender ? 'justify-end' : ''}`}>
                         {!isSender && (
@@ -465,13 +467,26 @@ const InboxPage = () => {
                           ) : (
                             <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                           )}
-                          <p
-                            className={`text-xs mt-1 ${
-                              isSender ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                            }`}
-                          >
-                            {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
-                          </p>
+                          <div className="flex items-center justify-between gap-2 mt-1">
+                            <p
+                              className={`text-xs ${
+                                isSender ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                              }`}
+                            >
+                              {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
+                            </p>
+                            {canModify && (
+                              <MessageActions
+                                messageId={msg.id}
+                                content={msg.content}
+                                canModify={canModify}
+                                onEdit={(id, content) => editMessage.mutate({ messageId: id, content })}
+                                onDelete={(id) => deleteMessage.mutate(id)}
+                                isEditing={false}
+                                isPending={editMessage.isPending || deleteMessage.isPending}
+                              />
+                            )}
+                          </div>
                         </div>
                         {isSender && (
                           <Button
