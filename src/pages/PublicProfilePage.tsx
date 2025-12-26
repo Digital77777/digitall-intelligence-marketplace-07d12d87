@@ -6,14 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, MessageCircle, Lightbulb, Calendar } from "lucide-react";
+import { ArrowLeft, User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, MessageCircle, Lightbulb, Calendar, UserPlus, Clock, Check, UserCheck, Users } from "lucide-react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SEOHead } from "@/components/SEOHead";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useConnections } from "@/hooks/useConnections";
-import { UserPlus, Clock, Check } from "lucide-react";
+import { useFollows } from "@/hooks/useFollows";
 
 const PublicProfilePage = () => {
   const { userId } = useParams();
@@ -21,7 +21,12 @@ const PublicProfilePage = () => {
   const { user } = useAuth();
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null);
   const { useConnectionStatus, sendConnectionRequest } = useConnections();
+  const { useFollowStatus, useFollowersCount, useFollowingCount, followUser, unfollowUser } = useFollows();
   const { data: connectionStatus, isLoading: connectionLoading } = useConnectionStatus(userId || "");
+  const { data: followStatus } = useFollowStatus(userId || "");
+  const { data: followersCount = 0 } = useFollowersCount(userId || "");
+  const { data: followingCount = 0 } = useFollowingCount(userId || "");
+  const isFollowing = !!followStatus;
 
   const { data: selectedInsight } = useQuery({
     queryKey: ["insight-detail", selectedInsightId],
@@ -189,9 +194,44 @@ const PublicProfilePage = () => {
                     </div>
                   )}
 
+                  {/* Follower/Following Stats */}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground justify-center md:justify-start">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      <span className="font-semibold text-foreground">{followersCount}</span>
+                      <span>followers</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold text-foreground">{followingCount}</span>
+                      <span>following</span>
+                    </div>
+                  </div>
+
                   {/* Action Buttons - Only show if viewing another user's profile */}
                   {user && user.id !== userId && (
                     <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center md:justify-start">
+                      {/* Follow Button */}
+                      {isFollowing ? (
+                        <Button
+                          onClick={() => unfollowUser.mutate(userId!)}
+                          disabled={unfollowUser.isPending}
+                          variant="outline"
+                          className="w-full sm:w-auto bg-primary/10 text-primary border-primary/20"
+                        >
+                          <UserCheck className="w-4 h-4 mr-2" />
+                          Following
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => followUser.mutate(userId!)}
+                          disabled={followUser.isPending}
+                          className="bg-gradient-ai text-white w-full sm:w-auto"
+                        >
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Follow
+                        </Button>
+                      )}
+
                       {/* Connect Button */}
                       {!connectionStatus ? (
                         <Button
@@ -204,12 +244,12 @@ const PublicProfilePage = () => {
                           {sendConnectionRequest.isPending ? "Sending..." : "Connect"}
                         </Button>
                       ) : connectionStatus.status === "pending" ? (
-                        <Button variant="outline" disabled className="w-full sm:w-auto">
+                        <Button variant="outline" disabled className="w-full sm:w-auto bg-amber-50 text-amber-700 border-amber-200">
                           <Clock className="w-4 h-4 mr-2" />
                           {connectionStatus.requester_id === user.id ? "Request Sent" : "Pending"}
                         </Button>
                       ) : connectionStatus.status === "accepted" ? (
-                        <Button variant="outline" disabled className="w-full sm:w-auto">
+                        <Button variant="outline" disabled className="w-full sm:w-auto bg-green-50 text-green-700 border-green-200">
                           <Check className="w-4 h-4 mr-2" />
                           Connected
                         </Button>
@@ -218,10 +258,11 @@ const PublicProfilePage = () => {
                       {/* Message Button */}
                       <Button
                         onClick={() => navigate(`/community/inbox?userId=${userId}`)}
-                        className="bg-gradient-ai text-white w-full sm:w-auto"
+                        variant="outline"
+                        className="w-full sm:w-auto"
                       >
                         <MessageCircle className="w-4 h-4 mr-2" />
-                        Send Message
+                        Message
                       </Button>
                     </div>
                   )}
