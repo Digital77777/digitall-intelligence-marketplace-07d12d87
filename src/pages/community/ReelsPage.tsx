@@ -37,6 +37,7 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle, onOpenComments, comme
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
+  const [videoError, setVideoError] = useState(false);
   const [authorProfile, setAuthorProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -156,23 +157,43 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle, onOpenComments, comme
     return count.toString();
   };
 
+  const handleVideoError = () => {
+    setVideoError(true);
+    setIsBuffering(false);
+  };
+
   return (
     <div className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden">
       {/* Full-screen video */}
-      <video
-        ref={videoRef}
-        src={reel.video_url}
-        poster={reel.thumbnail_url || undefined}
-        className="absolute inset-0 w-full h-full object-cover"
-        loop
-        playsInline
-        muted={isMuted}
-        autoPlay={isActive}
-        onClick={handleTap}
-        onWaiting={() => setIsBuffering(true)}
-        onPlaying={() => setIsBuffering(false)}
-        onCanPlay={() => setIsBuffering(false)}
-      />
+      {!videoError ? (
+        <video
+          ref={videoRef}
+          src={reel.video_url}
+          poster={reel.thumbnail_url || undefined}
+          className="absolute inset-0 w-full h-full object-cover"
+          loop
+          playsInline
+          muted={isMuted}
+          autoPlay={isActive}
+          onClick={handleTap}
+          onWaiting={() => setIsBuffering(true)}
+          onPlaying={() => setIsBuffering(false)}
+          onCanPlay={() => setIsBuffering(false)}
+          onError={handleVideoError}
+        />
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+          <p className="text-white/70 text-sm mb-2">Video unavailable</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setVideoError(false)}
+            className="text-white border-white/30"
+          >
+            Retry
+          </Button>
+        </div>
+      )}
 
       {/* Loading spinner */}
       {isBuffering && isActive && (
@@ -348,7 +369,7 @@ const ReelsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialReelId = searchParams.get("reel") || undefined;
-  const { reels, isLoading } = useReels(initialReelId);
+  const { reels, isLoading, error } = useReels(initialReelId);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -502,6 +523,22 @@ const ReelsPage = () => {
 
   if (isLoading) {
     return <ReelSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
+        <SEOHead
+          title="Reels - Community Videos"
+          description="Watch engaging short-form video content from our AI community."
+        />
+        <p className="text-white text-lg mb-4">Failed to load reels</p>
+        <p className="text-white/60 text-sm mb-4">Please try again later</p>
+        <Button variant="outline" onClick={() => navigate("/community")}>
+          Back to Community
+        </Button>
+      </div>
+    );
   }
 
   if (reels.length === 0) {
