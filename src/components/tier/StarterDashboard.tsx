@@ -1,13 +1,26 @@
 import { BookOpen, Brain, Users, Sparkles, GraduationCap, PlayCircle, HeadphonesIcon, Store } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { TierHero } from './shared/TierHero';
 import { FeatureCard } from './shared/FeatureCard';
 import { BenefitsList } from './shared/BenefitsList';
 import { QuickStats } from './shared/QuickStats';
+import { supabase } from '@/integrations/supabase/client';
 
 export const StarterDashboard = () => {
   const navigate = useNavigate();
+  const [memberCount, setMemberCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchMemberCount = async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      setMemberCount(count);
+    };
+    fetchMemberCount();
+  }, []);
 
   const benefits = [
     "Access to 3 essential AI learning tools",
@@ -22,7 +35,7 @@ export const StarterDashboard = () => {
   const stats = [
     { value: "3", label: "AI Tools", icon: <Brain className="h-6 w-6 text-primary" /> },
     { value: "10+", label: "Free Courses", icon: <GraduationCap className="h-6 w-6 text-primary" /> },
-    { value: "1,000+", label: "Community Members", icon: <Users className="h-6 w-6 text-primary" /> }
+    { value: memberCount !== null ? memberCount.toLocaleString() : "...", label: "Community Members", icon: <Users className="h-6 w-6 text-primary" /> }
   ];
 
   return (
