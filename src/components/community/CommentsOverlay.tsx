@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { X, Send, Loader2, Heart, MoreHorizontal } from "lucide-react";
+import { X, Send, Loader2, MoreHorizontal, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,10 +14,12 @@ interface Comment {
   content: string;
   user_id: string;
   created_at: string;
+  parent_id: string | null;
   profile?: {
     full_name: string | null;
     avatar_url: string | null;
   };
+  replies?: Comment[];
 }
 
 interface CommentsOverlayProps {
@@ -31,6 +33,8 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
   const [newComment, setNewComment] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -66,7 +70,26 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
           ...comment,
           profile: profileMap.get(comment.user_id) || null,
         }));
-        setComments(commentsWithProfiles);
+
+        // Organize comments into threads (parent comments with replies)
+        const parentComments: Comment[] = [];
+        const repliesMap = new Map<string, Comment[]>();
+
+        commentsWithProfiles.forEach((comment) => {
+          if (!comment.parent_id) {
+            parentComments.push({ ...comment, replies: [] });
+          } else {
+            const existingReplies = repliesMap.get(comment.parent_id) || [];
+            repliesMap.set(comment.parent_id, [...existingReplies, comment]);
+          }
+        });
+
+        // Attach replies to parent comments
+        parentComments.forEach((parent) => {
+          parent.replies = repliesMap.get(parent.id) || [];
+        });
+
+        setComments(parentComments);
       } else {
         setComments([]);
       }
@@ -76,12 +99,12 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
     fetchComments();
   }, [isOpen, insightId]);
 
-  // Focus input when overlay opens
+  // Focus input when overlay opens or when replying
   useEffect(() => {
     if (isOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
     }
-  }, [isOpen]);
+  }, [isOpen, replyingTo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +118,7 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
           insight_id: insightId,
           user_id: user.id,
           content: newComment.trim(),
+          parent_id: replyingTo?.id || null,
         })
         .select()
         .single();
@@ -108,9 +132,27 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
         .eq("user_id", user.id)
         .single();
 
-      setComments((prev) => [...prev, { ...data, profile }]);
+      const newCommentWithProfile = { ...data, profile };
+
+      if (replyingTo) {
+        // Add reply to the parent comment
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === replyingTo.id
+              ? { ...comment, replies: [...(comment.replies || []), newCommentWithProfile] }
+              : comment
+          )
+        );
+        // Auto-expand replies for the parent
+        setExpandedReplies((prev) => new Set([...prev, replyingTo.id]));
+        setReplyingTo(null);
+      } else {
+        // Add as a new parent comment
+        setComments((prev) => [...prev, { ...newCommentWithProfile, replies: [] }]);
+      }
+
       setNewComment("");
-      toast({ title: "Comment posted!" });
+      toast({ title: replyingTo ? "Reply posted!" : "Comment posted!" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to post comment", variant: "destructive" });
     } finally {
@@ -118,7 +160,7 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
     }
   };
 
-  const handleDelete = async (commentId: string) => {
+  const handleDelete = async (commentId: string, parentId?: string | null) => {
     try {
       const { error } = await supabase
         .from("insight_comments")
@@ -126,11 +168,41 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
         .eq("id", commentId);
 
       if (error) throw error;
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
+
+      if (parentId) {
+        // Remove reply from parent
+        setComments((prev) =>
+          prev.map((comment) =>
+            comment.id === parentId
+              ? { ...comment, replies: comment.replies?.filter((r) => r.id !== commentId) }
+              : comment
+          )
+        );
+      } else {
+        // Remove parent comment (and its replies will cascade delete in DB)
+        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      }
       toast({ title: "Comment deleted" });
     } catch (error) {
       toast({ title: "Error", description: "Failed to delete comment", variant: "destructive" });
     }
+  };
+
+  const handleReply = (commentId: string, userName: string) => {
+    setReplyingTo({ id: commentId, name: userName });
+    inputRef.current?.focus();
+  };
+
+  const toggleReplies = (commentId: string) => {
+    setExpandedReplies((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+      } else {
+        newSet.add(commentId);
+      }
+      return newSet;
+    });
   };
 
   const getInitials = (name: string | null) => {
@@ -153,6 +225,50 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
   const handleTouchMove = (e: React.TouchEvent) => {
     e.stopPropagation();
   };
+
+  const renderComment = (comment: Comment, isReply = false, parentId?: string) => (
+    <div key={comment.id} className={`flex gap-3 group ${isReply ? "ml-10 mt-3" : ""}`}>
+      <Avatar className={isReply ? "w-7 h-7" : "w-9 h-9"}>
+        <AvatarImage src={comment.profile?.avatar_url || undefined} />
+        <AvatarFallback className="bg-primary/10 text-primary text-xs">
+          {getInitials(comment.profile?.full_name)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            <span className="font-semibold text-sm">
+              {comment.profile?.full_name || "Anonymous"}
+            </span>
+            <span className="text-sm ml-2">{comment.content}</span>
+          </div>
+          {user?.id === comment.user_id && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => handleDelete(comment.id, parentId)}
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-4 mt-1">
+          <span className="text-xs text-muted-foreground">
+            {formatTime(comment.created_at)}
+          </span>
+          {user && !isReply && (
+            <button 
+              className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              onClick={() => handleReply(comment.id, comment.profile?.full_name || "Anonymous")}
+            >
+              Reply
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 
   if (!isOpen) return null;
 
@@ -202,41 +318,36 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
               </div>
             ) : (
               comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 group">
-                  <Avatar className="w-9 h-9 flex-shrink-0">
-                    <AvatarImage src={comment.profile?.avatar_url || undefined} />
-                    <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                      {getInitials(comment.profile?.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1">
-                        <span className="font-semibold text-sm">
-                          {comment.profile?.full_name || "Anonymous"}
-                        </span>
-                        <span className="text-sm ml-2">{comment.content}</span>
-                      </div>
-                      {user?.id === comment.user_id && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => handleDelete(comment.id)}
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
+                <div key={comment.id}>
+                  {renderComment(comment)}
+                  
+                  {/* Replies section */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <div className="mt-2">
+                      <button
+                        className="flex items-center gap-1 ml-12 text-xs font-medium text-primary hover:text-primary/80"
+                        onClick={() => toggleReplies(comment.id)}
+                      >
+                        {expandedReplies.has(comment.id) ? (
+                          <>
+                            <ChevronUp className="w-3 h-3" />
+                            Hide replies
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3 h-3" />
+                            View {comment.replies.length} {comment.replies.length === 1 ? "reply" : "replies"}
+                          </>
+                        )}
+                      </button>
+                      
+                      {expandedReplies.has(comment.id) && (
+                        <div className="space-y-3 mt-2">
+                          {comment.replies.map((reply) => renderComment(reply, true, comment.id))}
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 mt-1">
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(comment.created_at)}
-                      </span>
-                      <button className="text-xs text-muted-foreground hover:text-foreground">
-                        Reply
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ))
             )}
@@ -246,33 +357,49 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
         {/* Input area */}
         <div className="border-t border-border p-4">
           {user ? (
-            <form onSubmit={handleSubmit} className="flex items-center gap-3">
-              <Avatar className="w-8 h-8 flex-shrink-0">
-                <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {getInitials(user.email)}
-                </AvatarFallback>
-              </Avatar>
-              <Input
-                ref={inputRef}
-                placeholder="Add a comment..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="flex-1 bg-muted/50 border-0 focus-visible:ring-1"
-              />
-              <Button 
-                type="submit" 
-                size="icon"
-                variant="ghost"
-                disabled={!newComment.trim() || isSubmitting}
-                className="text-primary"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
-            </form>
+            <>
+              {/* Reply indicator */}
+              {replyingTo && (
+                <div className="flex items-center justify-between mb-2 px-2 py-1.5 bg-muted/50 rounded-lg">
+                  <span className="text-xs text-muted-foreground">
+                    Replying to <span className="font-medium text-foreground">{replyingTo.name}</span>
+                  </span>
+                  <button
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => setReplyingTo(null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <form onSubmit={handleSubmit} className="flex items-center gap-3">
+                <Avatar className="w-8 h-8 flex-shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                    {getInitials(user.email)}
+                  </AvatarFallback>
+                </Avatar>
+                <Input
+                  ref={inputRef}
+                  placeholder={replyingTo ? `Reply to ${replyingTo.name}...` : "Add a comment..."}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex-1 bg-muted/50 border-0 focus-visible:ring-1"
+                />
+                <Button 
+                  type="submit" 
+                  size="icon"
+                  variant="ghost"
+                  disabled={!newComment.trim() || isSubmitting}
+                  className="text-primary"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5" />
+                  )}
+                </Button>
+              </form>
+            </>
           ) : (
             <p className="text-center text-sm text-muted-foreground">
               Sign in to comment
