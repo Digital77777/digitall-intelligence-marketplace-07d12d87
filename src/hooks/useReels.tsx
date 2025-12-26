@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 interface Reel {
   id: string;
@@ -16,6 +16,7 @@ interface Reel {
 
 export const useReels = (initialReelId?: string) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [initializedForReel, setInitializedForReel] = useState<string | null>(null);
 
   const { data: reels = [], isLoading, error } = useQuery({
     queryKey: ["community-reels"],
@@ -37,12 +38,15 @@ export const useReels = (initialReelId?: string) => {
   }, [reels]);
 
   // Set initial index when reels load and initialReelId is provided
-  if (initialReelId && reels.length > 0 && currentIndex === 0) {
-    const idx = findReelIndex(initialReelId);
-    if (idx !== -1 && idx !== currentIndex) {
-      setCurrentIndex(idx);
+  useEffect(() => {
+    if (initialReelId && reels.length > 0 && initializedForReel !== initialReelId) {
+      const idx = findReelIndex(initialReelId);
+      if (idx !== -1) {
+        setCurrentIndex(idx);
+        setInitializedForReel(initialReelId);
+      }
     }
-  }
+  }, [initialReelId, reels, findReelIndex, initializedForReel]);
 
   const currentReel = reels[currentIndex] || null;
   const hasNext = currentIndex < reels.length - 1;
