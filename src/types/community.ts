@@ -39,6 +39,13 @@ export interface CommunityEvent {
   cover_image?: string | null;
   meeting_link?: string | null;
   location?: string | null;
+  venue_name?: string | null;
+  full_address?: string | null;
+  timezone?: string | null;
+  tags?: string[] | null;
+  requirements?: string | null;
+  language?: string | null;
+  contact_email?: string | null;
   is_online: boolean;
   status: string;
   attendees_count: number;

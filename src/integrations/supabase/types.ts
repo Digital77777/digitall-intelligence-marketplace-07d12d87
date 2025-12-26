@@ -214,6 +214,7 @@ export type Database = {
       community_events: {
         Row: {
           attendees_count: number | null
+          contact_email: string | null
           cover_image: string | null
           created_at: string
           description: string
@@ -221,18 +222,25 @@ export type Database = {
           event_date: string
           event_time: string
           event_type: string
+          full_address: string | null
           id: string
           is_online: boolean | null
+          language: string | null
           location: string | null
           max_attendees: number | null
           meeting_link: string | null
+          requirements: string | null
           status: string
+          tags: string[] | null
+          timezone: string | null
           title: string
           updated_at: string
           user_id: string
+          venue_name: string | null
         }
         Insert: {
           attendees_count?: number | null
+          contact_email?: string | null
           cover_image?: string | null
           created_at?: string
           description: string
@@ -240,18 +248,25 @@ export type Database = {
           event_date: string
           event_time: string
           event_type: string
+          full_address?: string | null
           id?: string
           is_online?: boolean | null
+          language?: string | null
           location?: string | null
           max_attendees?: number | null
           meeting_link?: string | null
+          requirements?: string | null
           status?: string
+          tags?: string[] | null
+          timezone?: string | null
           title: string
           updated_at?: string
           user_id: string
+          venue_name?: string | null
         }
         Update: {
           attendees_count?: number | null
+          contact_email?: string | null
           cover_image?: string | null
           created_at?: string
           description?: string
@@ -259,15 +274,21 @@ export type Database = {
           event_date?: string
           event_time?: string
           event_type?: string
+          full_address?: string | null
           id?: string
           is_online?: boolean | null
+          language?: string | null
           location?: string | null
           max_attendees?: number | null
           meeting_link?: string | null
+          requirements?: string | null
           status?: string
+          tags?: string[] | null
+          timezone?: string | null
           title?: string
           updated_at?: string
           user_id?: string
+          venue_name?: string | null
         }
         Relationships: [
           {
