@@ -127,9 +127,6 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
                       <p className="text-sm font-medium truncate">
                         {profile.full_name || "Community Member"}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {profile.email}
-                      </p>
                     </div>
                   </div>
                 ))}
