@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useReels } from "@/hooks/useReels";
@@ -30,6 +30,7 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(reel.likes_count);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const [authorProfile, setAuthorProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -140,6 +141,13 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
 
   return (
     <div className="relative w-full h-screen snap-start snap-always bg-black flex items-center justify-center">
+      {/* Loading spinner */}
+      {isBuffering && isActive && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <Loader2 className="w-12 h-12 text-white animate-spin" />
+        </div>
+      )}
+
       {/* Video */}
       <video
         ref={videoRef}
@@ -152,6 +160,9 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
         autoPlay={isActive}
         onClick={handleDoubleTap}
         onDoubleClick={handleLike}
+        onWaiting={() => setIsBuffering(true)}
+        onPlaying={() => setIsBuffering(false)}
+        onCanPlay={() => setIsBuffering(false)}
       />
 
       {/* Double-tap like animation */}
