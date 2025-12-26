@@ -26,19 +26,34 @@ export const useCommunity = () => {
         const { data, error } = await query;
         if (error) throw error;
 
-        // Fetch profiles separately
         if (data && data.length > 0) {
           const userIds = [...new Set(data.map(t => t.user_id))];
-          const { data: profiles } = await supabase
-            .from("public_profiles")
-            .select("user_id, full_name, avatar_url")
-            .in("user_id", userIds);
+          const topicIds = data.map(t => t.id);
+          
+          // Fetch profiles and replies count in parallel
+          const [profilesResult, repliesResult] = await Promise.all([
+            supabase
+              .from("public_profiles")
+              .select("user_id, full_name, avatar_url")
+              .in("user_id", userIds),
+            supabase
+              .from("topic_replies")
+              .select("topic_id")
+              .in("topic_id", topicIds),
+          ]);
 
-          const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+          const profilesMap = new Map(profilesResult.data?.map(p => [p.user_id, p]) || []);
+          
+          // Count replies per topic
+          const repliesCountMap = new Map<string, number>();
+          repliesResult.data?.forEach(r => {
+            repliesCountMap.set(r.topic_id, (repliesCountMap.get(r.topic_id) || 0) + 1);
+          });
           
           const topicsWithProfiles = data.map(topic => ({
             ...topic,
             profiles: profilesMap.get(topic.user_id),
+            replies_count: repliesCountMap.get(topic.id) || 0,
           })) as CommunityTopic[];
           
           // Apply recommendation algorithm
@@ -376,16 +391,22 @@ export const useCommunity = () => {
         // Get user result (should be ready by now)
         const { data: { user } } = await userPromise;
 
-        // Prepare parallel queries for profiles and likes
+        // Prepare parallel queries for profiles and all likes
         const userIds = [...new Set(data.map(i => i.user_id))];
         const insightIds = data.map(i => i.id);
 
         // Execute profiles and likes queries in parallel
-        const [profilesResult, likesResult] = await Promise.all([
+        const [profilesResult, allLikesResult, userLikesResult] = await Promise.all([
           supabase
             .from("public_profiles")
             .select("user_id, full_name, avatar_url")
             .in("user_id", userIds),
+          // Fetch all likes for these insights to get accurate counts
+          supabase
+            .from("insight_likes")
+            .select("insight_id")
+            .in("insight_id", insightIds),
+          // Fetch user's likes separately
           user 
             ? supabase
                 .from("insight_likes")
@@ -396,12 +417,19 @@ export const useCommunity = () => {
         ]);
 
         const profilesMap = new Map(profilesResult.data?.map(p => [p.user_id, p]) || []);
-        const likedIds = new Set(likesResult.data?.map(l => l.insight_id) || []);
+        const userLikedIds = new Set(userLikesResult.data?.map(l => l.insight_id) || []);
+        
+        // Count likes per insight
+        const likesCountMap = new Map<string, number>();
+        allLikesResult.data?.forEach(l => {
+          likesCountMap.set(l.insight_id, (likesCountMap.get(l.insight_id) || 0) + 1);
+        });
         
         const insightsWithProfiles = data.map(insight => ({
           ...insight,
           profiles: profilesMap.get(insight.user_id),
-          is_liked: likedIds.has(insight.id),
+          is_liked: userLikedIds.has(insight.id),
+          likes_count: likesCountMap.get(insight.id) || 0,
         })) as CommunityInsight[];
         
         // Apply recommendation algorithm
