@@ -735,6 +735,7 @@ export type Database = {
           created_at: string
           id: string
           insight_id: string
+          parent_id: string | null
           updated_at: string
           user_id: string
         }
@@ -743,6 +744,7 @@ export type Database = {
           created_at?: string
           id?: string
           insight_id: string
+          parent_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -751,6 +753,7 @@ export type Database = {
           created_at?: string
           id?: string
           insight_id?: string
+          parent_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -760,6 +763,13 @@ export type Database = {
             columns: ["insight_id"]
             isOneToOne: false
             referencedRelation: "community_insights"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insight_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "insight_comments"
             referencedColumns: ["id"]
           },
         ]
