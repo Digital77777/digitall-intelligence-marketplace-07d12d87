@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Square } from 'lucide-react';
+import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Square, Reply } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useMessages } from '@/hooks/useMessages';
+import { useMessages, Message } from '@/hooks/useMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +18,8 @@ import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
 import { useTypingIndicator } from '@/hooks/useTypingIndicator';
 import { TypingIndicator } from '@/components/chat/TypingIndicator';
+import { ReplyPreview } from '@/components/chat/ReplyPreview';
+import { QuotedMessage } from '@/components/chat/QuotedMessage';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -29,7 +31,9 @@ const InboxPage = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | undefined>(
     searchParams.get('userId') || undefined
   );
+  const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { useConversations, useConversationMessages, sendMessage } = useMessages();
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
@@ -98,10 +102,17 @@ const InboxPage = () => {
     await sendMessage.mutateAsync({
       receiverId: selectedUserId,
       content: messageText.trim(),
+      replyToId: replyToMessage?.id,
     });
 
     stopTyping();
     setMessageText('');
+    setReplyToMessage(null);
+  };
+
+  const handleReply = (msg: Message) => {
+    setReplyToMessage(msg);
+    inputRef.current?.focus();
   };
 
   const getInitials = (name?: string, email?: string) => {
@@ -417,8 +428,19 @@ const InboxPage = () => {
                 <div className="space-y-3">
                   {messages?.map((msg) => {
                     const isSender = msg.sender_id === user?.id;
+                    const isReplyFromCurrentUser = msg.reply_to?.sender_id === user?.id;
                     return (
-                      <div key={msg.id} className={`flex ${isSender ? 'justify-end' : ''}`}>
+                      <div key={msg.id} className={`group flex items-start gap-2 ${isSender ? 'justify-end' : ''}`}>
+                        {!isSender && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleReply(msg)}
+                          >
+                            <Reply className="h-4 w-4" />
+                          </Button>
+                        )}
                         <div
                           className={`max-w-[70%] rounded-lg px-4 py-2 ${
                             isSender
@@ -426,6 +448,18 @@ const InboxPage = () => {
                               : 'bg-muted text-foreground'
                           }`}
                         >
+                          {msg.reply_to && (
+                            <QuotedMessage
+                              content={msg.reply_to.content}
+                              senderName={
+                                msg.reply_to.sender_id === selectedUserId
+                                  ? selectedConversation?.full_name
+                                  : undefined
+                              }
+                              isCurrentUserSender={isReplyFromCurrentUser}
+                              isSentByMe={isSender}
+                            />
+                          )}
                           {msg.voice_note_url ? (
                             <VoiceNotePlayer audioUrl={msg.voice_note_url} isSender={isSender} />
                           ) : (
@@ -439,6 +473,16 @@ const InboxPage = () => {
                             {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
                           </p>
                         </div>
+                        {isSender && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleReply(msg)}
+                          >
+                            <Reply className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     );
                   })}
@@ -451,60 +495,79 @@ const InboxPage = () => {
             </ScrollArea>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-border bg-card">
-              {isRecording ? (
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 flex items-center gap-3">
-                    <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
-                    <span className="text-sm font-medium">Recording... {formatRecordingTime(recordingDuration)}</span>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={cancelRecording}>
-                    <X className="h-5 w-5" />
-                  </Button>
-                  <Button size="icon" onClick={handleSendVoiceNote} className="bg-primary">
-                    <Send className="h-5 w-5" />
-                  </Button>
-                </div>
-              ) : (
-                <form onSubmit={handleSendMessage}>
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Type a message..."
-                        value={messageText}
-                        onChange={(e) => {
-                          setMessageText(e.target.value);
-                          if (e.target.value.trim()) {
-                            startTyping();
-                          } else {
-                            stopTyping();
-                          }
-                        }}
-                        onBlur={stopTyping}
-                        className="flex-1"
-                        maxLength={2000}
-                      />
-                      <Button 
-                        type="button" 
-                        size="icon" 
-                        variant="ghost"
-                        onClick={startRecording}
-                        disabled={!!messageText.trim()}
-                      >
-                        <Mic className="h-5 w-5" />
-                      </Button>
-                      <Button type="submit" size="icon" disabled={!messageText.trim()}>
-                        <Send className="h-5 w-5" />
-                      </Button>
-                    </div>
-                    <div className="flex justify-end">
-                      <span className={`text-xs ${messageText.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                        {messageText.length}/2000
-                      </span>
-                    </div>
-                  </div>
-                </form>
+            <div className="border-t border-border bg-card">
+              {replyToMessage && (
+                <ReplyPreview
+                  replyToMessage={{
+                    id: replyToMessage.id,
+                    content: replyToMessage.content,
+                    sender_id: replyToMessage.sender_id,
+                  }}
+                  senderName={
+                    replyToMessage.sender_id === user?.id
+                      ? undefined
+                      : selectedConversation?.full_name
+                  }
+                  isCurrentUser={replyToMessage.sender_id === user?.id}
+                  onCancel={() => setReplyToMessage(null)}
+                />
               )}
+              <div className="p-4">
+                {isRecording ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 flex items-center gap-3">
+                      <div className="w-3 h-3 bg-destructive rounded-full animate-pulse" />
+                      <span className="text-sm font-medium">Recording... {formatRecordingTime(recordingDuration)}</span>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={cancelRecording}>
+                      <X className="h-5 w-5" />
+                    </Button>
+                    <Button size="icon" onClick={handleSendVoiceNote} className="bg-primary">
+                      <Send className="h-5 w-5" />
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSendMessage}>
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          ref={inputRef}
+                          placeholder="Type a message..."
+                          value={messageText}
+                          onChange={(e) => {
+                            setMessageText(e.target.value);
+                            if (e.target.value.trim()) {
+                              startTyping();
+                            } else {
+                              stopTyping();
+                            }
+                          }}
+                          onBlur={stopTyping}
+                          className="flex-1"
+                          maxLength={2000}
+                        />
+                        <Button 
+                          type="button" 
+                          size="icon" 
+                          variant="ghost"
+                          onClick={startRecording}
+                          disabled={!!messageText.trim()}
+                        >
+                          <Mic className="h-5 w-5" />
+                        </Button>
+                        <Button type="submit" size="icon" disabled={!messageText.trim()}>
+                          <Send className="h-5 w-5" />
+                        </Button>
+                      </div>
+                      <div className="flex justify-end">
+                        <span className={`text-xs ${messageText.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          {messageText.length}/2000
+                        </span>
+                      </div>
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </div>
         ) : (
