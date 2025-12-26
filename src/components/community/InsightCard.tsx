@@ -30,6 +30,9 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
     e.stopPropagation();
   }, []);
 
+  // Check if this is a text-only insight (no media)
+  const hasMedia = insight.cover_image || (insight.videos && insight.videos.length > 0);
+
   return (
     <Card 
       className="rounded-xl border border-border bg-card shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden max-w-full group"
@@ -63,7 +66,7 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
         )}
         
         {/* Content section - generous padding on mobile, compact on desktop */}
-        <div className="p-4 md:p-3.5">
+        <div className={`p-4 md:p-3.5 ${!hasMedia ? 'md:min-h-[180px] flex flex-col' : ''}`}>
           {/* Author info - larger on mobile, smaller on desktop */}
           <div className="flex items-center gap-3 md:gap-2 mb-3 md:mb-2">
             <Avatar className="w-10 h-10 md:w-8 md:h-8 shrink-0">
@@ -94,13 +97,13 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
             {insight.title}
           </h3>
           
-          {/* Preview text - normal on mobile, shorter on desktop */}
-          <p className="text-sm md:text-sm text-muted-foreground mb-3 md:mb-2 line-clamp-2">
-            <RichTextRenderer content={insight.content} truncate={100} />
+          {/* Preview text - show more text when there's no media */}
+          <p className={`text-sm md:text-sm text-muted-foreground mb-3 md:mb-2 ${!hasMedia ? 'line-clamp-5 md:line-clamp-4 flex-1' : 'line-clamp-2'}`}>
+            <RichTextRenderer content={insight.content} truncate={hasMedia ? 100 : 250} />
           </p>
 
           {/* Footer - spacious on mobile, compact on desktop */}
-          <div className="flex items-center justify-between gap-2 md:gap-1.5">
+          <div className="flex items-center justify-between gap-2 md:gap-1.5 mt-auto">
             <div className="flex items-center gap-3 md:gap-2 text-sm md:text-xs text-muted-foreground">
               <div className="flex items-center gap-1 md:gap-0.5">
                 <Eye className="w-4 h-4 md:w-3 md:h-3" />
