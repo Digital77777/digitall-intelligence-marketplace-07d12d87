@@ -196,12 +196,18 @@ const PublicProfilePage = () => {
 
                   {/* Follower/Following Stats */}
                   <div className="flex items-center gap-4 text-sm text-muted-foreground justify-center md:justify-start">
-                    <div className="flex items-center gap-1">
+                    <div 
+                      className={`flex items-center gap-1 ${user?.id === userId ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                      onClick={() => user?.id === userId && navigate('/community/followers')}
+                    >
                       <Users className="w-4 h-4" />
                       <span className="font-semibold text-foreground">{followersCount}</span>
                       <span>followers</span>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div 
+                      className={`flex items-center gap-1 ${user?.id === userId ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                      onClick={() => user?.id === userId && navigate('/community/followers?tab=following')}
+                    >
                       <span className="font-semibold text-foreground">{followingCount}</span>
                       <span>following</span>
                     </div>
