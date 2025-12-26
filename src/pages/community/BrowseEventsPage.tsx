@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Calendar, Users, Clock, MapPin, Edit2, Search, 
   Video, Building2, Sparkles, ChevronRight, Globe, Zap, CalendarPlus,
-  Mic, Network, Code, Presentation, MessageCircle, GraduationCap, User
+  Mic, Network, Code, Presentation, MessageCircle, GraduationCap, User,
+  LayoutGrid, CalendarDays
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,9 +15,11 @@ import { useCommunity } from "@/hooks/useCommunity";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO, isBefore, isAfter, addMinutes, isToday, isTomorrow } from "date-fns";
 import { EventDetailModal } from "@/components/community/EventDetailModal";
+import { EventCalendar } from "@/components/community/EventCalendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { CommunityEvent } from "@/types/community";
 
 // Event category configuration with icons and colors
@@ -42,6 +45,7 @@ const BrowseEventsPage = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [locationFilter, setLocationFilter] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "month" | "week">("list");
   const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const { useEvents, registerForEvent } = useCommunity();
@@ -208,6 +212,23 @@ const BrowseEventsPage = () => {
                 ))}
               </datalist>
             </div>
+            {/* View Mode Toggle */}
+            <ToggleGroup 
+              type="single" 
+              value={viewMode} 
+              onValueChange={(value) => value && setViewMode(value as "list" | "month" | "week")}
+              className="bg-card border border-border/50 rounded-xl p-1"
+            >
+              <ToggleGroupItem value="list" aria-label="List view" className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="month" aria-label="Month view" className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                <Calendar className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="week" aria-label="Week view" className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                <CalendarDays className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
         </div>
       </div>
@@ -242,8 +263,20 @@ const BrowseEventsPage = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Live Events Banner */}
-        {liveEvents.length > 0 && (
+        {/* Calendar View */}
+        {(viewMode === "month" || viewMode === "week") && (
+          <EventCalendar
+            events={filteredEvents}
+            viewMode={viewMode}
+            onEventClick={setSelectedEvent}
+          />
+        )}
+
+        {/* List View */}
+        {viewMode === "list" && (
+          <>
+            {/* Live Events Banner */}
+            {liveEvents.length > 0 && (
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
@@ -610,6 +643,8 @@ const BrowseEventsPage = () => {
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
 
       {selectedEvent && (
