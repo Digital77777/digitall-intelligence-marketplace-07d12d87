@@ -258,14 +258,14 @@ const ShareInsightPage = () => {
                   <Label htmlFor="content">Content *</Label>
                   <Textarea
                     id="content"
-                    placeholder="Share your insights, experiences, and knowledge with the community..."
+                    placeholder="Share your insights, experiences, and knowledge with the community... You can include #hashtags and links (https://example.com)"
                     value={formData.content}
                     onChange={(e) => handleChange("content", e.target.value)}
                     rows={15}
                     maxLength={5000}
                   />
                   <p className="text-xs text-muted-foreground">
-                    {formData.content.length}/5000 characters. Use markdown for formatting.
+                    {formData.content.length}/5000 characters. Links and #hashtags will be highlighted.
                   </p>
                 </div>
 

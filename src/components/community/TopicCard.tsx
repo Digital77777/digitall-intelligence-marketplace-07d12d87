@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { CommunityTopic } from "@/types/community";
+import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 
 interface TopicCardProps {
   topic: CommunityTopic;
@@ -59,7 +60,7 @@ export const TopicCard = memo(({ topic, onTopicClick, getInitials }: TopicCardPr
             {topic.title}
           </h3>
           <p className="text-sm text-foreground/80 leading-relaxed line-clamp-2">
-            {topic.content}
+            <RichTextRenderer content={topic.content} truncate={150} />
           </p>
         </div>
 
