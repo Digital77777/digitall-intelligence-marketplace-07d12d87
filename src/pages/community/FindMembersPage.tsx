@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MessageCircle, UserPlus, Award, Check, Clock } from "lucide-react";
+import { ArrowLeft, Search, MessageCircle, UserPlus, Award, Check, Clock, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
 import { useConnections } from "@/hooks/useConnections";
+import { useFollows } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
 import { MemberSkeletonGrid } from "@/components/community/MemberCardSkeleton";
 
@@ -20,6 +21,7 @@ const FindMembersPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: members = [], isLoading } = useActiveMembers(searchQuery);
   const { sendConnectionRequest } = useConnections();
+  const { followUser, unfollowUser } = useFollows();
 
   const topContributors = useMemo(() => {
     return members.filter((m) => m.is_top_contributor);
@@ -27,6 +29,14 @@ const FindMembersPage = () => {
 
   const handleConnect = (memberId: string) => {
     sendConnectionRequest.mutate(memberId);
+  };
+
+  const handleFollow = (memberId: string) => {
+    followUser.mutate(memberId);
+  };
+
+  const handleUnfollow = (memberId: string) => {
+    unfollowUser.mutate(memberId);
   };
 
   const handleMessage = (memberId: string) => {
@@ -53,8 +63,11 @@ const FindMembersPage = () => {
 
   const MemberCard = ({ member }: { member: ActiveMember }) => {
     const { useConnectionStatus } = useConnections();
+    const { useFollowStatus } = useFollows();
     const { data: connectionStatus } = useConnectionStatus(member.user_id);
+    const { data: followStatus } = useFollowStatus(member.user_id);
     const isOwnProfile = user?.id === member.user_id;
+    const isFollowing = !!followStatus;
 
     const getConnectionButton = () => {
       if (isOwnProfile) return null;
@@ -83,11 +96,42 @@ const FindMembersPage = () => {
         <Button
           size="sm"
           onClick={() => handleConnect(member.user_id)}
-          className="bg-gradient-ai text-white flex-1 sm:flex-initial"
+          variant="outline"
           disabled={sendConnectionRequest.isPending}
         >
           <UserPlus className="h-4 w-4 sm:mr-1" />
           <span className="hidden sm:inline">Connect</span>
+        </Button>
+      );
+    };
+
+    const getFollowButton = () => {
+      if (isOwnProfile) return null;
+
+      if (isFollowing) {
+        return (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleUnfollow(member.user_id)}
+            disabled={unfollowUser.isPending}
+            className="bg-primary/10 text-primary border-primary/20"
+          >
+            <UserCheck className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Following</span>
+          </Button>
+        );
+      }
+
+      return (
+        <Button
+          size="sm"
+          onClick={() => handleFollow(member.user_id)}
+          className="bg-gradient-ai text-white flex-1 sm:flex-initial"
+          disabled={followUser.isPending}
+        >
+          <UserPlus className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">Follow</span>
         </Button>
       );
     };
@@ -127,6 +171,7 @@ const FindMembersPage = () => {
             </div>
           </div>
           <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
+            {getFollowButton()}
             {getConnectionButton()}
             {!isOwnProfile && (
               <Button
