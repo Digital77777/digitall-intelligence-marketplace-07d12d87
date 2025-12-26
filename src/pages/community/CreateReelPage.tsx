@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Video, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Video, Loader2, Scissors } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
+import { VideoTrimmer } from "@/components/media/VideoTrimmer";
 
 const CreateReelPage = () => {
   const navigate = useNavigate();
@@ -23,6 +24,8 @@ const CreateReelPage = () => {
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showTrimmer, setShowTrimmer] = useState(false);
+  const [isTrimmed, setIsTrimmed] = useState(false);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,6 +54,34 @@ const CreateReelPage = () => {
 
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
+    setShowTrimmer(true);
+    setIsTrimmed(false);
+  };
+
+  const handleTrimComplete = (trimmedBlob: Blob) => {
+    // Clean up old preview
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
+    }
+    
+    // Create new file from trimmed blob
+    const trimmedFile = new File([trimmedBlob], videoFile?.name || "trimmed-video.webm", {
+      type: trimmedBlob.type,
+    });
+    
+    setVideoFile(trimmedFile);
+    setVideoPreview(URL.createObjectURL(trimmedBlob));
+    setShowTrimmer(false);
+    setIsTrimmed(true);
+    
+    toast({
+      title: "Video trimmed",
+      description: "Your video has been trimmed successfully.",
+    });
+  };
+
+  const handleCancelTrim = () => {
+    setShowTrimmer(false);
   };
 
   const removeVideo = () => {
@@ -219,22 +250,47 @@ const CreateReelPage = () => {
                         MP4, WebM, MOV, AVI (max 100MB)
                       </p>
                     </div>
+                  ) : showTrimmer ? (
+                    <VideoTrimmer
+                      videoFile={videoFile!}
+                      videoUrl={videoPreview}
+                      onTrimComplete={handleTrimComplete}
+                      onCancel={handleCancelTrim}
+                    />
                   ) : (
-                    <div className="relative rounded-lg overflow-hidden bg-black aspect-[9/16] max-w-xs mx-auto">
-                      <video
-                        src={videoPreview}
-                        className="w-full h-full object-contain"
-                        controls
-                        muted
-                      />
+                    <div className="space-y-3">
+                      <div className="relative rounded-lg overflow-hidden bg-black aspect-[9/16] max-w-xs mx-auto">
+                        <video
+                          src={videoPreview}
+                          className="w-full h-full object-contain"
+                          controls
+                          muted
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2"
+                          onClick={removeVideo}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                        {isTrimmed && (
+                          <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            <Scissors className="w-3 h-3" />
+                            Trimmed
+                          </div>
+                        )}
+                      </div>
                       <Button
                         type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2"
-                        onClick={removeVideo}
+                        variant="outline"
+                        size="sm"
+                        className="w-full max-w-xs mx-auto flex"
+                        onClick={() => setShowTrimmer(true)}
                       >
-                        <X className="w-4 h-4" />
+                        <Scissors className="w-4 h-4 mr-2" />
+                        {isTrimmed ? "Trim Again" : "Trim Video"}
                       </Button>
                     </div>
                   )}
