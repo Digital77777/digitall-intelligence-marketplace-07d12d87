@@ -19,7 +19,41 @@ export const StarterDashboard = () => {
         .select('*', { count: 'exact', head: true });
       setMemberCount(count);
     };
+    
     fetchMemberCount();
+
+    // Subscribe to real-time changes on profiles table
+    const channel = supabase
+      .channel('profiles-count')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          // Increment count when a new member joins
+          setMemberCount(prev => (prev ?? 0) + 1);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          // Decrement count when a member is removed
+          setMemberCount(prev => Math.max(0, (prev ?? 1) - 1));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const benefits = [
