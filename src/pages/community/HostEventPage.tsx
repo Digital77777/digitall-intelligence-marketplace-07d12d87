@@ -61,6 +61,8 @@ const HostEventPage = () => {
     coverImage: "",
     venueName: "",
     fullAddress: "",
+    city: "",
+    country: "",
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
     tags: [] as string[],
     requirements: "",
@@ -177,6 +179,8 @@ const HostEventPage = () => {
         cover_image: formData.coverImage || undefined,
         venue_name: formData.venueName.trim() || undefined,
         full_address: formData.fullAddress.trim() || undefined,
+        city: formData.city.trim() || undefined,
+        country: formData.country.trim() || undefined,
         timezone: formData.timezone,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         requirements: formData.requirements.trim() || undefined,
@@ -479,6 +483,30 @@ const HostEventPage = () => {
 
                 {showLocationFields && (
                   <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">City *</Label>
+                        <Input
+                          id="city"
+                          placeholder="e.g., San Francisco"
+                          value={formData.city}
+                          onChange={(e) => handleChange("city", e.target.value)}
+                          maxLength={100}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="country">Country *</Label>
+                        <Input
+                          id="country"
+                          placeholder="e.g., United States"
+                          value={formData.country}
+                          onChange={(e) => handleChange("country", e.target.value)}
+                          maxLength={100}
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="venueName">Venue Name</Label>
                       <Input
@@ -494,14 +522,14 @@ const HostEventPage = () => {
                       <Label htmlFor="fullAddress">Full Address</Label>
                       <Textarea
                         id="fullAddress"
-                        placeholder="e.g., 123 Innovation Street, Tech District, City, Country"
+                        placeholder="e.g., 123 Innovation Street, Tech District"
                         value={formData.fullAddress}
                         onChange={(e) => handleChange("fullAddress", e.target.value)}
                         rows={2}
                         maxLength={300}
                       />
                       <p className="text-xs text-muted-foreground">
-                        Include street, city, and country for easy navigation
+                        Street address for navigation
                       </p>
                     </div>
                   </div>

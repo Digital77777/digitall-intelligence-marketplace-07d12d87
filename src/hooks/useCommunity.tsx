@@ -167,6 +167,8 @@ export const useCommunity = () => {
       cover_image?: string;
       venue_name?: string;
       full_address?: string;
+      city?: string;
+      country?: string;
       timezone?: string;
       tags?: string[];
       requirements?: string;
@@ -221,6 +223,8 @@ export const useCommunity = () => {
         cover_image?: string | null;
         venue_name?: string | null;
         full_address?: string | null;
+        city?: string | null;
+        country?: string | null;
         timezone?: string;
         tags?: string[];
         requirements?: string | null;
