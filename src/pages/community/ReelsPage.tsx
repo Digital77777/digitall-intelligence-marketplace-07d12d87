@@ -349,6 +349,12 @@ const ReelsPage = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Touch gesture state
+  const touchStartY = useRef<number>(0);
+  const touchStartX = useRef<number>(0);
+  const touchStartTime = useRef<number>(0);
+  const isScrolling = useRef<boolean>(false);
 
   // Set initial index if reelId provided
   useEffect(() => {
@@ -376,12 +382,62 @@ const ReelsPage = () => {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [activeIndex, reels.length]);
 
-  // Scroll to reel on activeIndex change (for keyboard navigation)
+  // Scroll to reel on activeIndex change (for keyboard/swipe navigation)
   const scrollToReel = useCallback((index: number) => {
     const container = containerRef.current;
     if (!container || index < 0 || index >= reels.length) return;
     container.scrollTo({ top: index * container.clientHeight, behavior: "smooth" });
   }, [reels.length]);
+
+  // Touch gesture handlers for swipe navigation
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    touchStartX.current = e.touches[0].clientX;
+    touchStartTime.current = Date.now();
+    isScrolling.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isScrolling.current) return;
+    
+    const deltaX = Math.abs(e.touches[0].clientX - touchStartX.current);
+    const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
+    
+    // Determine if this is a vertical scroll (for reels) vs horizontal gesture
+    if (deltaY > deltaX && deltaY > 10) {
+      isScrolling.current = true;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndTime = Date.now();
+    const deltaY = touchStartY.current - touchEndY;
+    const deltaTime = touchEndTime - touchStartTime.current;
+    
+    // Calculate velocity for swipe detection
+    const velocity = Math.abs(deltaY) / deltaTime;
+    const minSwipeDistance = 50;
+    const minVelocity = 0.3;
+    
+    // Fast swipe or sufficient distance triggers navigation
+    if ((Math.abs(deltaY) > minSwipeDistance || velocity > minVelocity) && isScrolling.current) {
+      if (deltaY > 0 && activeIndex < reels.length - 1) {
+        // Swipe up - go to next reel
+        scrollToReel(activeIndex + 1);
+        // Haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate(10);
+        }
+      } else if (deltaY < 0 && activeIndex > 0) {
+        // Swipe down - go to previous reel
+        scrollToReel(activeIndex - 1);
+        if (navigator.vibrate) {
+          navigator.vibrate(10);
+        }
+      }
+    }
+  }, [activeIndex, reels.length, scrollToReel]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -457,11 +513,14 @@ const ReelsPage = () => {
         </div>
       </div>
 
-      {/* Reels container with snap scroll */}
+      {/* Reels container with snap scroll and touch gestures */}
       <div
         ref={containerRef}
-        className="w-full h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollSnapType: "y mandatory" }}
+        className="w-full h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide touch-pan-y"
+        style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch" }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         {reels.map((reel, index) => (
           <div key={reel.id} className="w-full h-screen">
