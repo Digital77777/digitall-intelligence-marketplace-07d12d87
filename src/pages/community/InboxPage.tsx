@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Search, MoreVertical, Check, X } from 'lucide-react';
+import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,8 +30,9 @@ const InboxPage = () => {
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
   const { data: messages, isLoading: messagesLoading } = useConversationMessages(selectedUserId);
   
-  const { usePendingRequests, acceptConnectionRequest, ignoreConnectionRequest } = useConnections();
+  const { usePendingRequests, useAcceptedConnections, acceptConnectionRequest, ignoreConnectionRequest } = useConnections();
   const { data: pendingRequests = [] } = usePendingRequests();
+  const { data: acceptedConnections = [], isLoading: connectionsLoading } = useAcceptedConnections();
 
   const selectedConversation = conversations?.find((c) => c.user_id === selectedUserId);
 
@@ -91,6 +92,14 @@ const InboxPage = () => {
     return (
       conv.full_name?.toLowerCase().includes(searchLower) ||
       conv.email?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const filteredConnections = acceptedConnections?.filter((conn) => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      conn.connected_user?.full_name?.toLowerCase().includes(searchLower) ||
+      conn.connected_user?.email?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -189,6 +198,67 @@ const InboxPage = () => {
                 </div>
               </ScrollArea>
               <Separator className="mt-3" />
+            </div>
+          )}
+
+          {/* Connected Members */}
+          {filteredConnections && filteredConnections.length > 0 && (
+            <div className="p-3 border-b border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-semibold">My Connections</p>
+                <Badge variant="secondary" className="text-xs">
+                  {filteredConnections.length}
+                </Badge>
+              </div>
+              <ScrollArea className="max-h-48">
+                <div className="space-y-1">
+                  {filteredConnections.map((conn) => (
+                    <button
+                      key={conn.id}
+                      onClick={() => setSelectedUserId(conn.connected_user?.user_id)}
+                      className={`w-full flex items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors ${
+                        selectedUserId === conn.connected_user?.user_id ? 'bg-accent' : ''
+                      }`}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={conn.connected_user?.avatar_url || undefined} />
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                          {getInitials(conn.connected_user?.full_name || undefined, conn.connected_user?.email || undefined)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-medium truncate">
+                          {conn.connected_user?.full_name || conn.connected_user?.email || 'Unknown User'}
+                        </p>
+                        {conn.connected_user?.headline && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {conn.connected_user.headline}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+              <Separator className="mt-3" />
+            </div>
+          )}
+
+          {connectionsLoading && (
+            <div className="p-3 border-b border-border">
+              <div className="flex items-center gap-2 mb-2">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2 p-2">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

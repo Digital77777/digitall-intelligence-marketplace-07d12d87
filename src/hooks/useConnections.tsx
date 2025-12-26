@@ -95,6 +95,47 @@ export const useConnections = () => {
     });
   };
 
+  // Get all accepted connections
+  const useAcceptedConnections = () => {
+    return useQuery({
+      queryKey: ["accepted-connections"],
+      queryFn: async () => {
+        if (!user) return [];
+
+        const { data, error } = await supabase
+          .from("user_connections")
+          .select("*")
+          .eq("status", "accepted")
+          .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`)
+          .order("updated_at", { ascending: false });
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) return [];
+
+        // Get the other user's ID for each connection
+        const otherUserIds = data.map((conn) =>
+          conn.requester_id === user.id ? conn.recipient_id : conn.requester_id
+        );
+
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, email, avatar_url, headline")
+          .in("user_id", otherUserIds);
+
+        return data.map((conn) => {
+          const otherUserId = conn.requester_id === user.id ? conn.recipient_id : conn.requester_id;
+          const profile = profiles?.find((p) => p.user_id === otherUserId);
+          return {
+            ...conn,
+            connected_user: profile || null,
+          };
+        });
+      },
+      enabled: !!user,
+    });
+  };
+
   // Send connection request
   const sendConnectionRequest = useMutation({
     mutationFn: async (recipientId: string) => {
@@ -193,6 +234,7 @@ export const useConnections = () => {
   return {
     useConnectionStatus,
     usePendingRequests,
+    useAcceptedConnections,
     sendConnectionRequest,
     acceptConnectionRequest,
     ignoreConnectionRequest,
