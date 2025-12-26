@@ -183,7 +183,7 @@ const TopicDetailPage = () => {
               </AvatarFallback>
             </Avatar>
             <span className="font-medium">
-              {topic.profiles?.full_name || topic.profiles?.email || "Anonymous"}
+              {topic.profiles?.full_name || "Community Member"}
               </span>
             </div>
             <span>•</span>
@@ -236,7 +236,7 @@ const TopicDetailPage = () => {
                           }}
                         >
                           <p className="font-medium text-sm">
-                            {reply.profiles?.full_name || reply.profiles?.email || "Anonymous"}
+                            {reply.profiles?.full_name || "Community Member"}
                             {reply.user_id === topic.user_id && (
                               <Badge variant="secondary" className="ml-2 text-xs">
                                 Author

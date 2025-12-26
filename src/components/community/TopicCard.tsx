@@ -39,7 +39,7 @@ export const TopicCard = memo(({ topic, onTopicClick, getInitials }: TopicCardPr
             }}
           >
             <p className="font-semibold text-sm leading-tight truncate">
-              {topic.profiles?.full_name || topic.profiles?.email || "Anonymous"}
+              {topic.profiles?.full_name || "Community Member"}
             </p>
             <p className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(topic.created_at), { addSuffix: true })}

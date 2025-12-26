@@ -72,7 +72,7 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm md:text-sm truncate">
-                {insight.profiles?.full_name || insight.profiles?.email || "Anonymous"}
+                {insight.profiles?.full_name || "Community Member"}
               </p>
               <div className="flex flex-wrap items-center gap-2 md:gap-1.5">
                 <Badge variant="outline" className="text-xs md:text-xs px-2 md:px-1.5 py-0.5 md:py-0">

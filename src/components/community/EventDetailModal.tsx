@@ -241,13 +241,8 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   </Avatar>
                   <div>
                     <p className="font-medium">
-                      {event.profiles.full_name || "Unknown User"}
+                      {event.profiles.full_name || "Community Member"}
                     </p>
-                    {event.profiles.email && (
-                      <p className="text-sm text-muted-foreground">
-                        {event.profiles.email}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
