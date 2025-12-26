@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, ChevronUp, ChevronDown, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, Loader2, Plus, Music2, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useReels } from "@/hooks/useReels";
@@ -29,9 +29,11 @@ interface ReelItemProps {
 const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLiked, setIsLiked] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [likesCount, setLikesCount] = useState(reel.likes_count);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
   const [authorProfile, setAuthorProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,25 +73,30 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (isActive) {
+    if (isActive && !isPaused) {
       video.muted = isMuted;
       video.play().catch(() => {});
     } else {
       video.pause();
-      video.currentTime = 0;
+      if (!isActive) video.currentTime = 0;
     }
-  }, [isActive, isMuted]);
+  }, [isActive, isMuted, isPaused]);
 
-  const handleDoubleTap = useCallback(() => {
+  const handleTap = useCallback(() => {
     const now = Date.now();
     if (now - lastTapRef.current < 300) {
-      // Double tap - toggle like
-      handleLike();
+      // Double tap - like
+      if (!isLiked) {
+        handleLike();
+      }
       setShowLikeAnimation(true);
       setTimeout(() => setShowLikeAnimation(false), 800);
+    } else {
+      // Single tap - pause/play
+      setIsPaused(prev => !prev);
     }
     lastTapRef.current = now;
-  }, []);
+  }, [isLiked]);
 
   const handleLike = async () => {
     if (!user) {
@@ -140,8 +147,30 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
+  const formatCount = (count: number) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  };
+
   return (
-    <div className="relative w-full h-screen snap-start snap-always bg-black flex items-center justify-center">
+    <div className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden">
+      {/* Full-screen video */}
+      <video
+        ref={videoRef}
+        src={reel.video_url}
+        poster={reel.thumbnail_url || undefined}
+        className="absolute inset-0 w-full h-full object-cover"
+        loop
+        playsInline
+        muted={isMuted}
+        autoPlay={isActive}
+        onClick={handleTap}
+        onWaiting={() => setIsBuffering(true)}
+        onPlaying={() => setIsBuffering(false)}
+        onCanPlay={() => setIsBuffering(false)}
+      />
+
       {/* Loading spinner */}
       {isBuffering && isActive && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -149,85 +178,165 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
         </div>
       )}
 
-      {/* Video */}
-      <video
-        ref={videoRef}
-        src={reel.video_url}
-        poster={reel.thumbnail_url || undefined}
-        className="max-w-full max-h-full object-contain"
-        loop
-        playsInline
-        muted={isMuted}
-        autoPlay={isActive}
-        onClick={handleDoubleTap}
-        onDoubleClick={handleLike}
-        onWaiting={() => setIsBuffering(true)}
-        onPlaying={() => setIsBuffering(false)}
-        onCanPlay={() => setIsBuffering(false)}
-      />
-
-      {/* Double-tap like animation */}
-      {showLikeAnimation && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <Heart className="w-24 h-24 text-red-500 fill-red-500 animate-in zoom-in-50 fade-in duration-200" />
+      {/* Pause indicator */}
+      {isPaused && isActive && !isBuffering && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+          <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center">
+            <div className="w-0 h-0 border-l-[24px] border-l-white border-y-[14px] border-y-transparent ml-2" />
+          </div>
         </div>
       )}
 
-      {/* Right side actions */}
-      <div className="absolute right-3 bottom-24 flex flex-col items-center gap-6 z-10">
-        {/* Author avatar */}
-        <button onClick={() => navigate(`/profile/${reel.user_id}`)} className="relative">
-          <Avatar className="w-12 h-12 border-2 border-white">
-            <AvatarImage src={authorProfile?.avatar_url || undefined} />
-            <AvatarFallback className="bg-primary text-primary-foreground">
-              {getInitials(authorProfile?.full_name)}
-            </AvatarFallback>
-          </Avatar>
-        </button>
+      {/* Double-tap like animation */}
+      {showLikeAnimation && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+          <Heart 
+            className="w-32 h-32 text-white fill-white animate-in zoom-in-50 fade-in duration-200" 
+            style={{ 
+              filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
+              animation: 'heartPop 0.8s ease-out forwards'
+            }} 
+          />
+        </div>
+      )}
+
+      {/* Top gradient overlay */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 via-black/30 to-transparent z-10 pointer-events-none" />
+
+      {/* Bottom gradient overlay */}
+      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
+
+      {/* Right side actions - Instagram style */}
+      <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20">
+        {/* Author avatar with follow button */}
+        <div className="relative mb-2">
+          <button 
+            onClick={() => navigate(`/profile/${reel.user_id}`)} 
+            className="block"
+          >
+            <Avatar className="w-12 h-12 border-2 border-white shadow-lg">
+              <AvatarImage src={authorProfile?.avatar_url || undefined} />
+              <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white font-semibold">
+                {getInitials(authorProfile?.full_name)}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center border-2 border-black">
+            <Plus className="w-3 h-3 text-white" />
+          </div>
+        </div>
 
         {/* Like button */}
-        <button onClick={handleLike} className="flex flex-col items-center gap-1">
-          <div className={`p-2 rounded-full ${isLiked ? "text-red-500" : "text-white"}`}>
-            <Heart className={`w-7 h-7 ${isLiked ? "fill-red-500" : ""}`} />
+        <button onClick={handleLike} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+          <div className={`p-0.5 ${isLiked ? "text-red-500" : "text-white"}`}>
+            <Heart 
+              className={`w-8 h-8 ${isLiked ? "fill-red-500" : ""}`} 
+              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+            />
           </div>
-          <span className="text-white text-xs font-medium">{likesCount}</span>
+          <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            {formatCount(likesCount)}
+          </span>
         </button>
 
         {/* Comment button */}
-        <button onClick={handleViewInsight} className="flex flex-col items-center gap-1">
-          <div className="p-2 rounded-full text-white">
-            <MessageCircle className="w-7 h-7" />
+        <button onClick={handleViewInsight} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+          <div className="text-white p-0.5">
+            <MessageCircle 
+              className="w-8 h-8" 
+              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+            />
           </div>
-          <span className="text-white text-xs font-medium">View</span>
+          <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            View
+          </span>
         </button>
 
         {/* Share button */}
-        <button onClick={handleShare} className="flex flex-col items-center gap-1">
-          <div className="p-2 rounded-full text-white">
-            <Share2 className="w-7 h-7" />
+        <button onClick={handleShare} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+          <div className="text-white p-0.5">
+            <Share2 
+              className="w-7 h-7" 
+              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+            />
           </div>
-          <span className="text-white text-xs font-medium">Share</span>
         </button>
 
-        {/* Mute button */}
-        <button onClick={onMuteToggle} className="flex flex-col items-center gap-1">
-          <div className="p-2 rounded-full text-white">
-            {isMuted ? <VolumeX className="w-7 h-7" /> : <Volume2 className="w-7 h-7" />}
+        {/* Save button */}
+        <button 
+          onClick={() => setIsSaved(!isSaved)} 
+          className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
+        >
+          <div className="text-white p-0.5">
+            <Bookmark 
+              className={`w-7 h-7 ${isSaved ? "fill-white" : ""}`}
+              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
+            />
           </div>
         </button>
+
+        {/* Rotating music disc */}
+        <div className="mt-2">
+          <div 
+            className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg"
+            style={{ 
+              animation: isActive && !isPaused ? 'spin 3s linear infinite' : 'none',
+            }}
+          >
+            <Avatar className="w-full h-full rounded-lg">
+              <AvatarImage src={authorProfile?.avatar_url || undefined} className="object-cover" />
+              <AvatarFallback className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg">
+                <Music2 className="w-4 h-4 text-white/60" />
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </div>
       </div>
 
-      {/* Bottom info */}
-      <div className="absolute bottom-6 left-4 right-20 z-10">
-        <button onClick={() => navigate(`/profile/${reel.user_id}`)} className="flex items-center gap-2 mb-2">
-          <span className="text-white font-semibold text-sm">
+      {/* Bottom info - Instagram style */}
+      <div className="absolute bottom-6 left-4 right-20 z-20">
+        {/* Username */}
+        <button 
+          onClick={() => navigate(`/profile/${reel.user_id}`)} 
+          className="flex items-center gap-2 mb-2"
+        >
+          <span className="text-white font-bold text-base" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
             @{authorProfile?.full_name?.toLowerCase().replace(/\s+/g, "_") || "user"}
           </span>
         </button>
+        
+        {/* Caption */}
         {reel.title && (
-          <p className="text-white text-sm line-clamp-2">{reel.title}</p>
+          <p 
+            className="text-white text-sm line-clamp-2 leading-relaxed" 
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+          >
+            {reel.title}
+          </p>
         )}
+
+        {/* Audio indicator */}
+        <div className="flex items-center gap-2 mt-3">
+          <div className="flex items-center gap-2 bg-black/30 rounded-full px-3 py-1.5 backdrop-blur-sm">
+            <Music2 className="w-3.5 h-3.5 text-white" />
+            <span className="text-white text-xs font-medium truncate max-w-[150px]">
+              Original audio · {authorProfile?.full_name || "Creator"}
+            </span>
+          </div>
+        </div>
       </div>
+
+      {/* Mute button - bottom right corner */}
+      <button 
+        onClick={onMuteToggle} 
+        className="absolute bottom-8 right-4 z-20 p-2 rounded-full bg-black/40 backdrop-blur-sm active:scale-90 transition-transform"
+      >
+        {isMuted ? (
+          <VolumeX className="w-4 h-4 text-white" />
+        ) : (
+          <Volume2 className="w-4 h-4 text-white" />
+        )}
+      </button>
     </div>
   );
 };
@@ -236,7 +345,7 @@ const ReelsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialReelId = searchParams.get("reel") || undefined;
-  const { reels, isLoading, currentIndex, goToReel, totalReels } = useReels(initialReelId);
+  const { reels, isLoading } = useReels(initialReelId);
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -320,43 +429,42 @@ const ReelsPage = () => {
         description="Watch engaging short-form video content from our AI community."
       />
       
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 flex items-center justify-between bg-gradient-to-b from-black/60 to-transparent">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </Button>
-        <span className="text-white font-semibold">Reels</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-white hover:bg-white/20"
-          onClick={() => navigate("/community/create-reel")}
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </div>
-
-      {/* Navigation hints */}
-      <div className="absolute left-1/2 -translate-x-1/2 top-20 z-20 flex flex-col items-center gap-1 opacity-50 pointer-events-none">
-        {activeIndex > 0 && <ChevronUp className="w-6 h-6 text-white animate-bounce" />}
-      </div>
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-20 z-20 flex flex-col items-center gap-1 opacity-50 pointer-events-none">
-        {activeIndex < reels.length - 1 && <ChevronDown className="w-6 h-6 text-white animate-bounce" />}
+      {/* Header - Instagram style */}
+      <div className="absolute top-0 left-0 right-0 z-30 safe-area-inset-top">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10 -ml-2"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-6 h-6" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
+          </Button>
+          <span 
+            className="text-white font-bold text-lg"
+            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
+          >
+            Reels
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10 -mr-2"
+            onClick={() => navigate("/community/create-reel")}
+          >
+            <Plus className="w-6 h-6" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
+          </Button>
+        </div>
       </div>
 
       {/* Reels container with snap scroll */}
       <div
         ref={containerRef}
-        className="w-full h-full overflow-y-auto snap-y snap-mandatory"
-        style={{ scrollSnapType: "y mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="w-full h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide"
+        style={{ scrollSnapType: "y mandatory" }}
       >
         {reels.map((reel, index) => (
-          <div key={reel.id} className="w-full" style={{ height: "100vh" }}>
+          <div key={reel.id} className="w-full h-screen">
             <ReelItem
               reel={reel}
               isActive={index === activeIndex}
@@ -367,17 +475,20 @@ const ReelsPage = () => {
         ))}
       </div>
 
-      {/* Progress indicator */}
-      <div className="absolute top-16 left-0 right-0 z-20 flex gap-1 px-4">
-        {reels.map((_, index) => (
-          <div
-            key={index}
-            className={`h-0.5 flex-1 rounded-full transition-colors ${
-              index === activeIndex ? "bg-white" : "bg-white/30"
-            }`}
-          />
-        ))}
-      </div>
+      {/* Custom styles for animations */}
+      <style>{`
+        @keyframes heartPop {
+          0% { transform: scale(0); opacity: 0; }
+          15% { transform: scale(1.2); opacity: 1; }
+          30% { transform: scale(0.95); }
+          45% { transform: scale(1.05); }
+          60% { transform: scale(1); }
+          100% { transform: scale(1); opacity: 0; }
+        }
+        .safe-area-inset-top {
+          padding-top: env(safe-area-inset-top, 0px);
+        }
+      `}</style>
     </div>
   );
 };
