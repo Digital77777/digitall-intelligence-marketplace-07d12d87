@@ -729,6 +729,41 @@ export type Database = {
           },
         ]
       }
+      insight_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          insight_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          insight_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          insight_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insight_comments_insight_id_fkey"
+            columns: ["insight_id"]
+            isOneToOne: false
+            referencedRelation: "community_insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       insight_likes: {
         Row: {
           created_at: string | null
