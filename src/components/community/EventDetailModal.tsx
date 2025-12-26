@@ -12,13 +12,26 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Calendar, Clock, Users, MapPin, ExternalLink, Check, 
-  Globe, Tag, FileText, Mail 
+  Globe, Tag, FileText, Mail, Pencil, Trash2
 } from "lucide-react";
 import type { CommunityEvent } from "@/types/community";
 import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useCommunity } from "@/hooks/useCommunity";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface EventDetailModalProps {
   event: CommunityEvent | null;
@@ -34,6 +47,12 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   onJoinEvent,
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { deleteEvent } = useCommunity();
+  
+  if (!event) return null;
+
+  const isOwner = user?.id === event.user_id;
   
   if (!event) return null;
 
@@ -319,26 +338,68 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
             </>
           )}
 
-          {/* Action Button */}
-          <div className="flex gap-3 pt-4">
-            <Button
-              onClick={handleJoinClick}
-              disabled={event.status !== 'upcoming'}
-              className="flex-1"
-              variant={event.is_registered ? "outline" : "default"}
-            >
-              {event.is_registered ? (
-                <>
-                  <Check className="w-4 h-4 mr-2" />
-                  Registered
-                </>
-              ) : (
-                <>
-                  <Users className="w-4 h-4 mr-2" />
-                  Register for Event
-                </>
-              )}
-            </Button>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 pt-4">
+            {isOwner ? (
+              <>
+                <Button
+                  onClick={() => {
+                    onClose();
+                    navigate(`/community/edit-event/${event.id}`);
+                  }}
+                  className="flex-1"
+                >
+                  <Pencil className="w-4 h-4 mr-2" />
+                  Edit Event
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="icon">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Event?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action cannot be undone. All registrations will be cancelled.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={async () => {
+                          await deleteEvent.mutateAsync(event.id);
+                          onClose();
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            ) : (
+              <Button
+                onClick={handleJoinClick}
+                disabled={event.status !== 'upcoming'}
+                className="flex-1"
+                variant={event.is_registered ? "outline" : "default"}
+              >
+                {event.is_registered ? (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Registered
+                  </>
+                ) : (
+                  <>
+                    <Users className="w-4 h-4 mr-2" />
+                    Register for Event
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
