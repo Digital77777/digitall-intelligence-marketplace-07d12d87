@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { SEOHead } from "@/components/SEOHead";
 import { ReelSkeleton } from "@/components/community/ReelSkeleton";
+import { CommentsOverlay } from "@/components/community/CommentsOverlay";
 
 interface ReelItemProps {
   reel: {
@@ -24,9 +25,11 @@ interface ReelItemProps {
   isActive: boolean;
   isMuted: boolean;
   onMuteToggle: () => void;
+  onOpenComments: () => void;
+  commentsCount: number;
 }
 
-const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
+const ReelItem = ({ reel, isActive, isMuted, onMuteToggle, onOpenComments, commentsCount }: ReelItemProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isLiked, setIsLiked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -240,7 +243,7 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
         </button>
 
         {/* Comment button */}
-        <button onClick={handleViewInsight} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
+        <button onClick={onOpenComments} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
           <div className="text-white p-0.5">
             <MessageCircle 
               className="w-8 h-8" 
@@ -248,7 +251,7 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
             />
           </div>
           <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-            View
+            {commentsCount > 0 ? formatCount(commentsCount) : "Comment"}
           </span>
         </button>
 
@@ -350,11 +353,49 @@ const ReelsPage = () => {
   const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   
+  // Comments overlay state
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null);
+  const [commentsCounts, setCommentsCounts] = useState<Record<string, number>>({});
+  
   // Touch gesture state
   const touchStartY = useRef<number>(0);
   const touchStartX = useRef<number>(0);
   const touchStartTime = useRef<number>(0);
   const isScrolling = useRef<boolean>(false);
+
+  // Fetch comments counts for all reels
+  useEffect(() => {
+    if (reels.length === 0) return;
+    
+    const fetchCommentsCounts = async () => {
+      const insightIds = reels.map(r => r.insight_id);
+      const { data } = await supabase
+        .from("insight_comments")
+        .select("insight_id")
+        .in("insight_id", insightIds);
+      
+      if (data) {
+        const counts: Record<string, number> = {};
+        data.forEach((c) => {
+          counts[c.insight_id] = (counts[c.insight_id] || 0) + 1;
+        });
+        setCommentsCounts(counts);
+      }
+    };
+    
+    fetchCommentsCounts();
+  }, [reels]);
+
+  const handleOpenComments = (insightId: string) => {
+    setSelectedInsightId(insightId);
+    setCommentsOpen(true);
+  };
+
+  const handleCloseComments = () => {
+    setCommentsOpen(false);
+    setSelectedInsightId(null);
+  };
 
   // Set initial index if reelId provided
   useEffect(() => {
@@ -529,10 +570,21 @@ const ReelsPage = () => {
               isActive={index === activeIndex}
               isMuted={isMuted}
               onMuteToggle={() => setIsMuted((prev) => !prev)}
+              onOpenComments={() => handleOpenComments(reel.insight_id)}
+              commentsCount={commentsCounts[reel.insight_id] || 0}
             />
           </div>
         ))}
       </div>
+
+      {/* Comments overlay */}
+      {selectedInsightId && (
+        <CommentsOverlay
+          insightId={selectedInsightId}
+          isOpen={commentsOpen}
+          onClose={handleCloseComments}
+        />
+      )}
 
       {/* Custom styles for animations */}
       <style>{`
