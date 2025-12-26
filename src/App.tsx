@@ -64,6 +64,7 @@ const TopicDetailPage = lazy(() => import("./pages/community/TopicDetailPage"));
 const BrowseEventsPage = lazy(() => import("./pages/community/BrowseEventsPage"));
 const FindMembersPage = lazy(() => import("./pages/community/FindMembersPage"));
 const HostEventPage = lazy(() => import("./pages/community/HostEventPage"));
+const EditEventPage = lazy(() => import("./pages/community/EditEventPage"));
 const InboxPage = lazy(() => import("./pages/community/InboxPage"));
 const ShareInsightPage = lazy(() => import("./pages/community/ShareInsightPage"));
 const StartTopicPage = lazy(() => import("./pages/community/StartTopicPage"));
@@ -179,6 +180,7 @@ const routeGroups: AppRoute[] = [
   { path: "/community/events", component: BrowseEventsPage, protected: true }, // Redirect alias for browse-events
   { path: "/community/find-members", component: FindMembersPage, protected: true },
   { path: "/community/host-event", component: HostEventPage, protected: true },
+  { path: "/community/edit-event/:eventId", component: EditEventPage, protected: true },
   { path: "/community/inbox", component: InboxPage, protected: true },
   { path: "/community/share-insight", component: ShareInsightPage, protected: true },
   { path: "/community/start-topic", component: StartTopicPage, protected: true },

@@ -204,6 +204,113 @@ export const useCommunity = () => {
     },
   });
 
+  const updateEvent = useMutation({
+    mutationFn: async ({ eventId, data }: {
+      eventId: string;
+      data: {
+        title?: string;
+        description?: string;
+        event_type?: string;
+        event_date?: string;
+        event_time?: string;
+        duration_minutes?: number;
+        max_attendees?: number | null;
+        meeting_link?: string | null;
+        location?: string | null;
+        is_online?: boolean;
+        cover_image?: string | null;
+        venue_name?: string | null;
+        full_address?: string | null;
+        timezone?: string;
+        tags?: string[];
+        requirements?: string | null;
+        language?: string;
+        contact_email?: string | null;
+      };
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // First, update the event
+      const { error: updateError } = await supabase
+        .from("community_events")
+        .update(data)
+        .eq("id", eventId)
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      // Get attendees to notify them
+      const { data: attendees } = await supabase
+        .from("event_attendees")
+        .select("user_id")
+        .eq("event_id", eventId);
+
+      // Create notifications for all attendees (except the host)
+      if (attendees && attendees.length > 0) {
+        const notifications = attendees
+          .filter(a => a.user_id !== user.id)
+          .map(a => ({
+            user_id: a.user_id,
+            type: "event_updated",
+            message: `Event "${data.title}" has been updated`,
+            metadata: { event_id: eventId }
+          }));
+
+        if (notifications.length > 0) {
+          await supabase.from("notifications").insert(notifications);
+        }
+      }
+
+      return { eventId };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["community-events"] });
+      queryClient.invalidateQueries({ queryKey: ["my-activity"] });
+      toast({
+        title: "Event Updated!",
+        description: "Your event has been updated and attendees have been notified.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteEvent = useMutation({
+    mutationFn: async (eventId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("community_events")
+        .delete()
+        .eq("id", eventId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["community-events"] });
+      queryClient.invalidateQueries({ queryKey: ["my-activity"] });
+      toast({
+        title: "Event Deleted",
+        description: "Your event has been removed.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const registerForEvent = useMutation({
     mutationFn: async (eventId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -576,6 +683,8 @@ export const useCommunity = () => {
     deleteReply,
     useEvents,
     createEvent,
+    updateEvent,
+    deleteEvent,
     registerForEvent,
     useInsights,
     createInsight,
