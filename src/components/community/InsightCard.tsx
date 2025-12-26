@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { CommunityInsight } from "@/types/community";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
+import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 
 interface InsightCardProps {
   insight: CommunityInsight;
@@ -95,7 +96,7 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
           
           {/* Preview text - normal on mobile, shorter on desktop */}
           <p className="text-sm md:text-sm text-muted-foreground mb-3 md:mb-2 line-clamp-2">
-            {insight.content.substring(0, 100)}...
+            <RichTextRenderer content={insight.content} truncate={100} />
           </p>
 
           {/* Footer - spacious on mobile, compact on desktop */}

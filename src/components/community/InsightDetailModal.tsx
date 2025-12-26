@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
+import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 
 interface InsightDetailModalProps {
   insight: CommunityInsight;
@@ -105,7 +106,9 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
 
           {/* Content */}
           <div className="prose prose-sm max-w-none">
-            <p className="whitespace-pre-wrap">{insight.content}</p>
+            <p className="whitespace-pre-wrap">
+              <RichTextRenderer content={insight.content} />
+            </p>
           </div>
 
           {/* Liked By Users */}

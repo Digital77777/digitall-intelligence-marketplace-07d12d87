@@ -95,14 +95,14 @@ const StartTopicPage = () => {
                 <Label htmlFor="content">Description</Label>
                 <Textarea
                   id="content"
-                  placeholder="Provide more details about your topic..."
+                  placeholder="Provide more details about your topic... You can include #hashtags and links (https://example.com)"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   rows={8}
                   maxLength={2000}
                 />
                 <p className="text-xs text-muted-foreground">
-                  {content.length}/2000 characters
+                  {content.length}/2000 characters. Links and #hashtags will be highlighted.
                 </p>
               </div>
 

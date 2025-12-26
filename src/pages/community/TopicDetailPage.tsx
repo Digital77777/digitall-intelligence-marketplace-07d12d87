@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatDistanceToNow } from "date-fns";
 import { z } from "zod";
 import { toast } from "sonner";
+import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 
 const replySchema = z.object({
   content: z
@@ -204,7 +205,9 @@ const TopicDetailPage = () => {
         <Card className="mb-6 sm:mb-8 shadow-sm">
           <CardContent className="p-4 sm:p-6">
             <div className="prose prose-sm max-w-none">
-              <p className="whitespace-pre-wrap text-foreground leading-relaxed">{topic.content}</p>
+              <p className="whitespace-pre-wrap text-foreground leading-relaxed">
+                <RichTextRenderer content={topic.content} />
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -262,7 +265,9 @@ const TopicDetailPage = () => {
                       )}
                     </div>
                     
-                    <p className="whitespace-pre-wrap text-sm">{reply.content}</p>
+                    <p className="whitespace-pre-wrap text-sm">
+                      <RichTextRenderer content={reply.content} />
+                    </p>
                   </CardContent>
                 </Card>
               ))}
