@@ -384,6 +384,39 @@ const ReelsPage = () => {
   const touchStartX = useRef<number>(0);
   const touchStartTime = useRef<number>(0);
   const isScrolling = useRef<boolean>(false);
+  
+  // Preloaded video cache
+  const preloadedVideos = useRef<Set<string>>(new Set());
+
+  // Preload adjacent videos for smoother transitions
+  useEffect(() => {
+    if (reels.length === 0) return;
+    
+    const preloadVideo = (url: string) => {
+      if (preloadedVideos.current.has(url)) return;
+      
+      const video = document.createElement('video');
+      video.preload = 'auto';
+      video.muted = true;
+      video.src = url;
+      video.load();
+      preloadedVideos.current.add(url);
+    };
+    
+    // Preload current, next and previous videos
+    const indicesToPreload = [
+      activeIndex,
+      activeIndex + 1,
+      activeIndex + 2,
+      activeIndex - 1
+    ].filter(i => i >= 0 && i < reels.length);
+    
+    indicesToPreload.forEach(i => {
+      if (reels[i]?.video_url) {
+        preloadVideo(reels[i].video_url);
+      }
+    });
+  }, [activeIndex, reels]);
 
   // Fetch comments counts for all reels
   useEffect(() => {
