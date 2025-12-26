@@ -139,15 +139,17 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle }: ReelItemProps) => {
   };
 
   return (
-    <div className="relative w-full h-full snap-start snap-always bg-black flex items-center justify-center">
+    <div className="relative w-full h-screen snap-start snap-always bg-black flex items-center justify-center">
       {/* Video */}
       <video
         ref={videoRef}
         src={reel.video_url}
         poster={reel.thumbnail_url || undefined}
-        className="w-full h-full object-contain"
+        className="max-w-full max-h-full object-contain"
         loop
         playsInline
+        muted={isMuted}
+        autoPlay={isActive}
         onClick={handleDoubleTap}
         onDoubleClick={handleLike}
       />
@@ -335,11 +337,11 @@ const ReelsPage = () => {
       {/* Reels container with snap scroll */}
       <div
         ref={containerRef}
-        className="w-full h-full overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
-        style={{ scrollSnapType: "y mandatory" }}
+        className="w-full h-full overflow-y-auto snap-y snap-mandatory"
+        style={{ scrollSnapType: "y mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {reels.map((reel, index) => (
-          <div key={reel.id} className="w-full h-full" style={{ height: "100vh" }}>
+          <div key={reel.id} className="w-full" style={{ height: "100vh" }}>
             <ReelItem
               reel={reel}
               isActive={index === activeIndex}
