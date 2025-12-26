@@ -124,6 +124,41 @@ const ScrollToTop = () => {
   return null;
 };
 
+// Hook to check if current route is a full-screen immersive page (like Reels)
+const useIsImmersivePage = () => {
+  const location = useLocation();
+  const immersiveRoutes = ['/community/reels', '/community/create-reel'];
+  return immersiveRoutes.some(route => location.pathname.startsWith(route));
+};
+
+// Layout wrapper that conditionally shows navigation
+const AppLayout = ({ children }: { children: React.ReactNode }) => {
+  const isImmersive = useIsImmersivePage();
+  
+  if (isImmersive) {
+    return (
+      <div className="min-h-screen bg-black">
+        <ScrollToTop />
+        <main id="main-content" tabIndex={-1} className="focus:outline-none">
+          {children}
+        </main>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen bg-background">
+      <SkipToContent />
+      <ScrollToTop />
+      <Navigation />
+      <main id="main-content" tabIndex={-1} className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 focus:outline-none">
+        {children}
+      </main>
+      <MobileFooter />
+    </div>
+  );
+};
+
 // Grouped route configuration
 interface AppRoute {
   path: string;
@@ -227,20 +262,14 @@ const App = () => {
                 <UpdatePrompt />
                 <Toaster position="top-right" />
                 <BrowserRouter>
-                  <div className="min-h-screen bg-background">
-                    <SkipToContent />
-                    <ScrollToTop />
-                    <Navigation />
-                    <main id="main-content" tabIndex={-1} className="pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0 focus:outline-none">
-                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
-                        <Routes>
-                          {routeGroups.map(renderRoute)}
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </Suspense>
-                    </main>
-                    <MobileFooter />
-                  </div>
+                  <AppLayout>
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+                      <Routes>
+                        {routeGroups.map(renderRoute)}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
+                  </AppLayout>
                 </BrowserRouter>
               </TooltipProvider>
             </TierProvider>
