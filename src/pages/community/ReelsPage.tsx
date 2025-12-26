@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, ChevronUp, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, ChevronUp, ChevronDown, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useReels } from "@/hooks/useReels";
@@ -331,7 +331,14 @@ const ReelsPage = () => {
           <ArrowLeft className="w-6 h-6" />
         </Button>
         <span className="text-white font-semibold">Reels</span>
-        <div className="w-10" /> {/* Spacer for centering */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="text-white hover:bg-white/20"
+          onClick={() => navigate("/community/create-reel")}
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
       </div>
 
       {/* Navigation hints */}
