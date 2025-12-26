@@ -69,6 +69,7 @@ const InboxPage = lazy(() => import("./pages/community/InboxPage"));
 const ShareInsightPage = lazy(() => import("./pages/community/ShareInsightPage"));
 const StartTopicPage = lazy(() => import("./pages/community/StartTopicPage"));
 const ReelsPage = lazy(() => import("./pages/community/ReelsPage"));
+const CreateReelPage = lazy(() => import("./pages/community/CreateReelPage"));
 const FollowersPage = lazy(() => import("./pages/community/FollowersPage"));
 
 // Career & Professional - Lazy loaded
@@ -186,6 +187,7 @@ const routeGroups: AppRoute[] = [
   { path: "/community/share-insight", component: ShareInsightPage, protected: true },
   { path: "/community/start-topic", component: StartTopicPage, protected: true },
   { path: "/community/reels", component: ReelsPage, protected: true },
+  { path: "/community/create-reel", component: CreateReelPage, protected: true },
   { path: "/community/followers", component: FollowersPage, protected: true },
 
   // Career & Professional
