@@ -11,6 +11,7 @@ import { useCommunity } from "@/hooks/useCommunity";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO, isToday, isBefore, isAfter, addMinutes } from "date-fns";
 import { EventDetailModal } from "@/components/community/EventDetailModal";
+import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import type { CommunityEvent } from "@/types/community";
 import {
   Select,
@@ -192,7 +193,7 @@ const BrowseEventsPage = () => {
 
           <TabsContent value="upcoming" className="space-y-6 mt-6">
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading events...</div>
+              <EventSkeletonGrid count={4} />
             ) : filteredUpcomingEvents.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No upcoming events found. {eventTypeFilter !== "all" && "Try adjusting your filters."}
@@ -279,7 +280,7 @@ const BrowseEventsPage = () => {
 
           <TabsContent value="live" className="space-y-6 mt-6">
             {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading live events...</div>
+              <EventSkeletonGrid count={2} />
             ) : filteredLiveEvents.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No live events at the moment. Check back later!

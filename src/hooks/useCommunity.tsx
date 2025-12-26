@@ -47,6 +47,11 @@ export const useCommunity = () => {
 
         return scoreTopics(data as CommunityTopic[]);
       },
+      // Performance optimizations
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      placeholderData: (previousData) => previousData,
     });
   };
 
@@ -139,6 +144,11 @@ export const useCommunity = () => {
 
         return data as CommunityEvent[];
       },
+      // Performance optimizations
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      placeholderData: (previousData) => previousData,
     });
   };
 

@@ -19,6 +19,8 @@ import { TopicCard } from "@/components/community/TopicCard";
 import { EventCard } from "@/components/community/EventCard";
 import { InsightCard } from "@/components/community/InsightCard";
 import { InsightSkeletonGrid } from "@/components/community/InsightCardSkeleton";
+import { TopicSkeletonGrid } from "@/components/community/TopicCardSkeleton";
+import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import { useCommunity } from "@/hooks/useCommunity";
 import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
@@ -359,17 +361,7 @@ const CommunityPage = () => {
             </div>
             
             {topicsLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i}>
-                    <CardContent className="p-6">
-                      <Skeleton className="h-6 w-3/4 mb-4" />
-                      <Skeleton className="h-4 w-full mb-2" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <TopicSkeletonGrid count={3} />
             ) : (
               <div className="space-y-3">
                 {visibleTopics.length > 0 ? (
@@ -427,17 +419,7 @@ const CommunityPage = () => {
               </div>
 
               {eventsLoading ? (
-                <div className="grid gap-3 sm:gap-4">
-                  {[1, 2, 3].map((i) => (
-                    <Card key={i} className="shadow-sm">
-                      <CardContent className="p-4 sm:p-6">
-                        <Skeleton className="h-6 w-3/4 mb-4" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-2/3" />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <EventSkeletonGrid count={3} />
               ) : (
                 <div className="grid gap-3 sm:gap-4">
                   {events && events.length > 0 ? (
