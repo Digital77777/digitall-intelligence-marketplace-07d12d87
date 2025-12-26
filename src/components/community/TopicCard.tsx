@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MessageCircle, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { CommunityTopic } from "@/types/community";
 
@@ -25,6 +25,7 @@ export const TopicCard = memo(({ topic, onTopicClick, getInitials }: TopicCardPr
         {/* Post Header */}
         <div className="flex items-center gap-3 p-3 pb-2">
           <Avatar className="w-9 h-9 shrink-0">
+            <AvatarImage src={topic.profiles?.avatar_url || undefined} />
             <AvatarFallback className="text-sm bg-primary/10 text-primary font-medium">
               {getInitials(topic.profiles?.full_name, topic.profiles?.email)}
             </AvatarFallback>
