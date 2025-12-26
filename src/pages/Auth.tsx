@@ -6,14 +6,15 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Brain, BookOpen, TrendingUp } from 'lucide-react';
+import { Loader2, Brain, BookOpen, TrendingUp, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
-import { authSchema } from '@/lib/validationSchemas';
+import { authSchema, signUpSchema } from '@/lib/validationSchemas';
 import { handleAuthError } from '@/lib/errorHandler';
 import { SEOHead } from '@/components/SEOHead';
 
 const Auth = () => {
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,14 +37,21 @@ const Auth = () => {
     setSuccess('');
 
     try {
-      const validated = authSchema.parse({ email: email.trim(), password });
+      const validated = signUpSchema.parse({ 
+        fullName: fullName.trim(), 
+        email: email.trim(), 
+        password 
+      });
       
-      const { error } = await signUp(validated.email, validated.password);
+      const { error } = await signUp(validated.email, validated.password, validated.fullName);
       
       if (error) {
         setError(handleAuthError(error));
       } else {
         setSuccess('Check your email for confirmation link!');
+        setFullName('');
+        setEmail('');
+        setPassword('');
       }
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -146,6 +154,21 @@ const Auth = () => {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div>
+                    <Label htmlFor="signup-fullname">Full Name</Label>
+                    <Input
+                      id="signup-fullname"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="John Doe"
+                      required
+                      autoComplete="name"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This will be shown to the community instead of your email
+                    </p>
+                  </div>
+                  <div>
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
                       id="signup-email"
@@ -154,6 +177,7 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="example@gmail.com"
                       required
+                      autoComplete="email"
                     />
                   </div>
                   <div>
@@ -166,7 +190,11 @@ const Auth = () => {
                       placeholder="••••••••"
                       required
                       minLength={8}
+                      autoComplete="new-password"
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Min 8 characters with uppercase and number
+                    </p>
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
