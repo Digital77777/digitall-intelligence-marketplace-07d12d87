@@ -2,13 +2,14 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, Plus, X, Upload, Loader2 } from "lucide-react";
+import { User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, Plus, X, Upload, Loader2, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { AvatarCropModal } from "./AvatarCropModal";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Form,
@@ -48,6 +49,8 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
   const [newSkill, setNewSkill] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
+  const [cropModalOpen, setCropModalOpen] = React.useState(false);
+  const [imageToCrop, setImageToCrop] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormData>({
@@ -76,7 +79,7 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
     setSkills(skills.filter(skill => skill !== skillToRemove));
   };
 
-  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
@@ -93,18 +96,34 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
       return;
     }
 
+    // Create object URL for cropping
+    const imageUrl = URL.createObjectURL(file);
+    setImageToCrop(imageUrl);
+    setCropModalOpen(true);
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
+    setCropModalOpen(false);
     setIsUploadingAvatar(true);
+
     try {
       // Create a unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/avatar-${Date.now()}.jpg`;
 
       // Upload to Supabase storage
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(fileName, file, {
+        .upload(fileName, croppedBlob, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: 'image/jpeg'
         });
 
       if (uploadError) throw uploadError;
@@ -122,10 +141,19 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
       toast.error('Failed to upload avatar. Please try again.');
     } finally {
       setIsUploadingAvatar(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+      // Clean up object URL
+      if (imageToCrop) {
+        URL.revokeObjectURL(imageToCrop);
+        setImageToCrop(null);
       }
+    }
+  };
+
+  const handleCropModalClose = () => {
+    setCropModalOpen(false);
+    if (imageToCrop) {
+      URL.revokeObjectURL(imageToCrop);
+      setImageToCrop(null);
     }
   };
 
@@ -199,7 +227,7 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
                     ref={fileInputRef}
                     type="file"
                     accept="image/jpeg,image/png,image/gif,image/webp"
-                    onChange={handleAvatarUpload}
+                    onChange={handleFileSelect}
                     className="hidden"
                     id="avatar-upload"
                   />
@@ -211,8 +239,8 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
                     disabled={isUploadingAvatar}
                     className="gap-2"
                   >
-                    <Upload className="w-4 h-4" />
-                    {isUploadingAvatar ? 'Uploading...' : 'Upload Photo'}
+                    <Crop className="w-4 h-4" />
+                    {isUploadingAvatar ? 'Uploading...' : 'Upload & Crop'}
                   </Button>
                 </div>
                 <p className="text-[10px] sm:text-xs text-muted-foreground">
@@ -230,6 +258,16 @@ export const ProfileEditForm = ({ profile, onSuccess }: ProfileEditFormProps) =>
               </div>
             </div>
           </div>
+
+          {/* Avatar Crop Modal */}
+          {imageToCrop && (
+            <AvatarCropModal
+              open={cropModalOpen}
+              onClose={handleCropModalClose}
+              imageSrc={imageToCrop}
+              onCropComplete={handleCropComplete}
+            />
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
