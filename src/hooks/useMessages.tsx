@@ -20,6 +20,12 @@ export interface Message {
   is_read: boolean;
   created_at: string;
   voice_note_url?: string | null;
+  reply_to_id?: string | null;
+  reply_to?: {
+    id: string;
+    content: string;
+    sender_id: string;
+  } | null;
   sender_profile?: {
     user_id: string;
     full_name?: string;
@@ -161,15 +167,33 @@ export const useMessages = () => {
             content,
             is_read,
             created_at,
-            voice_note_url
+            voice_note_url,
+            reply_to_id
           `)
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
 
         if (error) throw error;
 
+        // Fetch reply_to messages for messages that have replies
+        const messagesWithReplies = await Promise.all(
+          (data || []).map(async (msg) => {
+            if (msg.reply_to_id) {
+              const { data: replyTo } = await supabase
+                .from('messages')
+                .select('id, content, sender_id')
+                .eq('id', msg.reply_to_id)
+                .single();
+              return { ...msg, reply_to: replyTo };
+            }
+            return { ...msg, reply_to: null };
+          })
+        );
+
+        if (error) throw error;
+
         // Mark messages as read
-        const unreadIds = data?.filter(m => m.receiver_id === user.id && !m.is_read).map(m => m.id) || [];
+        const unreadIds = messagesWithReplies?.filter(m => m.receiver_id === user.id && !m.is_read).map(m => m.id) || [];
         if (unreadIds.length > 0) {
           await supabase
             .from('messages')
@@ -177,7 +201,7 @@ export const useMessages = () => {
             .in('id', unreadIds);
         }
 
-        return data || [];
+        return messagesWithReplies || [];
       },
       enabled: !!partnerId,
     });
@@ -185,7 +209,7 @@ export const useMessages = () => {
 
   // Send a message
   const sendMessage = useMutation({
-    mutationFn: async ({ receiverId, content, voiceNoteUrl }: { receiverId: string; content: string; voiceNoteUrl?: string }) => {
+    mutationFn: async ({ receiverId, content, voiceNoteUrl, replyToId }: { receiverId: string; content: string; voiceNoteUrl?: string; replyToId?: string }) => {
       // Validate input - allow empty content if voice note is present
       if (!voiceNoteUrl) {
         const validation = messageSchema.safeParse({ content });
@@ -202,6 +226,7 @@ export const useMessages = () => {
         receiver_id: receiverId,
         content: voiceNoteUrl ? '🎤 Voice note' : content,
         voice_note_url: voiceNoteUrl || null,
+        reply_to_id: replyToId || null,
       });
 
       if (error) throw error;

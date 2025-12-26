@@ -929,6 +929,7 @@ export type Database = {
           id: string
           is_read: boolean | null
           receiver_id: string
+          reply_to_id: string | null
           sender_id: string
           updated_at: string
           voice_note_url: string | null
@@ -939,6 +940,7 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           receiver_id: string
+          reply_to_id?: string | null
           sender_id: string
           updated_at?: string
           voice_note_url?: string | null
@@ -949,11 +951,20 @@ export type Database = {
           id?: string
           is_read?: boolean | null
           receiver_id?: string
+          reply_to_id?: string | null
           sender_id?: string
           updated_at?: string
           voice_note_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
