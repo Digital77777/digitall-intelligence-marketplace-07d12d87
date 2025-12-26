@@ -16,6 +16,8 @@ import { Separator } from '@/components/ui/separator';
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { TypingIndicator } from '@/components/chat/TypingIndicator';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -44,6 +46,9 @@ const InboxPage = () => {
 
   // Voice recording
   const { isRecording, recordingDuration, startRecording, stopRecording, cancelRecording } = useVoiceRecorder();
+
+  // Typing indicator
+  const { isOtherUserTyping, startTyping, stopTyping } = useTypingIndicator(selectedUserId);
 
   const formatRecordingTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -95,6 +100,7 @@ const InboxPage = () => {
       content: messageText.trim(),
     });
 
+    stopTyping();
     setMessageText('');
   };
 
@@ -436,6 +442,9 @@ const InboxPage = () => {
                       </div>
                     );
                   })}
+                  {isOtherUserTyping && (
+                    <TypingIndicator userName={selectedConversation?.full_name || undefined} />
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -463,7 +472,15 @@ const InboxPage = () => {
                       <Input
                         placeholder="Type a message..."
                         value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
+                        onChange={(e) => {
+                          setMessageText(e.target.value);
+                          if (e.target.value.trim()) {
+                            startTyping();
+                          } else {
+                            stopTyping();
+                          }
+                        }}
+                        onBlur={stopTyping}
                         className="flex-1"
                         maxLength={2000}
                       />
