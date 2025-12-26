@@ -244,9 +244,123 @@ export const useMessages = () => {
     },
   });
 
+  // Edit a message (within 15 minutes)
+  const editMessage = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      const validation = messageSchema.safeParse({ content });
+      if (!validation.success) {
+        throw new Error(validation.error.errors[0].message);
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get the message to check ownership and time
+      const { data: message, error: fetchError } = await supabase
+        .from('messages')
+        .select('sender_id, created_at')
+        .eq('id', messageId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!message) throw new Error('Message not found');
+      if (message.sender_id !== user.id) throw new Error('You can only edit your own messages');
+
+      // Check if within 15 minutes
+      const createdAt = new Date(message.created_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+      if (diffMinutes > 15) {
+        throw new Error('Messages can only be edited within 15 minutes');
+      }
+
+      const { error } = await supabase
+        .from('messages')
+        .update({ content })
+        .eq('id', messageId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast({
+        title: 'Message updated',
+        description: 'Your message has been edited',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to edit message',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete a message (within 15 minutes)
+  const deleteMessage = useMutation({
+    mutationFn: async (messageId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get the message to check ownership and time
+      const { data: message, error: fetchError } = await supabase
+        .from('messages')
+        .select('sender_id, created_at')
+        .eq('id', messageId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!message) throw new Error('Message not found');
+      if (message.sender_id !== user.id) throw new Error('You can only delete your own messages');
+
+      // Check if within 15 minutes
+      const createdAt = new Date(message.created_at);
+      const now = new Date();
+      const diffMinutes = (now.getTime() - createdAt.getTime()) / (1000 * 60);
+      if (diffMinutes > 15) {
+        throw new Error('Messages can only be deleted within 15 minutes');
+      }
+
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      toast({
+        title: 'Message deleted',
+        description: 'Your message has been removed',
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to delete message',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Check if a message can be edited/deleted (within 15 minutes)
+  const canModifyMessage = (createdAt: string): boolean => {
+    const created = new Date(createdAt);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - created.getTime()) / (1000 * 60);
+    return diffMinutes <= 15;
+  };
+
   return {
     useConversations,
     useConversationMessages,
     sendMessage,
+    editMessage,
+    deleteMessage,
+    canModifyMessage,
   };
 };
