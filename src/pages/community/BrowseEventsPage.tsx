@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { 
   ArrowLeft, Calendar, Users, Clock, MapPin, Edit2, Search, 
   Video, Building2, Sparkles, ChevronRight, Globe, Zap, CalendarPlus,
-  Mic, Network, Code, Presentation, MessageCircle, GraduationCap
+  Mic, Network, Code, Presentation, MessageCircle, GraduationCap, User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -370,15 +370,28 @@ const BrowseEventsPage = () => {
                         </div>
                         <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
                           <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={event.profiles?.avatar_url} />
-                              <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                {getInitials(event.profiles?.full_name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="text-xs text-muted-foreground truncate max-w-[100px]">
-                              {event.profiles?.full_name || 'Host'}
-                            </span>
+                            {event.is_personal_host === false && event.hosted_by ? (
+                              <>
+                                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <Building2 className="h-3 w-3 text-primary" />
+                                </div>
+                                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">
+                                  {event.hosted_by}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={event.profiles?.avatar_url} />
+                                  <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                    {getInitials(event.profiles?.full_name)}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs text-muted-foreground truncate max-w-[100px]">
+                                  {event.profiles?.full_name || 'Host'}
+                                </span>
+                              </>
+                            )}
                           </div>
                           <span className="text-xs text-muted-foreground">
                             {event.attendees_count} going
@@ -540,15 +553,28 @@ const BrowseEventsPage = () => {
 
                       <div className="flex items-center justify-between pt-3 border-t border-border/50">
                         <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={event.profiles?.avatar_url} />
-                            <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                              {getInitials(event.profiles?.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                            {event.profiles?.full_name || 'Host'}
-                          </span>
+                          {event.is_personal_host === false && event.hosted_by ? (
+                            <>
+                              <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Building2 className="h-3 w-3 text-primary" />
+                              </div>
+                              <span className="text-xs text-muted-foreground truncate max-w-[80px] font-medium">
+                                {event.hosted_by}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={event.profiles?.avatar_url} />
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                  {getInitials(event.profiles?.full_name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-muted-foreground truncate max-w-[80px]">
+                                {event.profiles?.full_name || 'Host'}
+                              </span>
+                            </>
+                          )}
                         </div>
                         {user?.id === event.user_id ? (
                           <Button 

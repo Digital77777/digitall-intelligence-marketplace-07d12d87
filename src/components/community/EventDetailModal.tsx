@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Calendar, Clock, Users, MapPin, ExternalLink, Check, 
-  Globe, Tag, FileText, Mail, Pencil, Trash2
+  Globe, Tag, FileText, Mail, Pencil, Trash2, Building2, User
 } from "lucide-react";
 import type { CommunityEvent } from "@/types/community";
 import { format } from "date-fns";
@@ -316,11 +316,25 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
           )}
 
           {/* Host Information */}
-          {event.profiles && (
-            <>
-              <Separator />
-              <div>
-                <h3 className="font-semibold text-lg mb-3">Hosted By</h3>
+          <>
+            <Separator />
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Hosted By</h3>
+              {event.is_personal_host === false && event.hosted_by ? (
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Building2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{event.hosted_by}</p>
+                    {event.profiles?.full_name && (
+                      <p className="text-sm text-muted-foreground">
+                        Organized by {event.profiles.full_name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : event.profiles ? (
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={event.profiles.avatar_url || undefined} />
@@ -332,11 +346,15 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
                     <p className="font-medium">
                       {event.profiles.full_name || "Community Member"}
                     </p>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      Personal host
+                    </p>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+              ) : null}
+            </div>
+          </>
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3 pt-4">

@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from "react";
-import { Calendar, Users, Check, Clock, MapPin, Globe } from "lucide-react";
+import { Calendar, Users, Check, Clock, MapPin, Globe, Building2, User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -111,6 +111,21 @@ export const EventCard = memo(({ event, onJoinEvent, onViewDetails }: EventCardP
                 <span className="truncate">{event.venue_name}</span>
               </div>
             )}
+            
+            {/* Host information */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
+              {event.is_personal_host === false && event.hosted_by ? (
+                <>
+                  <Building2 className="w-3.5 h-3.5 shrink-0 text-primary" />
+                  <span className="truncate font-medium">{event.hosted_by}</span>
+                </>
+              ) : event.profiles?.full_name ? (
+                <>
+                  <User className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Hosted by {event.profiles.full_name}</span>
+                </>
+              ) : null}
+            </div>
           </div>
           <Button
             size="sm"

@@ -48,6 +48,8 @@ export interface CommunityEvent {
   requirements?: string | null;
   language?: string | null;
   contact_email?: string | null;
+  hosted_by?: string | null;
+  is_personal_host?: boolean | null;
   is_online: boolean;
   status: string;
   attendees_count: number;
