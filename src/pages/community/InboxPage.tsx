@@ -116,7 +116,7 @@ const InboxPage = () => {
     inputRef.current?.focus();
   };
 
-  const getInitials = (name?: string, email?: string) => {
+  const getInitials = (name?: string) => {
     if (name) {
       return name
         .split(' ')
@@ -125,25 +125,18 @@ const InboxPage = () => {
         .toUpperCase()
         .slice(0, 2);
     }
-    if (email) {
-      return email.slice(0, 2).toUpperCase();
-    }
     return 'U';
   };
 
   const filteredConversations = conversations?.filter((conv) => {
     const searchLower = searchQuery.toLowerCase();
-    return (
-      conv.full_name?.toLowerCase().includes(searchLower) ||
-      conv.email?.toLowerCase().includes(searchLower)
-    );
+    return conv.full_name?.toLowerCase().includes(searchLower);
   });
 
   const filteredConnections = acceptedConnections?.filter((conn) => {
     const searchLower = searchQuery.toLowerCase();
     return (
-      conn.connected_user?.full_name?.toLowerCase().includes(searchLower) ||
-      conn.connected_user?.email?.toLowerCase().includes(searchLower)
+      conn.connected_user?.full_name?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -204,12 +197,12 @@ const InboxPage = () => {
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                            {getInitials(request.requester?.full_name, request.requester?.email)}
+                            {getInitials(request.requester?.full_name)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {request.requester?.full_name || request.requester?.email || 'Unknown User'}
+                            {request.requester?.full_name || 'Unknown User'}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             wants to connect
@@ -268,12 +261,12 @@ const InboxPage = () => {
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={conn.connected_user?.avatar_url || undefined} />
                         <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                          {getInitials(conn.connected_user?.full_name || undefined, conn.connected_user?.email || undefined)}
+                          {getInitials(conn.connected_user?.full_name || undefined)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0 text-left">
                         <p className="text-sm font-medium truncate">
-                          {conn.connected_user?.full_name || conn.connected_user?.email || 'Unknown User'}
+                          {conn.connected_user?.full_name || 'Unknown User'}
                         </p>
                         {conn.connected_user?.headline && (
                           <p className="text-xs text-muted-foreground truncate">
@@ -333,7 +326,7 @@ const InboxPage = () => {
                     <Avatar className="w-12 h-12">
                       <AvatarImage src={conv.avatar_url} />
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {getInitials(conv.full_name, conv.email)}
+                        {getInitials(conv.full_name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 text-left">
@@ -345,7 +338,7 @@ const InboxPage = () => {
                             navigate(`/profile/${conv.user_id}`);
                           }}
                         >
-                          {conv.full_name || conv.email || 'Unknown User'}
+                          {conv.full_name || 'Unknown User'}
                         </p>
                         {conv.last_message_time && (
                           <span className="text-xs text-muted-foreground">
@@ -396,7 +389,7 @@ const InboxPage = () => {
               <Avatar className="w-10 h-10">
                 <AvatarImage src={selectedConversation?.avatar_url} />
                 <AvatarFallback className="bg-primary/10 text-primary">
-                  {getInitials(selectedConversation?.full_name, selectedConversation?.email)}
+                  {getInitials(selectedConversation?.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div 
@@ -404,9 +397,7 @@ const InboxPage = () => {
                 onClick={() => navigate(`/profile/${selectedUserId}`)}
               >
                 <p className="font-semibold text-sm truncate">
-                  {selectedConversation?.full_name ||
-                    selectedConversation?.email ||
-                    'Unknown User'}
+                  {selectedConversation?.full_name || 'Unknown User'}
                 </p>
                 <p className="text-xs text-muted-foreground">Active</p>
               </div>

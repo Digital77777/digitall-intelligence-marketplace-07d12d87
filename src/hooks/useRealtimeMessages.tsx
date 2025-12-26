@@ -45,14 +45,14 @@ export const useRealtimeMessages = () => {
           queryClient.invalidateQueries({ queryKey: ['conversations'] });
           queryClient.invalidateQueries({ queryKey: ['messages', newMessage.sender_id] });
 
-          // Get sender profile for notification
+          // Get sender profile for notification - use public_profiles
           const { data: senderProfile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
+            .from('public_profiles')
+            .select('full_name')
             .eq('user_id', newMessage.sender_id)
             .single();
 
-          const senderName = senderProfile?.full_name || senderProfile?.email || 'Someone';
+          const senderName = senderProfile?.full_name || 'Someone';
 
           // Show toast notification
           toast({

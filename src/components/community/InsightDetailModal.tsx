@@ -30,8 +30,8 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
 
       const userIds = likes.map(l => l.user_id);
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, email, avatar_url")
+        .from("public_profiles")
+        .select("user_id, full_name, avatar_url")
         .in("user_id", userIds);
 
       return profiles || [];
@@ -39,12 +39,9 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
     enabled: open && !!insight.insight_likes && insight.insight_likes.length > 0,
   });
 
-  const getInitials = (name?: string, email?: string) => {
+  const getInitials = (name?: string) => {
     if (name) {
       return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-    }
-    if (email) {
-      return email.slice(0, 2).toUpperCase();
     }
     return "U";
   };
@@ -124,7 +121,7 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
                     <Avatar className="w-10 h-10">
                       <AvatarImage src={profile.avatar_url || undefined} />
                       <AvatarFallback className="text-xs bg-primary/10">
-                        {getInitials(profile.full_name, profile.email)}
+                        {getInitials(profile.full_name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

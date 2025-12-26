@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Users, Mail, Calendar, Clock, Check, X, Eye, FileText } from 'lucide-react';
+import { Users, Calendar, Clock, Check, X, Eye, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface JobApplication {
@@ -19,7 +19,6 @@ interface JobApplication {
   created_at: string;
   job_title?: string;
   applicant_name?: string;
-  applicant_email?: string;
   applicant_avatar?: string;
 }
 
@@ -77,23 +76,21 @@ export const JobApplicationsList = ({ onApplicationCountChange }: JobApplication
 
       if (appsError) throw appsError;
 
-      // Fetch applicant profiles
+      // Fetch applicant profiles - use public_profiles for display data
       const applicantIds = [...new Set(apps?.map(a => a.applicant_id) || [])];
       const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, email, avatar_url')
+        .from('public_profiles')
+        .select('user_id, full_name, avatar_url')
         .in('user_id', applicantIds);
 
       const profileMap = Object.fromEntries(
         (profiles || []).map(p => [p.user_id, p])
       );
 
-      // Combine data
       const enrichedApplications = (apps || []).map(app => ({
         ...app,
         job_title: listingTitles[app.job_listing_id],
         applicant_name: profileMap[app.applicant_id]?.full_name || 'Unknown',
-        applicant_email: profileMap[app.applicant_id]?.email || '',
         applicant_avatar: profileMap[app.applicant_id]?.avatar_url || '',
       }));
 
@@ -225,10 +222,6 @@ export const JobApplicationsList = ({ onApplicationCountChange }: JobApplication
                   </p>
                   
                   <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {application.applicant_email}
-                    </span>
                     <span className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
                       {format(new Date(application.created_at), 'MMM d, yyyy')}

@@ -43,7 +43,6 @@ export interface Message {
 export interface Conversation {
   user_id: string;
   full_name?: string;
-  email?: string;
   avatar_url?: string;
   last_message?: string;
   last_message_time?: string;
@@ -85,17 +84,16 @@ export const useMessages = () => {
           const partnerId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
           
           if (!conversationsMap.has(partnerId)) {
-            // Fetch partner profile
+            // Fetch partner profile - use public_profiles for display data
             const { data: profile } = await supabase
-              .from('profiles')
-              .select('user_id, full_name, email, avatar_url')
+              .from('public_profiles')
+              .select('user_id, full_name, avatar_url')
               .eq('user_id', partnerId)
               .single();
 
             conversationsMap.set(partnerId, {
               user_id: partnerId,
               full_name: profile?.full_name,
-              email: profile?.email,
               avatar_url: profile?.avatar_url,
               last_message: msg.content,
               last_message_time: msg.created_at,
@@ -123,17 +121,16 @@ export const useMessages = () => {
             const partnerId = conn.requester_id === user.id ? conn.recipient_id : conn.requester_id;
             
             if (!conversationsMap.has(partnerId)) {
-              // Fetch partner profile
+              // Fetch partner profile - use public_profiles for display data
               const { data: profile } = await supabase
-                .from('profiles')
-                .select('user_id, full_name, email, avatar_url')
+                .from('public_profiles')
+                .select('user_id, full_name, avatar_url')
                 .eq('user_id', partnerId)
                 .single();
 
               conversationsMap.set(partnerId, {
                 user_id: partnerId,
                 full_name: profile?.full_name,
-                email: profile?.email,
                 avatar_url: profile?.avatar_url,
                 last_message: undefined,
                 last_message_time: undefined,
