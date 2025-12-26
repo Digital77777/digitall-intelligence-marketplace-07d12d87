@@ -214,7 +214,9 @@ export type Database = {
       community_events: {
         Row: {
           attendees_count: number | null
+          city: string | null
           contact_email: string | null
+          country: string | null
           cover_image: string | null
           created_at: string
           description: string
@@ -240,7 +242,9 @@ export type Database = {
         }
         Insert: {
           attendees_count?: number | null
+          city?: string | null
           contact_email?: string | null
+          country?: string | null
           cover_image?: string | null
           created_at?: string
           description: string
@@ -266,7 +270,9 @@ export type Database = {
         }
         Update: {
           attendees_count?: number | null
+          city?: string | null
           contact_email?: string | null
+          country?: string | null
           cover_image?: string | null
           created_at?: string
           description?: string
