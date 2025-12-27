@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, ChevronDown, Heart, Clock, Check, Play } from "lucide-react";
+import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,10 +17,8 @@ import { InsightDetailModal } from "@/components/community/InsightDetailModal";
 import { EventDetailModal } from "@/components/community/EventDetailModal";
 import { TopicCard } from "@/components/community/TopicCard";
 import { EventCard } from "@/components/community/EventCard";
-import { InsightCard } from "@/components/community/InsightCard";
-import { InsightSkeletonGrid } from "@/components/community/InsightCardSkeleton";
-import { TopicSkeletonGrid } from "@/components/community/TopicCardSkeleton";
 import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
+import { InstagramFeed } from "@/components/community/InstagramFeed";
 import { useCommunity } from "@/hooks/useCommunity";
 import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
@@ -36,8 +34,6 @@ const CommunityPage = () => {
   const [insightCategory, setInsightCategory] = useState("all");
   const [selectedInsight, setSelectedInsight] = useState<CommunityInsight | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
-  const [topicsPage, setTopicsPage] = useState(0);
-  const [insightsPage, setInsightsPage] = useState(0);
   const {
     user
   } = useAuth();
@@ -65,14 +61,6 @@ const CommunityPage = () => {
   const {
     data: stats
   } = useStats();
-
-  // Reset pagination when search query or filters change
-  useEffect(() => {
-    setTopicsPage(0);
-  }, [searchQuery]);
-  useEffect(() => {
-    setInsightsPage(0);
-  }, [searchQuery, insightCategory]);
 
   // Handler functions for button interactions - wrapped in useCallback for performance
   const handleStartTopic = useCallback(() => {
@@ -143,39 +131,13 @@ const CommunityPage = () => {
     return "U";
   }, []);
 
-  // Pagination handlers
-  const loadMoreTopics = useCallback(() => {
-    setTopicsPage(prev => prev + 1);
-  }, []);
-  const loadMoreInsights = useCallback(() => {
-    setInsightsPage(prev => prev + 1);
-  }, []);
-
   // Memoize expensive computations
-  const visibleTopics = useMemo(() => {
-    const startTopicIndex = topicsPage * 5;
-    const endTopicIndex = startTopicIndex + 5;
-    return topics?.slice(startTopicIndex, endTopicIndex) || [];
-  }, [topics, topicsPage]);
-  const hasMoreTopics = useMemo(() => {
-    const endTopicIndex = (topicsPage + 1) * 5;
-    return (topics?.length || 0) > endTopicIndex;
-  }, [topics, topicsPage]);
   const filteredInsights = useMemo(() => {
     return insights?.filter(insight => {
       const matchesCategory = insightCategory === "all" || insight.category === insightCategory;
       return matchesCategory;
     }) || [];
   }, [insights, insightCategory]);
-  const visibleInsights = useMemo(() => {
-    const startInsightIndex = insightsPage * 5;
-    const endInsightIndex = startInsightIndex + 5;
-    return filteredInsights.slice(startInsightIndex, endInsightIndex);
-  }, [filteredInsights, insightsPage]);
-  const hasMoreInsights = useMemo(() => {
-    const endInsightIndex = (insightsPage + 1) * 5;
-    return filteredInsights.length > endInsightIndex;
-  }, [filteredInsights, insightsPage]);
   return <div className="min-h-screen bg-background">
       <SEOHead title="AI Community - Connect, Learn & Collaborate" description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence." keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]} />
       {/* Hero Section */}
@@ -334,30 +296,28 @@ const CommunityPage = () => {
               </Button>
             </div>
             
-            {topicsLoading ? <TopicSkeletonGrid count={3} /> : <div className="space-y-3">
-                {visibleTopics.length > 0 ? <>
-                    {visibleTopics.map(topic => <TopicCard key={topic.id} topic={topic} onTopicClick={handleTopicClick} getInitials={getInitials} />)}
-                    
-                    {hasMoreTopics && <div className="flex justify-center py-8">
-                        <Button onClick={loadMoreTopics} variant="outline" size="lg" className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all">
-                          <ChevronDown className="w-5 h-5" />
-                          Load More Discussions
-                        </Button>
-                      </div>}
-                  </> : <Card>
-                    <CardContent className="p-12 text-center">
-                      <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">No discussions found</h3>
-                      <p className="text-muted-foreground mb-4">
-                        {searchQuery ? "Try adjusting your search." : "Be the first to start a conversation!"}
-                      </p>
-                      <Button onClick={handleStartTopic}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Start a Topic
-                      </Button>
-                    </CardContent>
-                  </Card>}
-              </div>}
+            <InstagramFeed
+              items={topics || []}
+              isLoading={topicsLoading}
+              type="topic"
+              onTopicClick={handleTopicClick}
+              getInitials={getInitials}
+              emptyState={
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold mb-2">No discussions found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery ? "Try adjusting your search." : "Be the first to start a conversation!"}
+                    </p>
+                    <Button onClick={handleStartTopic}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Start a Topic
+                    </Button>
+                  </CardContent>
+                </Card>
+              }
+            />
               </TabsContent>
 
               {/* Events Tab */}
@@ -401,28 +361,27 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              {insightsLoading ? <InsightSkeletonGrid count={6} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {visibleInsights.length > 0 ? <>
-                      {visibleInsights.map(insight => <InsightCard key={insight.id} insight={insight} onLikeClick={handleLikeInsight} onViewClick={handleInsightView} getInitials={getInitials} />)}
-                      
-                      {hasMoreInsights && <div className="flex justify-center py-8">
-                          <Button onClick={loadMoreInsights} variant="outline" size="lg" className="gap-2 hover:bg-primary/10 hover:text-primary hover:border-primary transition-all">
-                            <ChevronDown className="w-5 h-5" />
-                            Load More Insights
-                          </Button>
-                        </div>}
-                    </> : <Card>
-                      <CardContent className="p-12 text-center">
-                        <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                        <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
-                        <p className="text-muted-foreground mb-4">Share your knowledge with the community!</p>
-                        <Button onClick={handleShareInsight}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Share an Insight
-                        </Button>
-                      </CardContent>
-                    </Card>}
-                </div>}
+              <InstagramFeed
+                items={filteredInsights}
+                isLoading={insightsLoading}
+                type="insight"
+                onLikeClick={handleLikeInsight}
+                onViewClick={handleInsightView}
+                getInitials={getInitials}
+                emptyState={
+                  <Card>
+                    <CardContent className="p-12 text-center">
+                      <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
+                      <p className="text-muted-foreground mb-4">Share your knowledge with the community!</p>
+                      <Button onClick={handleShareInsight}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Share an Insight
+                      </Button>
+                    </CardContent>
+                  </Card>
+                }
+              />
               </TabsContent>
             </Tabs>
           </div>
