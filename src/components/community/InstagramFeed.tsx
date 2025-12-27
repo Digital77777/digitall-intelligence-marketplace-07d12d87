@@ -196,6 +196,7 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
                 onLikeClick={onLikeClick!}
                 onViewClick={onViewClick!}
                 getInitials={getInitials}
+                priority={index === 0}
               />
             </FeedItem>
           ))}
