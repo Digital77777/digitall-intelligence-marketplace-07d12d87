@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 
 interface EnhancedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -8,6 +8,8 @@ interface EnhancedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   fallbackSrc?: string;
   showLoader?: boolean;
   onImageClick?: () => void;
+  enableBlurUp?: boolean;
+  priority?: boolean;
 }
 
 const categoryPlaceholders = {
@@ -19,6 +21,17 @@ const categoryPlaceholders = {
   default: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&auto=format&fit=crop'
 };
 
+// Generate a tiny placeholder URL for blur effect
+const generateBlurPlaceholder = (src: string): string => {
+  // For Unsplash images, use their built-in tiny sizing
+  if (src.includes('unsplash.com')) {
+    const baseUrl = src.split('?')[0];
+    return `${baseUrl}?w=20&q=10&blur=10&auto=format`;
+  }
+  // For Supabase storage or other URLs, return the original (will use CSS blur)
+  return src;
+};
+
 export const EnhancedImage: React.FC<EnhancedImageProps> = ({
   src,
   alt,
@@ -26,13 +39,57 @@ export const EnhancedImage: React.FC<EnhancedImageProps> = ({
   fallbackSrc,
   showLoader = true,
   onImageClick,
+  enableBlurUp = true,
+  priority = false,
   className,
   ...props
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [currentSrc, setCurrentSrc] = useState(src);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [fallbackLevel, setFallbackLevel] = useState(0);
+  const [isInView, setIsInView] = useState(priority);
+  const [blurLoaded, setBlurLoaded] = useState(false);
+
+  // Generate blur placeholder URL
+  const blurPlaceholder = useMemo(() => generateBlurPlaceholder(src), [src]);
+
+  // Intersection Observer for lazy loading
+  useEffect(() => {
+    if (priority) {
+      setIsInView(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { 
+        threshold: 0.1, 
+        rootMargin: '200px' // Start loading before it enters viewport
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [priority]);
+
+  // Reset state when src changes
+  useEffect(() => {
+    setCurrentSrc(src);
+    setIsLoading(true);
+    setHasError(false);
+    setFallbackLevel(0);
+    setBlurLoaded(false);
+  }, [src]);
 
   const handleError = useCallback(() => {
     setHasError(true);
@@ -57,6 +114,10 @@ export const EnhancedImage: React.FC<EnhancedImageProps> = ({
     setHasError(false);
   }, []);
 
+  const handleBlurLoad = useCallback(() => {
+    setBlurLoaded(true);
+  }, []);
+
   const handleClick = useCallback(() => {
     if (onImageClick && !hasError) {
       onImageClick();
@@ -64,29 +125,68 @@ export const EnhancedImage: React.FC<EnhancedImageProps> = ({
   }, [onImageClick, hasError]);
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
-      {/* Loading Skeleton */}
-      {isLoading && showLoader && (
+    <div 
+      ref={containerRef}
+      className={cn("relative overflow-hidden bg-muted", className)}
+    >
+      {/* Blur placeholder - always rendered first for blur-up effect */}
+      {enableBlurUp && isLoading && (
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src={blurPlaceholder}
+            alt=""
+            aria-hidden="true"
+            onLoad={handleBlurLoad}
+            className={cn(
+              "w-full h-full object-cover scale-110 transition-opacity duration-300",
+              blurLoaded ? "opacity-100" : "opacity-0",
+              "blur-xl"
+            )}
+            style={{ filter: 'blur(20px)' }}
+          />
+          {/* Gradient overlay for smoother blur effect */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/10 to-background/20" />
+        </div>
+      )}
+
+      {/* Loading skeleton (fallback if blur not enabled or not loaded) */}
+      {isLoading && showLoader && (!enableBlurUp || !blurLoaded) && (
         <div className="absolute inset-0 bg-muted animate-pulse flex items-center justify-center">
           <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Main Image */}
-      <img
-        src={currentSrc}
-        alt={alt}
-        onLoad={handleLoad}
-        onError={handleError}
-        onClick={handleClick}
-        className={cn(
-          "transition-all duration-300",
-          isLoading ? "opacity-0" : "opacity-100 animate-fade-in",
-          onImageClick && !hasError && "cursor-pointer hover:scale-105 hover:brightness-110",
-          className
-        )}
-        {...props}
-      />
+      {/* Shimmer effect overlay during loading */}
+      {isLoading && blurLoaded && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div 
+            className="absolute inset-0 -translate-x-full animate-shimmer"
+            style={{
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+              animation: 'shimmer 1.5s infinite'
+            }}
+          />
+        </div>
+      )}
+
+      {/* Main Image - only load when in view */}
+      {isInView && (
+        <img
+          src={currentSrc}
+          alt={alt}
+          onLoad={handleLoad}
+          onError={handleError}
+          onClick={handleClick}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          className={cn(
+            "transition-all duration-500 ease-out w-full h-full",
+            isLoading ? "opacity-0 scale-105" : "opacity-100 scale-100",
+            onImageClick && !hasError && "cursor-pointer hover:scale-105 hover:brightness-110"
+          )}
+          {...props}
+        />
+      )}
 
       {/* Click to expand indicator */}
       {onImageClick && !hasError && !isLoading && (

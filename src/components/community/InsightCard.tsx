@@ -14,9 +14,10 @@ interface InsightCardProps {
   onLikeClick: (insightId: string, isLiked: boolean, category?: string) => Promise<void>;
   onViewClick: (insight: CommunityInsight) => void;
   getInitials: (name: string | undefined, email: string | undefined) => string;
+  priority?: boolean;
 }
 
-export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitials }: InsightCardProps) => {
+export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitials, priority = false }: InsightCardProps) => {
   const handleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     await onLikeClick(insight.id, insight.is_liked || false, insight.category);
@@ -46,6 +47,8 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
               src={insight.cover_image} 
               alt={insight.title}
               className="w-full h-full object-contain md:object-cover rounded-t-xl"
+              enableBlurUp={true}
+              priority={priority}
             />
           </div>
         )}
