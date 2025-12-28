@@ -440,13 +440,13 @@ const CommunityPage = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card className="shadow-sm">
+            {/* Quick Actions - Hidden on mobile since FAB provides same functionality */}
+            <Card className="shadow-sm hidden lg:block">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                {user && <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={() => navigate("/community/my-activity")}>
+                {user && <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={() => navigate("/my-activity")}>
                     <TrendingUp className="mr-2 h-4 w-4" />
                     <span className="font-medium">My Activity</span>
                   </Button>}
