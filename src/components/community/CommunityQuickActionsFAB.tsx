@@ -26,6 +26,9 @@ export const CommunityQuickActionsFAB = () => {
   const { user } = useAuth();
 
   const handleActionClick = (action: QuickAction) => {
+    // Smooth scroll to top first
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
     if (action.requiresAuth && !user) {
       navigate('/auth');
     } else {
