@@ -24,6 +24,7 @@ import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
+import { CommunityQuickActionsFAB } from "@/components/community/CommunityQuickActionsFAB";
 const CommunityPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -460,6 +461,9 @@ const CommunityPage = () => {
       {selectedInsight && <InsightDetailModal insight={selectedInsight} open={!!selectedInsight} onOpenChange={open => !open && setSelectedInsight(null)} />}
 
       {selectedEvent && <EventDetailModal event={selectedEvent} isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} onJoinEvent={handleJoinEventClick} />}
+
+      {/* Quick Actions FAB */}
+      <CommunityQuickActionsFAB />
     </div>;
 };
 export default CommunityPage;
