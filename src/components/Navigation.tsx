@@ -17,7 +17,10 @@ const Navigation = () => {
   } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
-  const { handleMouseEnter, handleTouchStart } = usePrefetch();
+  const {
+    handleMouseEnter,
+    handleTouchStart
+  } = usePrefetch();
   const navigationItems = [{
     icon: Home,
     label: "Home",
@@ -44,7 +47,7 @@ const Navigation = () => {
     path: "/referrals"
   }];
   return <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border" aria-label="Main navigation">
-      <div className="container mx-auto px-6 py-4">
+      <div className="container mx-auto px-6 py-px">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link to="/" aria-label="Home">
@@ -55,13 +58,7 @@ const Navigation = () => {
           </div>
           
           <div className="hidden md:flex items-center space-x-6" role="navigation" aria-label="Primary navigation">
-            {navigationItems.map(item => <Link 
-                key={item.path} 
-                to={item.path}
-                onMouseEnter={() => handleMouseEnter(item.path)}
-                onTouchStart={() => handleTouchStart(item.path)}
-                aria-label={`Navigate to ${item.label}`}
-              >
+            {navigationItems.map(item => <Link key={item.path} to={item.path} onMouseEnter={() => handleMouseEnter(item.path)} onTouchStart={() => handleTouchStart(item.path)} aria-label={`Navigate to ${item.label}`}>
                 <Button variant="ghost" size="sm" className="flex items-center gap-2">
                   <item.icon className="h-4 w-4" aria-hidden="true" />
                   {item.label}
@@ -90,13 +87,7 @@ const Navigation = () => {
                   
                   <ScrollArea className="flex-1 px-4">
                      <div className="py-6 space-y-2" role="navigation" aria-label="Mobile menu navigation">
-                      {navigationItems.map(item => <Link 
-                          key={item.path} 
-                          to={item.path} 
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          onTouchStart={() => handleTouchStart(item.path)}
-                          aria-label={`Navigate to ${item.label}`}
-                        >
+                      {navigationItems.map(item => <Link key={item.path} to={item.path} onClick={() => setIsMobileMenuOpen(false)} onTouchStart={() => handleTouchStart(item.path)} aria-label={`Navigate to ${item.label}`}>
                           <Button variant="ghost" className="w-full justify-start gap-3 h-12 px-4 text-left">
                             <item.icon className="h-5 w-5" aria-hidden="true" />
                             <span className="font-medium">{item.label}</span>
@@ -140,8 +131,7 @@ const Navigation = () => {
                 </div>
               </SheetContent>
             </Sheet>
-            {loading ? <div className="w-20 h-8 animate-pulse bg-muted rounded" /> : user ? (
-              <>
+            {loading ? <div className="w-20 h-8 animate-pulse bg-muted rounded" /> : user ? <>
                 <NotificationBell />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -158,10 +148,7 @@ const Navigation = () => {
                     </p>
                   </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    asChild
-                    onMouseEnter={() => handleMouseEnter('/dashboard')}
-                  >
+                  <DropdownMenuItem asChild onMouseEnter={() => handleMouseEnter('/dashboard')}>
                     <Link to="/dashboard">
                       <div className="flex items-center">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -169,10 +156,7 @@ const Navigation = () => {
                       </div>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    asChild
-                    onMouseEnter={() => handleMouseEnter('/subscription')}
-                  >
+                  <DropdownMenuItem asChild onMouseEnter={() => handleMouseEnter('/subscription')}>
                     <Link to="/subscription">
                       <div className="flex items-center">
                         <CreditCard className="mr-2 h-4 w-4" />
@@ -180,16 +164,10 @@ const Navigation = () => {
                       </div>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    asChild
-                    onMouseEnter={() => handleMouseEnter('/marketplace/my-listings')}
-                  >
+                  <DropdownMenuItem asChild onMouseEnter={() => handleMouseEnter('/marketplace/my-listings')}>
                     <Link to="/marketplace/my-listings">My Listings</Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    asChild
-                    onMouseEnter={() => handleMouseEnter('/marketplace/create')}
-                  >
+                  <DropdownMenuItem asChild onMouseEnter={() => handleMouseEnter('/marketplace/create')}>
                     <Link to="/marketplace/create">Create Listing</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -199,8 +177,7 @@ const Navigation = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              </>
-            ) : <>
+              </> : <>
                 <Link to="/auth">
                   <Button variant="outline" size="sm" aria-label="Sign in">
                     <User className="h-4 w-4" />
