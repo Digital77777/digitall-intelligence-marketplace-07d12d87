@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play, ArrowUp } from "lucide-react";
+import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,7 +24,6 @@ import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
-import { CommunityQuickActionsFAB } from "@/components/community/CommunityQuickActionsFAB";
 const CommunityPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,21 +61,6 @@ const CommunityPage = () => {
   const {
     data: stats
   } = useStats();
-
-  // Scroll to top state and handler
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 300);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
   // Handler functions for button interactions - wrapped in useCallback for performance
   const handleStartTopic = useCallback(() => {
@@ -476,21 +460,6 @@ const CommunityPage = () => {
       {selectedInsight && <InsightDetailModal insight={selectedInsight} open={!!selectedInsight} onOpenChange={open => !open && setSelectedInsight(null)} />}
 
       {selectedEvent && <EventDetailModal event={selectedEvent} isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} onJoinEvent={handleJoinEventClick} />}
-
-      {/* Quick Actions FAB */}
-      <CommunityQuickActionsFAB />
-
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <Button
-          onClick={scrollToTop}
-          className="fixed bottom-20 md:bottom-6 left-6 h-12 w-12 rounded-full bg-secondary hover:bg-secondary/90 text-secondary-foreground shadow-lg hover:shadow-xl transition-all duration-300 z-50 animate-fade-in"
-          size="sm"
-          aria-label="Scroll to top"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </Button>
-      )}
     </div>;
 };
 export default CommunityPage;
