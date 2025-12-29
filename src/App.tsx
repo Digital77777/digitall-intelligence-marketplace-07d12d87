@@ -12,7 +12,6 @@ import MobileFooter from "./components/MobileFooter";
 import { DeploymentDiagnostics } from "./components/DeploymentDiagnostics";
 import { SkipToContent } from "./components/SkipToContent";
 import { UpdatePrompt } from "./components/UpdatePrompt";
-import { BackgroundLoader } from "./components/BackgroundLoader";
 
 // Eager-loaded pages for instant navigation
 import Index from "./pages/Index";
@@ -263,16 +262,8 @@ const App = () => {
                 <UpdatePrompt />
                 <Toaster position="top-right" />
                 <BrowserRouter>
-                  <BackgroundLoader />
                   <AppLayout>
-                    <Suspense fallback={
-                      <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content">
-                        <div className="flex flex-col items-center gap-3">
-                          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                          <span className="text-sm text-muted-foreground animate-pulse">Loading...</span>
-                        </div>
-                      </div>
-                    }>
+                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
                       <Routes>
                         {routeGroups.map(renderRoute)}
                         <Route path="*" element={<NotFound />} />
