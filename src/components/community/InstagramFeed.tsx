@@ -3,6 +3,9 @@ import { InsightCard } from "./InsightCard";
 import { InsightCardSkeleton } from "./InsightCardSkeleton";
 import { TopicCard } from "./TopicCard";
 import { TopicCardSkeleton } from "./TopicCardSkeleton";
+import { InstagramPostMobile } from "./InstagramPostMobile";
+import { InstagramFeedSkeleton } from "./InstagramPostSkeleton";
+import { useIsMobile } from "@/hooks/use-mobile";
 import type { CommunityInsight, CommunityTopic } from "@/types/community";
 import { cn } from "@/lib/utils";
 
@@ -123,6 +126,7 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   emptyState,
   className
 }: InstagramFeedProps<T>) {
+  const isMobile = useIsMobile();
   // Progressive loading: show first item immediately, then batch load rest
   const [visibleCount, setVisibleCount] = useState(1);
   const [isFirstBatchLoaded, setIsFirstBatchLoaded] = useState(false);
@@ -151,8 +155,13 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     setVisibleCount(prev => Math.min(prev + 6, items.length));
   }, [items.length]);
 
-  // Initial loading state - show skeleton for first item prominently
+  // Initial loading state
   if (isLoading) {
+    // Mobile Instagram-style skeleton for insights
+    if (isMobile && type === 'insight') {
+      return <InstagramFeedSkeleton count={3} />;
+    }
+    
     return (
       <div className={cn("space-y-4", className)}>
         {type === 'insight' ? (
@@ -186,6 +195,34 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   const hasMore = visibleCount < items.length;
 
   if (type === 'insight') {
+    // Mobile Instagram-style feed
+    if (isMobile) {
+      return (
+        <div className={cn("-mx-6", className)}>
+          <div className="divide-y divide-border">
+            {visibleItems.map((item, index) => (
+              <FeedItem key={(item as CommunityInsight).id} index={index} isVisible={true}>
+                <InstagramPostMobile
+                  insight={item as CommunityInsight}
+                  onLikeClick={onLikeClick!}
+                  onViewClick={onViewClick!}
+                  getInitials={getInitials}
+                />
+              </FeedItem>
+            ))}
+            
+            {/* Load more trigger */}
+            {hasMore && (
+              <LazyFeedSection onVisible={loadMoreItems}>
+                <InstagramFeedSkeleton count={1} />
+              </LazyFeedSection>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Desktop card grid layout
     return (
       <div className={cn("space-y-4", className)}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
