@@ -67,6 +67,19 @@ export const useFollows = () => {
   const followUser = useMutation({
     mutationFn: async (userId: string) => {
       if (!user) throw new Error("Must be logged in to follow");
+      if (user.id === userId) throw new Error("Cannot follow yourself");
+
+      // Check if already following
+      const { data: existing } = await supabase
+        .from("user_follows")
+        .select("id")
+        .eq("follower_id", user.id)
+        .eq("following_id", userId)
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error("Already following this user");
+      }
 
       const { data, error } = await supabase
         .from("user_follows")
@@ -77,11 +90,14 @@ export const useFollows = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Follow insert error:", error);
+        throw error;
+      }
       return data;
     },
     onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
+      queryClient.invalidateQueries({ queryKey: ["follow-status"] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
       toast({
@@ -89,10 +105,10 @@ export const useFollows = () => {
         description: "You are now following this user",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to follow user",
+        description: error.message || "Failed to follow user",
         variant: "destructive",
       });
       console.error("Follow error:", error);
@@ -110,10 +126,13 @@ export const useFollows = () => {
         .eq("follower_id", user.id)
         .eq("following_id", userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Unfollow error:", error);
+        throw error;
+      }
     },
     onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
+      queryClient.invalidateQueries({ queryKey: ["follow-status"] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
       toast({
@@ -121,10 +140,10 @@ export const useFollows = () => {
         description: "You have unfollowed this user",
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to unfollow user",
+        description: error.message || "Failed to unfollow user",
         variant: "destructive",
       });
       console.error("Unfollow error:", error);

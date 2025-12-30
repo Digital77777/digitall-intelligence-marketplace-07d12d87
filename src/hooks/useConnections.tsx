@@ -37,9 +37,9 @@ export const useConnections = () => {
   // Get connection status with a specific user
   const useConnectionStatus = (userId: string) => {
     return useQuery({
-      queryKey: ["connection-status", userId],
+      queryKey: ["connection-status", user?.id, userId],
       queryFn: async () => {
-        if (!user) return null;
+        if (!user || !userId || user.id === userId) return null;
 
         const { data, error } = await supabase
           .from("user_connections")
@@ -47,12 +47,15 @@ export const useConnections = () => {
           .or(
             `and(requester_id.eq.${user.id},recipient_id.eq.${userId}),and(requester_id.eq.${userId},recipient_id.eq.${user.id})`
           )
-          .single();
+          .maybeSingle();
 
-        if (error && error.code !== "PGRST116") throw error;
+        if (error) {
+          console.error("Connection status error:", error);
+          throw error;
+        }
         return data;
       },
-      enabled: !!user && !!userId,
+      enabled: !!user && !!userId && user.id !== userId,
     });
   };
 
@@ -137,6 +140,26 @@ export const useConnections = () => {
   const sendConnectionRequest = useMutation({
     mutationFn: async (recipientId: string) => {
       if (!user) throw new Error("Must be logged in");
+      if (user.id === recipientId) throw new Error("Cannot connect with yourself");
+
+      // Check if connection already exists in either direction
+      const { data: existing } = await supabase
+        .from("user_connections")
+        .select("id, status")
+        .or(
+          `and(requester_id.eq.${user.id},recipient_id.eq.${recipientId}),and(requester_id.eq.${recipientId},recipient_id.eq.${user.id})`
+        )
+        .maybeSingle();
+
+      if (existing) {
+        throw new Error(
+          existing.status === "pending" 
+            ? "Connection request already pending" 
+            : existing.status === "accepted" 
+              ? "Already connected" 
+              : "Connection was previously declined"
+        );
+      }
 
       const { data, error } = await supabase
         .from("user_connections")
@@ -148,17 +171,20 @@ export const useConnections = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Connection request error:", error);
+        throw error;
+      }
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (_, recipientId) => {
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
       toast({
         title: "Connection Request Sent",
         description: "Your connection request has been sent successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to send connection request",
