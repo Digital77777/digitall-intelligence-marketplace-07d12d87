@@ -369,8 +369,8 @@ const CommunityPage = () => {
                 onViewClick={handleInsightView}
                 getInitials={getInitials}
                 emptyState={
-                  <Card>
-                    <CardContent className="p-12 text-center">
+                  <Card className="mx-0 sm:mx-0">
+                    <CardContent className="p-8 sm:p-12 text-center">
                       <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
                       <p className="text-muted-foreground mb-4">Share your knowledge with the community!</p>
