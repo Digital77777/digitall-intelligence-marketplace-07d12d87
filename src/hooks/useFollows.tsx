@@ -97,7 +97,9 @@ export const useFollows = () => {
       return data;
     },
     onSuccess: (_, userId) => {
+      // Invalidate all follow-related queries with specific user
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
+      queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
       toast({
@@ -132,7 +134,9 @@ export const useFollows = () => {
       }
     },
     onSuccess: (_, userId) => {
+      // Invalidate all follow-related queries with specific user
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
+      queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
       toast({

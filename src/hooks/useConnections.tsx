@@ -178,7 +178,12 @@ export const useConnections = () => {
       return data;
     },
     onSuccess: (_, recipientId) => {
+      // Invalidate all connection-related queries with specific user
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["connection-status", user?.id, recipientId] });
+      queryClient.invalidateQueries({ queryKey: ["pending-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-connection-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["accepted-connections"] });
       toast({
         title: "Connection Request Sent",
         description: "Your connection request has been sent successfully.",
