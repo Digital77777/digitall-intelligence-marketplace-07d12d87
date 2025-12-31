@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 export interface ActiveMember {
   user_id: string;
   full_name: string | null;
+  avatar_url: string | null;
+  headline: string | null;
   contributions: number;
   is_top_contributor: boolean;
   joined_at: string;
@@ -16,7 +18,7 @@ export const useActiveMembers = (searchQuery?: string) => {
       // Fetch all profiles from public_profiles view (RLS-compliant for discovery)
       let query = supabase
         .from("public_profiles")
-        .select("user_id, full_name, created_at")
+        .select("user_id, full_name, avatar_url, headline, created_at")
         .not("user_id", "is", null);
 
       if (searchQuery && searchQuery.trim()) {
@@ -40,6 +42,8 @@ export const useActiveMembers = (searchQuery?: string) => {
             return {
               user_id: profile.user_id,
               full_name: profile.full_name,
+              avatar_url: profile.avatar_url,
+              headline: profile.headline,
               contributions: 0,
               is_top_contributor: false,
               joined_at: profile.created_at,
@@ -49,6 +53,8 @@ export const useActiveMembers = (searchQuery?: string) => {
           return {
             user_id: profile.user_id,
             full_name: profile.full_name,
+            avatar_url: profile.avatar_url,
+            headline: profile.headline,
             contributions: contributions || 0,
             is_top_contributor: (contributions || 0) >= 10,
             joined_at: profile.created_at,

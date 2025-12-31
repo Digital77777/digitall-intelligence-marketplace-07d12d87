@@ -1,27 +1,28 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, MessageCircle, UserPlus, Award, Check, Clock, UserCheck } from "lucide-react";
+import { ArrowLeft, Search, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
 import { useConnections } from "@/hooks/useConnections";
 import { useFollows } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import LinkedInMemberCard from "@/components/community/LinkedInMemberCard";
+import { LinkedInMemberCardSkeletonGrid } from "@/components/community/LinkedInMemberCardSkeleton";
 import { MemberSkeletonGrid } from "@/components/community/MemberCardSkeleton";
 
 const FindMembersPage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const { data: members = [], isLoading } = useActiveMembers(searchQuery);
-  const { sendConnectionRequest } = useConnections();
-  const { followUser, unfollowUser } = useFollows();
+  const { sendConnectionRequest, useConnectionStatus } = useConnections();
+  const { followUser, unfollowUser, useFollowStatus } = useFollows();
 
   const topContributors = useMemo(() => {
     return members.filter((m) => m.is_top_contributor);
@@ -39,158 +40,137 @@ const FindMembersPage = () => {
     unfollowUser.mutate(memberId);
   };
 
-  const handleMessage = (memberId: string) => {
-    navigate(`/community/inbox?userId=${memberId}`);
-  };
-
   const handleViewProfile = (memberId: string) => {
     navigate(`/profile/${memberId}`);
   };
 
-  const getInitials = (name: string | null) => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getJoinedYear = (date: string) => {
-    return new Date(date).getFullYear().toString();
-  };
-
-  const MemberCard = ({ member }: { member: ActiveMember }) => {
-    const { useConnectionStatus } = useConnections();
-    const { useFollowStatus } = useFollows();
+  // Member card wrapper for mobile that fetches connection/follow status
+  const MobileMemberCard = ({ member }: { member: ActiveMember }) => {
     const { data: connectionStatus } = useConnectionStatus(member.user_id);
     const { data: followStatus } = useFollowStatus(member.user_id);
     const isOwnProfile = user?.id === member.user_id;
     const isFollowing = !!followStatus;
 
-    const getConnectionButton = () => {
-      if (isOwnProfile) return null;
-
-      if (connectionStatus) {
-        if (connectionStatus.status === "accepted") {
-          return (
-            <Button size="sm" variant="outline" disabled className="bg-green-50 text-green-700 border-green-200">
-              <Check className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Connected</span>
-            </Button>
-          );
-        }
-        if (connectionStatus.status === "pending") {
-          const isPendingRequest = connectionStatus.requester_id === user?.id;
-          return (
-            <Button size="sm" variant="outline" disabled className="bg-amber-50 text-amber-700 border-amber-200">
-              <Clock className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">{isPendingRequest ? "Pending" : "Request Received"}</span>
-            </Button>
-          );
-        }
-      }
-
-      return (
-        <Button
-          size="sm"
-          onClick={() => handleConnect(member.user_id)}
-          variant="outline"
-          disabled={sendConnectionRequest.isPending}
-        >
-          <UserPlus className="h-4 w-4 sm:mr-1" />
-          <span className="hidden sm:inline">Connect</span>
-        </Button>
-      );
-    };
-
-    const getFollowButton = () => {
-      if (isOwnProfile) return null;
-
-      if (isFollowing) {
-        return (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleUnfollow(member.user_id)}
-            disabled={unfollowUser.isPending}
-            className="bg-primary/10 text-primary border-primary/20"
-          >
-            <UserCheck className="h-4 w-4 sm:mr-1" />
-            <span className="hidden sm:inline">Following</span>
-          </Button>
-        );
-      }
-
-      return (
-        <Button
-          size="sm"
-          onClick={() => handleFollow(member.user_id)}
-          className="bg-gradient-ai text-white flex-1 sm:flex-initial"
-          disabled={followUser.isPending}
-        >
-          <UserPlus className="h-4 w-4 sm:mr-1" />
-          <span className="hidden sm:inline">Follow</span>
-        </Button>
-      );
+    const getConnectionStatusString = (): 'none' | 'pending' | 'accepted' => {
+      if (!connectionStatus) return 'none';
+      if (connectionStatus.status === 'accepted') return 'accepted';
+      if (connectionStatus.status === 'pending') return 'pending';
+      return 'none';
     };
 
     return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-          <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
-            <div className="relative flex-shrink-0">
-              <Avatar className="h-12 w-12 sm:h-16 sm:w-16">
-                <AvatarFallback className="text-sm sm:text-lg font-semibold bg-gradient-ai text-white">
-                  {getInitials(member.full_name)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start gap-2 mb-1">
-                <h3 
-                  className="text-base sm:text-lg font-semibold truncate hover:text-primary cursor-pointer transition-colors"
-                  onClick={() => handleViewProfile(member.user_id)}
-                >
-                  {member.full_name || "Anonymous User"}
-                </h3>
-                {member.is_top_contributor && (
-                  <Badge className="bg-amber-500 text-white flex-shrink-0 gap-1 px-2 py-0.5">
-                    <Award className="h-3 w-3" />
-                    <span className="text-xs">Top</span>
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground">
-                <span className="font-medium">{member.contributions} contributions</span>
-                <span>•</span>
-                <span>Joined {getJoinedYear(member.joined_at)}</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex sm:flex-col gap-2 w-full sm:w-auto">
-            {getFollowButton()}
-            {getConnectionButton()}
-            {!isOwnProfile && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleMessage(member.user_id)}
-                className="flex-1 sm:flex-initial"
-              >
-                <MessageCircle className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Message</span>
-              </Button>
-            )}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      <LinkedInMemberCard
+        member={member}
+        onConnect={handleConnect}
+        onFollow={handleFollow}
+        onViewProfile={handleViewProfile}
+        connectionStatus={getConnectionStatusString()}
+        isFollowing={isFollowing}
+        isOwnProfile={isOwnProfile}
+        isConnectPending={sendConnectionRequest.isPending}
+        isFollowPending={followUser.isPending}
+      />
     );
   };
 
+  // Mobile Layout - LinkedIn-style grid
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="px-4 py-4">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-4">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate("/community")}
+              className="shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-bold text-foreground">
+                Find Members
+              </h1>
+              {!isLoading && (
+                <p className="text-xs text-muted-foreground">
+                  {members.length} {members.length === 1 ? "member" : "members"} to connect with
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10"
+            />
+          </div>
+
+          {/* Tabs */}
+          <Tabs defaultValue="all" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="all" className="text-xs">
+                All ({members.length})
+              </TabsTrigger>
+              <TabsTrigger value="top" className="text-xs gap-1">
+                <Award className="h-3 w-3" />
+                Top ({topContributors.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="mt-0">
+              {isLoading ? (
+                <LinkedInMemberCardSkeletonGrid count={6} />
+              ) : members.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <p className="text-muted-foreground text-sm">No members found</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {members.map((member) => (
+                    <MobileMemberCard key={member.user_id} member={member} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="top" className="mt-0">
+              {isLoading ? (
+                <LinkedInMemberCardSkeletonGrid count={4} />
+              ) : topContributors.length === 0 ? (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <Award className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-muted-foreground text-sm">
+                      No top contributors yet
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Make 10+ posts to earn this badge!
+                    </p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {topContributors.map((member) => (
+                    <MobileMemberCard key={member.user_id} member={member} />
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout - Original design
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-12">
@@ -235,17 +215,15 @@ const FindMembersPage = () => {
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="all" className="data-[state=active]:bg-primary/10">
               <Search className="h-4 w-4 mr-1.5 shrink-0" />
-              <span className="hidden sm:inline">All Members ({members.length})</span>
-              <span className="sm:hidden text-xs">All ({members.length})</span>
+              All Members ({members.length})
             </TabsTrigger>
             <TabsTrigger value="top" className="gap-1.5 data-[state=active]:bg-primary/10">
               <Award className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">Top Contributors ({topContributors.length})</span>
-              <span className="sm:hidden text-xs">Top ({topContributors.length})</span>
+              Top Contributors ({topContributors.length})
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all" className="space-y-3 sm:space-y-4 mt-6">
+          <TabsContent value="all" className="mt-6">
             {isLoading ? (
               <MemberSkeletonGrid count={5} />
             ) : members.length === 0 ? (
@@ -255,13 +233,15 @@ const FindMembersPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              members.map((member) => (
-                <MemberCard key={member.user_id} member={member} />
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {members.map((member) => (
+                  <MobileMemberCard key={member.user_id} member={member} />
+                ))}
+              </div>
             )}
           </TabsContent>
 
-          <TabsContent value="top" className="space-y-3 sm:space-y-4 mt-6">
+          <TabsContent value="top" className="mt-6">
             {isLoading ? (
               <MemberSkeletonGrid count={3} />
             ) : topContributors.length === 0 ? (
@@ -274,9 +254,11 @@ const FindMembersPage = () => {
                 </CardContent>
               </Card>
             ) : (
-              topContributors.map((member) => (
-                <MemberCard key={member.user_id} member={member} />
-              ))
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {topContributors.map((member) => (
+                  <MobileMemberCard key={member.user_id} member={member} />
+                ))}
+              </div>
             )}
           </TabsContent>
         </Tabs>
