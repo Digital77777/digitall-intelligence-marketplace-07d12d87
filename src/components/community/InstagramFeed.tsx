@@ -195,11 +195,11 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   const hasMore = visibleCount < items.length;
 
   if (type === 'insight') {
-    // Mobile Instagram-style feed
+    // Mobile Instagram-style feed with improved scrolling
     if (isMobile) {
       return (
-        <div className={cn("-mx-6", className)}>
-          <div className="divide-y divide-border">
+        <div className={cn("-mx-6 scroll-smooth", className)}>
+          <div className="divide-y divide-border" style={{ overscrollBehaviorY: 'contain' }}>
             {visibleItems.map((item, index) => (
               <FeedItem key={(item as CommunityInsight).id} index={index} isVisible={true}>
                 <InstagramPostMobile

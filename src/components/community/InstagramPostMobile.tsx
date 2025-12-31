@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { CommunityInsight } from "@/types/community";
@@ -138,10 +138,22 @@ export const InstagramPostMobile = memo(({
 
   const timeAgo = formatDistanceToNow(new Date(insight.created_at), { addSuffix: false });
 
-  // Truncate content for preview
-  const contentPreview = insight.content.length > 125 
-    ? insight.content.slice(0, 125) + '...' 
-    : insight.content;
+  // Helper function to truncate by word count
+  const truncateByWords = useCallback((text: string, wordLimit: number): { truncated: string; isTruncated: boolean } => {
+    const words = text.trim().split(/\s+/);
+    if (words.length <= wordLimit) {
+      return { truncated: text, isTruncated: false };
+    }
+    return { 
+      truncated: words.slice(0, wordLimit).join(' ') + '...', 
+      isTruncated: true 
+    };
+  }, []);
+
+  // Determine word limit based on content type: 30 for media posts, 70 for text-only
+  const hasMedia = mediaItems.length > 0;
+  const wordLimit = hasMedia ? 30 : 70;
+  const { truncated: contentPreview, isTruncated } = truncateByWords(insight.content, wordLimit);
 
   return (
     <article className="border-b border-border bg-background" ref={containerRef}>
@@ -272,7 +284,17 @@ export const InstagramPostMobile = memo(({
           className="px-4 py-6 bg-gradient-to-br from-muted/30 to-muted/10 min-h-[200px] flex items-center"
           onClick={handleDoubleTap}
         >
-          <p className="text-lg leading-relaxed">{insight.content}</p>
+          <p className="text-lg leading-relaxed">
+            {isExpanded ? insight.content : contentPreview}
+            {isTruncated && !isExpanded && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
+                className="text-primary ml-1 font-medium"
+              >
+                more
+              </button>
+            )}
+          </p>
         </div>
       )}
 
@@ -288,6 +310,9 @@ export const InstagramPostMobile = memo(({
                   : "hover:text-muted-foreground/80"
               )}
             />
+          </button>
+          <button onClick={handleViewPost} className="p-1" aria-label="View full post">
+            <Eye className="h-6 w-6 hover:text-muted-foreground/80" />
           </button>
           <button onClick={handleViewPost} className="p-1">
             <MessageCircle className="h-6 w-6 hover:text-muted-foreground/80" />
@@ -314,7 +339,7 @@ export const InstagramPostMobile = memo(({
               {insight.profiles?.full_name || "Community Member"}
             </span>
             {isExpanded ? insight.content : contentPreview}
-            {insight.content.length > 125 && !isExpanded && (
+            {isTruncated && !isExpanded && (
               <button 
                 onClick={() => setIsExpanded(true)}
                 className="text-muted-foreground ml-1"
