@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TierProvider } from "@/contexts/TierContext";
+import { FeedScrollProvider } from "@/contexts/FeedScrollContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Navigation from "./components/Navigation";
 import MobileFooter from "./components/MobileFooter";
@@ -257,21 +258,23 @@ const App = () => {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <TierProvider>
-              <TooltipProvider>
-                <DeploymentDiagnostics />
-                <UpdatePrompt />
-                <Toaster position="top-right" />
-                <BrowserRouter>
-                  <AppLayout>
-                    <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
-                      <Routes>
-                        {routeGroups.map(renderRoute)}
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </Suspense>
-                  </AppLayout>
-                </BrowserRouter>
-              </TooltipProvider>
+              <FeedScrollProvider>
+                <TooltipProvider>
+                  <DeploymentDiagnostics />
+                  <UpdatePrompt />
+                  <Toaster position="top-right" />
+                  <BrowserRouter>
+                    <AppLayout>
+                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+                        <Routes>
+                          {routeGroups.map(renderRoute)}
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </Suspense>
+                    </AppLayout>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </FeedScrollProvider>
             </TierProvider>
           </AuthProvider>
         </QueryClientProvider>

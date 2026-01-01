@@ -11,6 +11,7 @@ interface InstagramPostMobileProps {
   insight: CommunityInsight;
   onLikeClick: (insightId: string, isLiked: boolean, category?: string) => Promise<void>;
   onViewClick: (insight: CommunityInsight) => void;
+  onVideoTap?: (videoUrl: string, insightId: string, videoIndex: number) => void;
   getInitials: (name: string | undefined, email: string | undefined) => string;
 }
 
@@ -18,6 +19,7 @@ export const InstagramPostMobile = memo(({
   insight, 
   onLikeClick, 
   onViewClick, 
+  onVideoTap,
   getInitials 
 }: InstagramPostMobileProps) => {
   const [isLiked, setIsLiked] = useState(insight.is_liked || false);
@@ -197,7 +199,15 @@ export const InstagramPostMobile = memo(({
                       loading="lazy"
                     />
                   ) : (
-                    <div className="relative w-full h-full">
+                    <div 
+                      className="relative w-full h-full group cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onVideoTap) {
+                          onVideoTap(media.src, insight.id, index);
+                        }
+                      }}
+                    >
                       <video
                         ref={index === selectedMediaIndex ? videoRef : null}
                         src={media.src}
@@ -207,10 +217,24 @@ export const InstagramPostMobile = memo(({
                         muted={isMuted}
                         playsInline
                       />
+                      {/* Reels entry indicator - shows on video */}
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="bg-black/30 rounded-full p-4 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          <svg 
+                            className="w-10 h-10 text-white fill-white" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
                       {/* Mute toggle for video */}
                       <button
-                        onClick={toggleMute}
-                        className="absolute bottom-4 right-4 p-2 rounded-full bg-background/80 backdrop-blur-sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMute(e);
+                        }}
+                        className="absolute bottom-4 right-4 p-2 rounded-full bg-background/80 backdrop-blur-sm z-10"
                       >
                         {isMuted ? (
                           <VolumeX className="h-4 w-4" />
