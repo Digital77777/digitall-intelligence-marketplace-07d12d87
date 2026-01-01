@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, Loader2, Plu
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useReels } from "@/hooks/useReels";
+import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -368,8 +369,22 @@ const ReelItem = ({ reel, isActive, isMuted, onMuteToggle, onOpenComments, comme
 const ReelsPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  
+  // Parse query params for video entry
   const initialReelId = searchParams.get("reel") || undefined;
-  const { reels, isLoading, error } = useReels(initialReelId);
+  const initialVideoUrl = searchParams.get("video") ? decodeURIComponent(searchParams.get("video")!) : undefined;
+  const initialInsightId = searchParams.get("insight") || undefined;
+  const source = searchParams.get("source") || undefined;
+  
+  // Feed scroll context for returning to Insights
+  const { setReturnToFeed } = useFeedScroll();
+  
+  const { reels, isLoading, error, initialIndex } = useReels({
+    initialReelId,
+    initialVideoUrl,
+    initialInsightId,
+  });
+  
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -387,6 +402,17 @@ const ReelsPage = () => {
   
   // Preloaded video cache
   const preloadedVideos = useRef<Set<string>>(new Set());
+
+  // Set initial index based on matched video
+  useEffect(() => {
+    if (initialIndex > 0 && containerRef.current) {
+      setActiveIndex(initialIndex);
+      // Scroll to the matched video
+      requestAnimationFrame(() => {
+        containerRef.current?.scrollTo(0, initialIndex * window.innerHeight);
+      });
+    }
+  }, [initialIndex]);
 
   // Preload adjacent videos for smoother transitions
   useEffect(() => {
@@ -451,7 +477,17 @@ const ReelsPage = () => {
     setSelectedInsightId(null);
   };
 
-  // Set initial index if reelId provided
+  // Custom back handler to restore Insights scroll position
+  const handleBack = useCallback(() => {
+    if (source === "insights") {
+      setReturnToFeed(true);
+      navigate("/community");
+    } else {
+      navigate(-1);
+    }
+  }, [source, navigate, setReturnToFeed]);
+
+  // Set initial index if reelId provided (legacy support)
   useEffect(() => {
     if (initialReelId && reels.length > 0) {
       const idx = reels.findIndex((r) => r.id === initialReelId);
@@ -603,7 +639,7 @@ const ReelsPage = () => {
             variant="ghost"
             size="icon"
             className="text-white hover:bg-white/10 -ml-2"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
           >
             <ArrowLeft className="w-6 h-6" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
           </Button>

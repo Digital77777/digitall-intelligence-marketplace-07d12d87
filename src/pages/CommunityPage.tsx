@@ -20,6 +20,7 @@ import { EventCard } from "@/components/community/EventCard";
 import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import { InstagramFeed } from "@/components/community/InstagramFeed";
 import { useCommunity } from "@/hooks/useCommunity";
+import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { formatDistanceToNow } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
@@ -34,6 +35,10 @@ const CommunityPage = () => {
   const [insightCategory, setInsightCategory] = useState("all");
   const [selectedInsight, setSelectedInsight] = useState<CommunityInsight | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
+  
+  // Feed scroll context for restoring position when returning from Reels
+  const { insightsFeedScroll, setInsightsFeedScroll, returnToFeed, setReturnToFeed } = useFeedScroll();
+  
   const {
     user
   } = useAuth();
@@ -61,6 +66,17 @@ const CommunityPage = () => {
   const {
     data: stats
   } = useStats();
+
+  // Restore scroll position when returning from Reels
+  useEffect(() => {
+    if (returnToFeed && insightsFeedScroll > 0) {
+      // Small delay to ensure DOM is ready
+      requestAnimationFrame(() => {
+        window.scrollTo(0, insightsFeedScroll);
+        setReturnToFeed(false);
+      });
+    }
+  }, [returnToFeed, insightsFeedScroll, setReturnToFeed]);
 
   // Handler functions for button interactions - wrapped in useCallback for performance
   const handleStartTopic = useCallback(() => {
@@ -130,6 +146,15 @@ const CommunityPage = () => {
     }
     return "U";
   }, []);
+
+  // Handle video tap - navigate to Reels with video context
+  const handleVideoTap = useCallback((videoUrl: string, insightId: string, videoIndex: number) => {
+    // Save current scroll position before navigating
+    setInsightsFeedScroll(window.scrollY);
+    
+    // Navigate to Reels with video URL for matching
+    navigate(`/community/reels?video=${encodeURIComponent(videoUrl)}&insight=${insightId}&source=insights`);
+  }, [navigate, setInsightsFeedScroll]);
 
   // Memoize expensive computations
   const filteredInsights = useMemo(() => {
@@ -367,6 +392,7 @@ const CommunityPage = () => {
                 type="insight"
                 onLikeClick={handleLikeInsight}
                 onViewClick={handleInsightView}
+                onVideoTap={handleVideoTap}
                 getInitials={getInitials}
                 emptyState={
                   <Card className="mx-0 sm:mx-0">

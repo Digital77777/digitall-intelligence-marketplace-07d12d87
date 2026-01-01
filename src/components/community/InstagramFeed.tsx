@@ -15,6 +15,7 @@ interface InstagramFeedProps<T> {
   type: 'insight' | 'topic';
   onLikeClick?: (insightId: string, isLiked: boolean, category?: string) => Promise<void>;
   onViewClick?: (insight: CommunityInsight) => void;
+  onVideoTap?: (videoUrl: string, insightId: string, videoIndex: number) => void;
   onTopicClick?: (topicId: string, tags?: string[]) => void;
   getInitials: (name: string | undefined, email: string | undefined) => string;
   emptyState?: React.ReactNode;
@@ -121,6 +122,7 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   type,
   onLikeClick,
   onViewClick,
+  onVideoTap,
   onTopicClick,
   getInitials,
   emptyState,
@@ -206,6 +208,7 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
                   insight={item as CommunityInsight}
                   onLikeClick={onLikeClick!}
                   onViewClick={onViewClick!}
+                  onVideoTap={onVideoTap}
                   getInitials={getInitials}
                 />
               </FeedItem>
