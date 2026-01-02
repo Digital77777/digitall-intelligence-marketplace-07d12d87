@@ -1,9 +1,11 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import type { CommunityTopic, CommunityEvent, CommunityInsight } from "@/types/community";
 import { scoreTopics, scoreInsights, trackContentView } from "@/lib/recommendationAlgorithm";
+
+const INSIGHTS_PAGE_SIZE = 12;
 
 export const useCommunity = () => {
   const { toast } = useToast();
@@ -364,7 +366,7 @@ export const useCommunity = () => {
     },
   });
 
-  // Insights queries - optimized for fast loading
+  // Insights queries - optimized for fast loading (original query for compatibility)
   const useInsights = (searchQuery?: string) => {
     return useQuery({
       queryKey: ["community-insights", searchQuery],
@@ -440,6 +442,82 @@ export const useCommunity = () => {
       gcTime: 5 * 60 * 1000, // Cache for 5 minutes (renamed from cacheTime)
       refetchOnWindowFocus: false, // Don't refetch on tab focus
       placeholderData: (previousData) => previousData, // Show stale data while fetching
+    });
+  };
+
+  // Infinite scroll version of insights query
+  const useInfiniteInsights = (searchQuery?: string) => {
+    return useInfiniteQuery({
+      queryKey: ["community-insights-infinite", searchQuery],
+      queryFn: async ({ pageParam = 0 }) => {
+        const userPromise = supabase.auth.getUser();
+        
+        let query = supabase
+          .from("community_insights")
+          .select("*")
+          .eq("is_published", true)
+          .order("created_at", { ascending: false })
+          .range(pageParam * INSIGHTS_PAGE_SIZE, (pageParam + 1) * INSIGHTS_PAGE_SIZE - 1);
+
+        if (searchQuery) {
+          query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          return { insights: [] as CommunityInsight[], nextPage: undefined };
+        }
+
+        const { data: { user } } = await userPromise;
+        const userIds = [...new Set(data.map(i => i.user_id))];
+        const insightIds = data.map(i => i.id);
+
+        const [profilesResult, allLikesResult, userLikesResult] = await Promise.all([
+          supabase
+            .from("public_profiles")
+            .select("user_id, full_name, avatar_url")
+            .in("user_id", userIds),
+          supabase
+            .from("insight_likes")
+            .select("insight_id")
+            .in("insight_id", insightIds),
+          user 
+            ? supabase
+                .from("insight_likes")
+                .select("insight_id")
+                .eq("user_id", user.id)
+                .in("insight_id", insightIds)
+            : Promise.resolve({ data: null }),
+        ]);
+
+        const profilesMap = new Map(profilesResult.data?.map(p => [p.user_id, p]) || []);
+        const userLikedIds = new Set(userLikesResult.data?.map(l => l.insight_id) || []);
+        
+        const likesCountMap = new Map<string, number>();
+        allLikesResult.data?.forEach(l => {
+          likesCountMap.set(l.insight_id, (likesCountMap.get(l.insight_id) || 0) + 1);
+        });
+        
+        const insightsWithProfiles = data.map(insight => ({
+          ...insight,
+          profiles: profilesMap.get(insight.user_id),
+          is_liked: userLikedIds.has(insight.id),
+          likes_count: likesCountMap.get(insight.id) || 0,
+        })) as CommunityInsight[];
+        
+        const scoredInsights = scoreInsights(insightsWithProfiles);
+        
+        return {
+          insights: scoredInsights,
+          nextPage: data.length === INSIGHTS_PAGE_SIZE ? pageParam + 1 : undefined
+        };
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => lastPage.nextPage,
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
     });
   };
 
@@ -723,6 +801,7 @@ export const useCommunity = () => {
     deleteEvent,
     registerForEvent,
     useInsights,
+    useInfiniteInsights,
     createInsight,
     updateInsight,
     deleteInsight,
