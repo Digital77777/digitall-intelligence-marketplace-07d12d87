@@ -617,10 +617,45 @@ const ReelsPage = () => {
           title="Reels - Community Videos"
           description="Watch engaging short-form video content from our AI community."
         />
-        <p className="text-white text-lg mb-4">No reels available</p>
-        <Button variant="outline" onClick={() => navigate("/community")}>
-          Back to Community
-        </Button>
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-30 safe-area-inset-top">
+          <div className="flex items-center justify-between px-4 py-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 -ml-2"
+              onClick={handleBack}
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </Button>
+            <span className="text-white font-bold text-lg">Reels</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:bg-white/10 -mr-2"
+              onClick={() => navigate("/community/create-reel")}
+            >
+              <Plus className="w-6 h-6" />
+            </Button>
+          </div>
+        </div>
+        
+        <div className="flex flex-col items-center text-center px-6">
+          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
+            <Music2 className="w-10 h-10 text-white/60" />
+          </div>
+          <p className="text-white text-xl font-semibold mb-2">No reels yet</p>
+          <p className="text-white/60 text-sm mb-6 max-w-[280px]">
+            Be the first to share a short video with the community!
+          </p>
+          <Button 
+            onClick={() => navigate("/community/create-reel")}
+            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Reel
+          </Button>
+        </div>
       </div>
     );
   }
