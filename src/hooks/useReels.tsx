@@ -38,10 +38,20 @@ export const useReels = (options?: UseReelsOptions | string) => {
       const { data, error } = await supabase
         .from("community_reels")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false, nullsFirst: false });
 
-      if (error) throw error;
-      return data as Reel[];
+      if (error) {
+        console.error("Error fetching reels:", error);
+        throw error;
+      }
+      
+      // Map and ensure required fields have defaults
+      return (data || []).map(reel => ({
+        ...reel,
+        created_at: reel.created_at || new Date().toISOString(),
+        likes_count: reel.likes_count || 0,
+        views_count: reel.views_count || 0,
+      })) as Reel[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
