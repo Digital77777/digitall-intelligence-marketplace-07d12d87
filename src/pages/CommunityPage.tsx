@@ -46,7 +46,7 @@ const CommunityPage = () => {
   const {
     useTopics,
     useEvents,
-    useInsights,
+    useInfiniteInsights,
     useStats,
     registerForEvent,
     toggleInsightLike,
@@ -60,10 +60,21 @@ const CommunityPage = () => {
     data: events,
     isLoading: eventsLoading
   } = useEvents(searchQuery);
+  
+  // Use infinite query for insights with Facebook-style scrolling
   const {
-    data: insights,
-    isLoading: insightsLoading
-  } = useInsights(searchQuery);
+    data: insightsData,
+    isLoading: insightsLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteInsights(searchQuery);
+  
+  // Flatten all pages of insights into a single array
+  const insights = useMemo(() => {
+    return insightsData?.pages.flatMap(page => page.insights) || [];
+  }, [insightsData]);
+  
   const {
     data: stats
   } = useStats();
@@ -159,11 +170,18 @@ const CommunityPage = () => {
 
   // Memoize expensive computations
   const filteredInsights = useMemo(() => {
-    return insights?.filter(insight => {
+    return insights.filter(insight => {
       const matchesCategory = insightCategory === "all" || insight.category === insightCategory;
       return matchesCategory;
-    }) || [];
+    });
   }, [insights, insightCategory]);
+  
+  // Load more handler for infinite scroll
+  const handleLoadMoreInsights = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
   return <div className="min-h-screen bg-background">
       <SEOHead title="AI Community - Connect, Learn & Collaborate" description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence." keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]} />
       {/* Hero Section */}
@@ -393,6 +411,9 @@ const CommunityPage = () => {
               <InstagramFeed
                 items={filteredInsights}
                 isLoading={insightsLoading}
+                isFetchingMore={isFetchingNextPage}
+                hasMore={!!hasNextPage}
+                onLoadMore={handleLoadMoreInsights}
                 type="insight"
                 onLikeClick={handleLikeInsight}
                 onViewClick={handleInsightView}
