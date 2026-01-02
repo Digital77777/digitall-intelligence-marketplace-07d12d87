@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play } from "lucide-react";
+import { QuickActionsRow } from "@/components/community/QuickActionsRow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -193,6 +194,9 @@ const CommunityPage = () => {
                 My Inbox
               </Button>
             </div>
+            
+            {/* Quick Actions - Icon Row */}
+            <QuickActionsRow isLoggedIn={!!user} />
           </div>
         </div>
       </section>
@@ -450,34 +454,6 @@ const CommunityPage = () => {
               </CardContent>
             </Card>
 
-            {/* Quick Actions */}
-            <Card className="shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {user && <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={() => navigate("/community/my-activity")}>
-                    <TrendingUp className="mr-2 h-4 w-4" />
-                    <span className="font-medium">My Activity</span>
-                  </Button>}
-                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleStartDiscussion}>
-                  <MessageCircle className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Start Discussion</span>
-                </Button>
-                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleCreateEvent}>
-                  <Calendar className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Create Event</span>
-                </Button>
-                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleShareInsight}>
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Share Insight</span>
-                </Button>
-                <Button variant="outline" className="w-full justify-start hover:bg-primary/10 hover:text-primary hover:border-primary transition-colors" onClick={handleFindMembers}>
-                  <Users className="mr-2 h-4 w-4" />
-                  <span className="font-medium">Find Members</span>
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
