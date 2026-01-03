@@ -7,6 +7,7 @@ import { TopicCardSkeleton } from "./TopicCardSkeleton";
 import { InstagramPostMobile } from "./InstagramPostMobile";
 import { InstagramFeedSkeleton } from "./InstagramPostSkeleton";
 import { ScrollToTopButton } from "./ScrollToTopButton";
+import { PullToRefresh } from "./PullToRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { CommunityInsight, CommunityTopic } from "@/types/community";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ interface InstagramFeedProps<T> {
   getInitials: (name: string | undefined, email: string | undefined) => string;
   emptyState?: React.ReactNode;
   onLoadMore?: () => void;
+  onRefresh?: () => Promise<void>;
   className?: string;
 }
 
@@ -134,6 +136,7 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   getInitials,
   emptyState,
   onLoadMore,
+  onRefresh,
   className
 }: InstagramFeedProps<T>) {
   const isMobile = useIsMobile();
@@ -239,47 +242,57 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   );
 
   if (type === 'insight') {
-    // Mobile Instagram-style feed with improved scrolling
+    // Mobile Instagram-style feed with pull-to-refresh
     if (isMobile) {
+      const feedContent = (
+        <div className={cn("-mx-4 sm:-mx-6", className)}>
+          <div className="divide-y divide-border">
+            {visibleItems.map((item, index) => (
+              <FeedItem key={(item as CommunityInsight).id} index={index} isVisible={true}>
+                <InstagramPostMobile
+                  insight={item as CommunityInsight}
+                  onLikeClick={onLikeClick!}
+                  onViewClick={onViewClick!}
+                  onVideoTap={onVideoTap}
+                  getInitials={getInitials}
+                />
+              </FeedItem>
+            ))}
+            
+            {/* Progressive load within current batch */}
+            {hasMoreLocal && (
+              <LazyFeedSection onVisible={loadMoreItems}>
+                <InstagramFeedSkeleton count={1} />
+              </LazyFeedSection>
+            )}
+            
+            {/* Infinite scroll trigger for fetching more from server */}
+            {!hasMoreLocal && hasMore && (
+              <>
+                <InfiniteScrollTrigger />
+                {isFetchingMore && <LoadingIndicator />}
+              </>
+            )}
+            
+            {/* End of feed indicator */}
+            {!hasMoreLocal && !hasMore && items.length > 6 && (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">You're all caught up! 🎉</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
       return (
         <>
-          <div className={cn("-mx-4 sm:-mx-6", className)}>
-            <div className="divide-y divide-border">
-              {visibleItems.map((item, index) => (
-                <FeedItem key={(item as CommunityInsight).id} index={index} isVisible={true}>
-                  <InstagramPostMobile
-                    insight={item as CommunityInsight}
-                    onLikeClick={onLikeClick!}
-                    onViewClick={onViewClick!}
-                    onVideoTap={onVideoTap}
-                    getInitials={getInitials}
-                  />
-                </FeedItem>
-              ))}
-              
-              {/* Progressive load within current batch */}
-              {hasMoreLocal && (
-                <LazyFeedSection onVisible={loadMoreItems}>
-                  <InstagramFeedSkeleton count={1} />
-                </LazyFeedSection>
-              )}
-              
-              {/* Infinite scroll trigger for fetching more from server */}
-              {!hasMoreLocal && hasMore && (
-                <>
-                  <InfiniteScrollTrigger />
-                  {isFetchingMore && <LoadingIndicator />}
-                </>
-              )}
-              
-              {/* End of feed indicator */}
-              {!hasMoreLocal && !hasMore && items.length > 6 && (
-                <div className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground">You're all caught up! 🎉</p>
-                </div>
-              )}
-            </div>
-          </div>
+          {onRefresh ? (
+            <PullToRefresh onRefresh={onRefresh} disabled={isLoading || isFetchingMore}>
+              {feedContent}
+            </PullToRefresh>
+          ) : (
+            feedContent
+          )}
           <ScrollToTopButton />
         </>
       );
