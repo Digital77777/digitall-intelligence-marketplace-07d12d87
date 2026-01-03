@@ -68,6 +68,7 @@ const CommunityPage = () => {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
+    refetch: refetchInsights,
   } = useInfiniteInsights(searchQuery);
   
   // Flatten all pages of insights into a single array
@@ -182,6 +183,11 @@ const CommunityPage = () => {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Pull-to-refresh handler
+  const handleRefreshInsights = useCallback(async () => {
+    await refetchInsights();
+  }, [refetchInsights]);
   return <div className="min-h-screen bg-background">
       <SEOHead title="AI Community - Connect, Learn & Collaborate" description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence." keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]} />
       {/* Hero Section */}
@@ -414,6 +420,7 @@ const CommunityPage = () => {
                 isFetchingMore={isFetchingNextPage}
                 hasMore={!!hasNextPage}
                 onLoadMore={handleLoadMoreInsights}
+                onRefresh={handleRefreshInsights}
                 type="insight"
                 onLikeClick={handleLikeInsight}
                 onViewClick={handleInsightView}
