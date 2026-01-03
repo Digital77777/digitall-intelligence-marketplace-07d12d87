@@ -243,8 +243,8 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     if (isMobile) {
       return (
         <>
-          <div className={cn("-mx-6 scroll-smooth", className)}>
-            <div className="divide-y divide-border" style={{ overscrollBehaviorY: 'contain' }}>
+          <div className={cn("-mx-4 sm:-mx-6", className)}>
+            <div className="divide-y divide-border">
               {visibleItems.map((item, index) => (
                 <FeedItem key={(item as CommunityInsight).id} index={index} isVisible={true}>
                   <InstagramPostMobile

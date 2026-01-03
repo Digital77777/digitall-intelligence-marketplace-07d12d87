@@ -190,17 +190,20 @@ export const InstagramPostMobile = memo(({
           <div className="overflow-hidden w-full" ref={emblaRef}>
             <div className="flex w-full">
               {mediaItems.map((media, index) => (
-                <div key={index} className="flex-[0_0_100%] min-w-0 relative">
+                <div 
+                  key={index} 
+                  className="flex-[0_0_100%] min-w-0 relative flex items-center justify-center"
+                >
                   {media.type === 'image' ? (
                     <img
                       src={media.src}
                       alt={insight.title}
-                      className="w-full max-h-[600px] object-contain"
+                      className="w-full h-auto max-h-[70vh] object-contain"
                       loading="lazy"
                     />
                   ) : (
                     <div 
-                      className="relative w-full group cursor-pointer"
+                      className="relative w-full flex items-center justify-center group cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onVideoTap) {
@@ -212,7 +215,7 @@ export const InstagramPostMobile = memo(({
                         ref={index === selectedMediaIndex ? videoRef : null}
                         src={media.src}
                         poster={media.poster}
-                        className="w-full max-h-[600px] object-contain"
+                        className="w-full h-auto max-h-[70vh] object-contain"
                         loop
                         muted={isMuted}
                         playsInline
