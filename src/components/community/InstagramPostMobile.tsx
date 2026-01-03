@@ -184,23 +184,23 @@ export const InstagramPostMobile = memo(({
         </Button>
       </div>
 
-      {/* Media Content */}
+      {/* Media Content - Full width edge-to-edge like Instagram */}
       {mediaItems.length > 0 && (
-        <div className="relative w-full aspect-square bg-muted/20" onClick={handleDoubleTap}>
-          <div className="overflow-hidden h-full" ref={emblaRef}>
-            <div className="flex h-full">
+        <div className="relative w-full bg-black" onClick={handleDoubleTap}>
+          <div className="overflow-hidden w-full" ref={emblaRef}>
+            <div className="flex w-full">
               {mediaItems.map((media, index) => (
-                <div key={index} className="flex-[0_0_100%] min-w-0 relative h-full">
+                <div key={index} className="flex-[0_0_100%] min-w-0 relative">
                   {media.type === 'image' ? (
                     <img
                       src={media.src}
                       alt={insight.title}
-                      className="w-full h-full object-cover"
+                      className="w-full max-h-[600px] object-contain"
                       loading="lazy"
                     />
                   ) : (
                     <div 
-                      className="relative w-full h-full group cursor-pointer"
+                      className="relative w-full group cursor-pointer"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onVideoTap) {
@@ -212,7 +212,7 @@ export const InstagramPostMobile = memo(({
                         ref={index === selectedMediaIndex ? videoRef : null}
                         src={media.src}
                         poster={media.poster}
-                        className="w-full h-full object-cover"
+                        className="w-full max-h-[600px] object-contain"
                         loop
                         muted={isMuted}
                         playsInline
