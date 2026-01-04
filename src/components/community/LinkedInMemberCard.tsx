@@ -46,13 +46,14 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       .slice(0, 2);
   };
 
-  const handleButtonClick = (e: React.MouseEvent) => {
+  const handleConnectClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (connectionStatus === 'none' && !isFollowing) {
-      onConnect(member.user_id);
-    } else if (!isFollowing) {
-      onFollow(member.user_id);
-    }
+    onConnect(member.user_id);
+  };
+
+  const handleFollowClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onFollow(member.user_id);
   };
 
   const renderButton = () => {
@@ -72,6 +73,7 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       );
     }
 
+    // Already connected - show connected status
     if (connectionStatus === 'accepted') {
       return (
         <Button
@@ -86,6 +88,7 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       );
     }
 
+    // Pending connection - show pending status
     if (connectionStatus === 'pending') {
       return (
         <Button
@@ -100,6 +103,7 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       );
     }
 
+    // Already following - show following status
     if (isFollowing) {
       return (
         <Button
@@ -114,17 +118,29 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       );
     }
 
+    // Default - show Connect button, or Follow button as secondary action
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleButtonClick}
-        disabled={isConnectPending || isFollowPending}
-        className="w-full rounded-full text-xs font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-      >
-        <UserPlus className="h-3 w-3 mr-1" />
-        Connect
-      </Button>
+      <div className="flex flex-col gap-1.5 w-full">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleConnectClick}
+          disabled={isConnectPending}
+          className="w-full rounded-full text-xs font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+        >
+          <UserPlus className="h-3 w-3 mr-1" />
+          {isConnectPending ? "Sending..." : "Connect"}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleFollowClick}
+          disabled={isFollowPending}
+          className="w-full rounded-full text-xs font-medium text-muted-foreground hover:text-primary"
+        >
+          {isFollowPending ? "Following..." : "Follow"}
+        </Button>
+      </div>
     );
   };
 

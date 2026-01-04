@@ -69,39 +69,40 @@ export const useFollows = () => {
       if (!user) throw new Error("Must be logged in to follow");
       if (user.id === userId) throw new Error("Cannot follow yourself");
 
-      // Check if already following
-      const { data: existing } = await supabase
-        .from("user_follows")
-        .select("id")
-        .eq("follower_id", user.id)
-        .eq("following_id", userId)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error("Already following this user");
-      }
-
+      // Use upsert to handle race conditions - ignore if already exists
       const { data, error } = await supabase
         .from("user_follows")
-        .insert({
-          follower_id: user.id,
-          following_id: userId,
-        })
+        .upsert(
+          {
+            follower_id: user.id,
+            following_id: userId,
+          },
+          { 
+            onConflict: 'follower_id,following_id',
+            ignoreDuplicates: true 
+          }
+        )
         .select()
         .single();
 
       if (error) {
+        // If it's a duplicate error, treat as success
+        if (error.code === '23505') {
+          return { follower_id: user.id, following_id: userId };
+        }
         console.error("Follow insert error:", error);
         throw error;
       }
       return data;
     },
     onSuccess: (_, userId) => {
-      // Invalidate all follow-related queries with specific user
+      // Invalidate all follow-related queries
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
       queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["followers", userId] });
+      queryClient.invalidateQueries({ queryKey: ["following", user?.id] });
       toast({
         title: "Following",
         description: "You are now following this user",
@@ -132,13 +133,16 @@ export const useFollows = () => {
         console.error("Unfollow error:", error);
         throw error;
       }
+      return userId;
     },
     onSuccess: (_, userId) => {
-      // Invalidate all follow-related queries with specific user
+      // Invalidate all follow-related queries
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
       queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["followers", userId] });
+      queryClient.invalidateQueries({ queryKey: ["following", user?.id] });
       toast({
         title: "Unfollowed",
         description: "You have unfollowed this user",

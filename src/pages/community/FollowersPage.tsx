@@ -33,26 +33,29 @@ const FollowersPage = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // First get follower IDs
+      const { data: followsData, error: followsError } = await supabase
         .from("user_follows")
-        .select(`
-          follower_id,
-          public_profiles!user_follows_follower_id_fkey (
-            user_id,
-            full_name,
-            avatar_url,
-            headline
-          )
-        `)
+        .select("follower_id")
         .eq("following_id", user.id);
 
-      if (error) throw error;
+      if (followsError) throw followsError;
+      if (!followsData || followsData.length === 0) return [];
 
-      return (data || []).map((item: any) => ({
-        user_id: item.follower_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
+      // Then get profiles for those followers
+      const followerIds = followsData.map(f => f.follower_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("public_profiles")
+        .select("user_id, full_name, avatar_url, headline")
+        .in("user_id", followerIds);
+
+      if (profilesError) throw profilesError;
+
+      return (profiles || []).map((profile) => ({
+        user_id: profile.user_id!,
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        headline: profile.headline,
       })) as FollowUser[];
     },
     enabled: !!user,
@@ -64,26 +67,29 @@ const FollowersPage = () => {
     queryFn: async () => {
       if (!user) return [];
 
-      const { data, error } = await supabase
+      // First get following IDs
+      const { data: followsData, error: followsError } = await supabase
         .from("user_follows")
-        .select(`
-          following_id,
-          public_profiles!user_follows_following_id_fkey (
-            user_id,
-            full_name,
-            avatar_url,
-            headline
-          )
-        `)
+        .select("following_id")
         .eq("follower_id", user.id);
 
-      if (error) throw error;
+      if (followsError) throw followsError;
+      if (!followsData || followsData.length === 0) return [];
 
-      return (data || []).map((item: any) => ({
-        user_id: item.following_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
+      // Then get profiles for those being followed
+      const followingIds = followsData.map(f => f.following_id);
+      const { data: profiles, error: profilesError } = await supabase
+        .from("public_profiles")
+        .select("user_id, full_name, avatar_url, headline")
+        .in("user_id", followingIds);
+
+      if (profilesError) throw profilesError;
+
+      return (profiles || []).map((profile) => ({
+        user_id: profile.user_id!,
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        headline: profile.headline,
       })) as FollowUser[];
     },
     enabled: !!user,
