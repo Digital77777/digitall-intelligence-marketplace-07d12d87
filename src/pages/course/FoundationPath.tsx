@@ -34,7 +34,7 @@ const FoundationPath = () => {
       duration: "2 weeks",
       lessons: 8,
       completed: false,
-      route: "/course/responsible-ai",
+      externalUrl: "https://www.elementsofia.com",
       topics: [
         "What is Artificial Intelligence?",
         "History of AI Development", 
@@ -53,7 +53,7 @@ const FoundationPath = () => {
       duration: "3 weeks",
       lessons: 12,
       completed: false,
-      route: "/course/advanced-technical-ai",
+      externalUrl: "https://www.khanacademy.org/math/linear-algebra",
       topics: [
         "Statistics Made Simple",
         "Understanding Probability", 
@@ -76,7 +76,7 @@ const FoundationPath = () => {
       duration: "4 weeks", 
       lessons: 16,
       completed: false,
-      route: "/course/practical-skills",
+      externalUrl: "https://www.freecodecamp.org/learn/machine-learning-with-python/",
       topics: [
         "Python Installation & Setup",
         "Variables and Data Types",
@@ -103,7 +103,7 @@ const FoundationPath = () => {
       duration: "2 weeks",
       lessons: 8,
       completed: false,
-      route: "/course/applied-ai-industry",
+      externalUrl: "https://www.deeplearning.ai/courses/generative-ai-for-everyone/",
       topics: [
         "AI in Healthcare",
         "AI in Finance & Banking",
@@ -323,7 +323,7 @@ const FoundationPath = () => {
                       <Button 
                         variant="outline" 
                         className="w-full md:w-auto"
-                        onClick={() => navigate(module.route)}
+                        onClick={() => window.open(module.externalUrl, '_blank', 'noopener,noreferrer')}
                       >
                         View Full Course
                         <ArrowRight className="h-4 w-4 ml-2" />
