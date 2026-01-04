@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import { Loader2 } from "lucide-react";
-import { InsightCard } from "./InsightCard";
 import { InsightCardSkeleton } from "./InsightCardSkeleton";
 import { TopicCard } from "./TopicCard";
 import { TopicCardSkeleton } from "./TopicCardSkeleton";
 import { InstagramPostMobile } from "./InstagramPostMobile";
+import { InstagramPostDesktop } from "./InstagramPostDesktop";
 import { InstagramFeedSkeleton } from "./InstagramPostSkeleton";
 import { ScrollToTopButton } from "./ScrollToTopButton";
 import { PullToRefresh } from "./PullToRefresh";
@@ -298,19 +298,19 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
       );
     }
 
-    // Desktop card grid layout
+    // Desktop Instagram-style feed
     return (
       <>
-        <div className={cn("space-y-4", className)}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={cn("space-y-6", className)}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {visibleItems.map((item, index) => (
               <FeedItem key={(item as CommunityInsight).id} index={index} isVisible={true}>
-                <InsightCard
+                <InstagramPostDesktop
                   insight={item as CommunityInsight}
                   onLikeClick={onLikeClick!}
                   onViewClick={onViewClick!}
+                  onVideoTap={onVideoTap}
                   getInitials={getInitials}
-                  priority={index === 0}
                 />
               </FeedItem>
             ))}
