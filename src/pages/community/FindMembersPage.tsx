@@ -44,10 +44,10 @@ const FindMembersPage = () => {
     navigate(`/profile/${memberId}`);
   };
 
-  // Member card wrapper that fetches connection/follow status
-  const MobileMemberCard = React.memo(({ member }: { member: ActiveMember }) => {
-    const { data: connectionStatus, isLoading: isLoadingConnection } = useConnectionStatus(member.user_id);
-    const { data: followStatus, isLoading: isLoadingFollow } = useFollowStatus(member.user_id);
+  // Member card wrapper for mobile that fetches connection/follow status
+  const MobileMemberCard = ({ member }: { member: ActiveMember }) => {
+    const { data: connectionStatus } = useConnectionStatus(member.user_id);
+    const { data: followStatus } = useFollowStatus(member.user_id);
     const isOwnProfile = user?.id === member.user_id;
     const isFollowing = !!followStatus;
 
@@ -71,7 +71,7 @@ const FindMembersPage = () => {
         isFollowPending={followUser.isPending}
       />
     );
-  });
+  };
 
   // Mobile Layout - LinkedIn-style grid
   if (isMobile) {
