@@ -37,6 +37,11 @@ const CommunityPage = () => {
   const [selectedInsight, setSelectedInsight] = useState<CommunityInsight | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
   
+  // Track new content availability for scroll-up refresh
+  const [hasNewContent, setHasNewContent] = useState(false);
+  const [newContentCount, setNewContentCount] = useState(0);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(Date.now());
+  
   // Feed scroll context for restoring position when returning from Reels
   const { insightsFeedScroll, setInsightsFeedScroll, returnToFeed, setReturnToFeed } = useFeedScroll();
   
@@ -187,7 +192,44 @@ const CommunityPage = () => {
   // Pull-to-refresh handler
   const handleRefreshInsights = useCallback(async () => {
     await refetchInsights();
+    setHasNewContent(false);
+    setNewContentCount(0);
+    setLastFetchTime(Date.now());
   }, [refetchInsights]);
+
+  // Check for new content periodically (every 30 seconds when tab is active)
+  useEffect(() => {
+    if (activeTab !== "insights") return;
+    
+    const checkForNewContent = async () => {
+      // Only check if user has been viewing for at least 30 seconds
+      const timeSinceLastFetch = Date.now() - lastFetchTime;
+      if (timeSinceLastFetch < 30000) return;
+      
+      try {
+        // Quick check for new insights since last fetch
+        const { count } = await import("@/integrations/supabase/client").then(m => 
+          m.supabase
+            .from("community_insights")
+            .select("id", { count: "exact", head: true })
+            .eq("is_published", true)
+            .gt("created_at", new Date(lastFetchTime).toISOString())
+        );
+        
+        if (count && count > 0) {
+          setHasNewContent(true);
+          setNewContentCount(count);
+        }
+      } catch (error) {
+        console.error("Error checking for new content:", error);
+      }
+    };
+    
+    const intervalId = setInterval(checkForNewContent, 30000);
+    
+    return () => clearInterval(intervalId);
+  }, [activeTab, lastFetchTime]);
+  
   return <div className="min-h-screen bg-background">
       <SEOHead title="AI Community - Connect, Learn & Collaborate" description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence." keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]} />
       {/* Hero Section */}
@@ -421,6 +463,8 @@ const CommunityPage = () => {
                 hasMore={!!hasNextPage}
                 onLoadMore={handleLoadMoreInsights}
                 onRefresh={handleRefreshInsights}
+                hasNewContent={hasNewContent}
+                newContentCount={newContentCount}
                 type="insight"
                 onLikeClick={handleLikeInsight}
                 onViewClick={handleInsightView}
