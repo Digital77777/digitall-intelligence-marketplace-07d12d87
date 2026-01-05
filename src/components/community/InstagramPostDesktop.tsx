@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { CommunityInsight } from "@/types/community";
@@ -310,14 +310,6 @@ export const InstagramPostDesktop = memo(({
           <h3 className="text-xl font-semibold mb-3 leading-tight">{insight.title}</h3>
           <p className="text-base leading-relaxed text-muted-foreground">
             {isExpanded ? insight.content : contentPreview}
-            {isTruncated && !isExpanded && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
-                className="text-primary ml-1 font-medium hover:underline"
-              >
-                more
-              </button>
-            )}
           </p>
         </div>
       )}
@@ -353,13 +345,7 @@ export const InstagramPostDesktop = memo(({
           >
             <Eye className="h-7 w-7 hover:text-muted-foreground/80" />
           </button>
-          <button className="p-1 hover:scale-110 transition-transform" aria-label="Share">
-            <Send className="h-7 w-7 hover:text-muted-foreground/80" />
-          </button>
         </div>
-        <button className="p-1 hover:scale-110 transition-transform" aria-label="Save">
-          <Bookmark className="h-7 w-7 hover:text-muted-foreground/80" />
-        </button>
       </div>
 
       {/* Likes count */}
@@ -376,14 +362,6 @@ export const InstagramPostDesktop = memo(({
               {insight.profiles?.full_name || "Community Member"}
             </span>
             {isExpanded ? insight.content : contentPreview}
-            {isTruncated && !isExpanded && (
-              <button 
-                onClick={() => setIsExpanded(true)}
-                className="text-muted-foreground ml-1 hover:underline"
-              >
-                more
-              </button>
-            )}
           </p>
         </div>
       )}

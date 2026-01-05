@@ -1,5 +1,5 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Heart, MessageCircle, Send, Bookmark, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { CommunityInsight } from "@/types/community";
@@ -313,14 +313,6 @@ export const InstagramPostMobile = memo(({
         >
           <p className="text-lg leading-relaxed">
             {isExpanded ? insight.content : contentPreview}
-            {isTruncated && !isExpanded && (
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
-                className="text-primary ml-1 font-medium"
-              >
-                more
-              </button>
-            )}
           </p>
         </div>
       )}
@@ -344,13 +336,7 @@ export const InstagramPostMobile = memo(({
           <button onClick={handleViewPost} className="p-1">
             <MessageCircle className="h-6 w-6 hover:text-muted-foreground/80" />
           </button>
-          <button className="p-1">
-            <Send className="h-6 w-6 hover:text-muted-foreground/80" />
-          </button>
         </div>
-        <button className="p-1">
-          <Bookmark className="h-6 w-6 hover:text-muted-foreground/80" />
-        </button>
       </div>
 
       {/* Likes count */}
@@ -366,14 +352,6 @@ export const InstagramPostMobile = memo(({
               {insight.profiles?.full_name || "Community Member"}
             </span>
             {isExpanded ? insight.content : contentPreview}
-            {isTruncated && !isExpanded && (
-              <button 
-                onClick={() => setIsExpanded(true)}
-                className="text-muted-foreground ml-1"
-              >
-                more
-              </button>
-            )}
           </p>
         </div>
       )}
