@@ -26,6 +26,8 @@ interface InstagramFeedProps<T> {
   emptyState?: React.ReactNode;
   onLoadMore?: () => void;
   onRefresh?: () => Promise<void>;
+  hasNewContent?: boolean;
+  newContentCount?: number;
   className?: string;
 }
 
@@ -137,6 +139,8 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   emptyState,
   onLoadMore,
   onRefresh,
+  hasNewContent = false,
+  newContentCount = 0,
   className
 }: InstagramFeedProps<T>) {
   const isMobile = useIsMobile();
@@ -293,7 +297,11 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
           ) : (
             feedContent
           )}
-          <ScrollToTopButton />
+          <ScrollToTopButton 
+            onRefresh={onRefresh}
+            hasNewContent={hasNewContent}
+            newContentCount={newContentCount}
+          />
         </>
       );
     }
@@ -337,7 +345,11 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
             </div>
           )}
         </div>
-        <ScrollToTopButton />
+        <ScrollToTopButton 
+          onRefresh={onRefresh}
+          hasNewContent={hasNewContent}
+          newContentCount={newContentCount}
+        />
       </>
     );
   }
@@ -376,7 +388,11 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
           </>
         )}
       </div>
-      <ScrollToTopButton />
+      <ScrollToTopButton 
+        onRefresh={onRefresh}
+        hasNewContent={hasNewContent}
+        newContentCount={newContentCount}
+      />
     </>
   );
 }
