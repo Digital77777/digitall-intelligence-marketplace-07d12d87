@@ -361,7 +361,7 @@ export const InstagramPostMobile = memo(({
         onClick={handleViewPost}
         className="px-4 pb-2 text-sm text-muted-foreground"
       >
-        View all comments
+        View more
       </button>
 
       {/* Category tag */}
