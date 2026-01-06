@@ -26,13 +26,13 @@ export const EventCard = memo(({ event, onJoinEvent, onViewDetails }: EventCardP
       className="hover:shadow-md transition-shadow overflow-hidden cursor-pointer" 
       onClick={handleCardClick}
     >
-      {/* Cover Image */}
+      {/* Cover Image - Full display like Instagram */}
       {event.cover_image && (
-        <div className="relative w-full h-32 sm:h-40">
+        <div className="w-full bg-black">
           <img 
             src={event.cover_image} 
             alt={event.title}
-            className="w-full h-full object-cover"
+            className="w-full max-h-[300px] object-contain"
           />
         </div>
       )}

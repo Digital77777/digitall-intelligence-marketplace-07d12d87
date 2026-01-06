@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play } from "lucide-react";
+import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play, MapPin, Globe, ChevronRight, Video, Sparkles, Building2, Code, Network, Presentation } from "lucide-react";
 import { QuickActionsRow } from "@/components/community/QuickActionsRow";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,10 +22,24 @@ import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import { InstagramFeed } from "@/components/community/InstagramFeed";
 import { useCommunity } from "@/hooks/useCommunity";
 import { useFeedScroll } from "@/contexts/FeedScrollContext";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, parseISO, isAfter, isBefore, addMinutes, isToday, isTomorrow, format } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
+
+// Event category configuration matching BrowseEventsPage
+const EVENT_CATEGORIES = [
+  { id: 'all', label: 'All Events', icon: Calendar, color: 'bg-primary/10 text-primary' },
+  { id: 'webinar', label: 'Webinars', icon: Video, color: 'bg-blue-500/10 text-blue-600' },
+  { id: 'workshop', label: 'Workshops', icon: Sparkles, color: 'bg-purple-500/10 text-purple-600' },
+  { id: 'meetup', label: 'Meetups', icon: Users, color: 'bg-green-500/10 text-green-600' },
+  { id: 'conference', label: 'Conferences', icon: Building2, color: 'bg-orange-500/10 text-orange-600' },
+  { id: 'hackathon', label: 'Hackathons', icon: Code, color: 'bg-red-500/10 text-red-600' },
+  { id: 'networking', label: 'Networking', icon: Network, color: 'bg-cyan-500/10 text-cyan-600' },
+  { id: 'qa', label: 'Q&A Sessions', icon: MessageCircle, color: 'bg-pink-500/10 text-pink-600' },
+  { id: 'demo', label: 'Demos', icon: Presentation, color: 'bg-amber-500/10 text-amber-600' },
+];
 const CommunityPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +98,42 @@ const CommunityPage = () => {
   const {
     data: stats
   } = useStats();
+
+  // Helper functions for events (matching BrowseEventsPage)
+  const isEventLive = useCallback((eventDate: string, eventTime: string, durationMinutes: number) => {
+    try {
+      const eventDateTime = parseISO(`${eventDate}T${eventTime}`);
+      const now = new Date();
+      const eventEndTime = addMinutes(eventDateTime, durationMinutes);
+      return isAfter(now, eventDateTime) && isBefore(now, eventEndTime);
+    } catch (error) {
+      return false;
+    }
+  }, []);
+
+  const getCategoryConfig = useCallback((eventType: string) => {
+    return EVENT_CATEGORIES.find(c => c.id === eventType.toLowerCase()) || EVENT_CATEGORIES[0];
+  }, []);
+
+  const formatEventDate = useCallback((date: string) => {
+    const parsed = parseISO(date);
+    if (isToday(parsed)) return 'Today';
+    if (isTomorrow(parsed)) return 'Tomorrow';
+    return format(parsed, 'EEE, MMM d');
+  }, []);
+
+  // Separate events into live, featured, and upcoming (matching BrowseEventsPage)
+  const { liveEvents, featuredEvents, upcomingEvents } = useMemo(() => {
+    if (!events) return { liveEvents: [], featuredEvents: [], upcomingEvents: [] };
+    const live = events.filter(event => 
+      isEventLive(event.event_date, event.event_time, event.duration_minutes || 60)
+    );
+    const notLive = events.filter(event => 
+      !isEventLive(event.event_date, event.event_time, event.duration_minutes || 60)
+    );
+    const featured = notLive.slice(0, 3);
+    return { liveEvents: live, featuredEvents: featured, upcomingEvents: notLive };
+  }, [events, isEventLive]);
 
   // Restore scroll position when returning from Reels
   useEffect(() => {
@@ -415,35 +465,190 @@ const CommunityPage = () => {
             />
               </TabsContent>
 
-              {/* Events Tab */}
+              {/* Events Tab - Matching BrowseEventsPage layout */}
               <TabsContent value="events" className="space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                <h2 className="text-xl sm:text-2xl font-semibold">Upcoming Events</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold">Live Events</h2>
                 <Button onClick={handleHostEvent} className="w-full sm:w-auto bg-gradient-ai text-white">
                   <Calendar className="mr-2 h-4 w-4" />
                   Host Event
                 </Button>
               </div>
 
-              {eventsLoading ? <EventSkeletonGrid count={3} /> : <div className="grid gap-3 sm:gap-4">
-                  {events && events.length > 0 ? events.map(event => <EventCard key={event.id} event={event} onJoinEvent={handleJoinEventClick} onViewDetails={event => setSelectedEvent(event)} />) : <Card className="shadow-sm">
-                      <CardContent className="p-8 sm:p-12 text-center">
-                        <div className="flex flex-col items-center">
-                          <div className="p-3 bg-primary/10 rounded-full mb-4">
-                            <Calendar className="w-8 h-8 sm:w-12 sm:h-12 text-primary" />
-                          </div>
-                          <h3 className="text-base sm:text-lg font-semibold mb-2">No upcoming events</h3>
-                          <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                            Host an event to bring the community together!
-                          </p>
-                          <Button onClick={handleHostEvent} className="w-full sm:w-auto bg-gradient-ai text-white">
-                            <Calendar className="mr-2 h-4 w-4" />
-                            Host an Event
-                          </Button>
+              {eventsLoading ? <EventSkeletonGrid count={3} /> : (
+                <div className="space-y-8">
+                  {/* Live Events Banner */}
+                  {liveEvents.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
+                        <h3 className="text-lg font-semibold">Happening Now</h3>
+                      </div>
+                      <div className="grid gap-4">
+                        {liveEvents.map((event) => {
+                          const categoryConfig = getCategoryConfig(event.event_type);
+                          const CategoryIcon = categoryConfig.icon;
+                          return (
+                            <Card 
+                              key={event.id}
+                              className="border-destructive/50 bg-gradient-to-r from-destructive/5 to-transparent cursor-pointer hover:shadow-lg transition-all"
+                              onClick={() => setSelectedEvent(event)}
+                            >
+                              <CardContent className="p-5">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                  <div className="flex items-center gap-4">
+                                    <div className={`h-16 w-16 rounded-xl ${categoryConfig.color} flex items-center justify-center shrink-0`}>
+                                      <CategoryIcon className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Badge variant="destructive" className="animate-pulse text-xs">
+                                          ● LIVE
+                                        </Badge>
+                                        <Badge variant="secondary" className="capitalize text-xs">
+                                          {event.event_type}
+                                        </Badge>
+                                        {event.city && (
+                                          <Badge variant="outline" className="text-xs">
+                                            <MapPin className="h-3 w-3 mr-1" />
+                                            {event.city}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <h3 className="font-semibold text-lg">{event.title}</h3>
+                                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                        <Users className="h-3.5 w-3.5" />
+                                        {event.attendees_count} watching
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (event.meeting_link) {
+                                        window.open(event.meeting_link, '_blank');
+                                      } else {
+                                        handleJoinEventClick(event.id, false);
+                                      }
+                                    }}
+                                    className="bg-destructive hover:bg-destructive/90 shrink-0"
+                                  >
+                                    Join Now
+                                    <ChevronRight className="ml-1 h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Featured Events Carousel */}
+                  {featuredEvents.length > 0 && (
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Featured Events</h3>
+                      <ScrollArea className="w-full whitespace-nowrap pb-4">
+                        <div className="flex gap-4">
+                          {featuredEvents.map((event) => {
+                            const categoryConfig = getCategoryConfig(event.event_type);
+                            const CategoryIcon = categoryConfig.icon;
+                            return (
+                              <Card 
+                                key={event.id}
+                                className="w-[320px] shrink-0 cursor-pointer hover:shadow-lg transition-all group overflow-hidden"
+                                onClick={() => setSelectedEvent(event)}
+                              >
+                                {/* Event Cover - Full display */}
+                                <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 relative">
+                                  {event.cover_image ? (
+                                    <div className="w-full h-full bg-black flex items-center justify-center">
+                                      <img 
+                                        src={event.cover_image} 
+                                        alt={event.title}
+                                        className="w-full h-full object-contain"
+                                      />
+                                    </div>
+                                  ) : (
+                                    <div className={`absolute inset-0 flex items-center justify-center ${categoryConfig.color}`}>
+                                      <CategoryIcon className="h-12 w-12 opacity-50" />
+                                    </div>
+                                  )}
+                                  <div className="absolute top-3 left-3 flex gap-2">
+                                    <Badge className="bg-background/90 text-foreground text-xs">
+                                      {event.is_online ? (
+                                        <><Globe className="h-3 w-3 mr-1" />Online</>
+                                      ) : (
+                                        <><MapPin className="h-3 w-3 mr-1" />{event.city || 'In-Person'}</>
+                                      )}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className={`h-6 w-6 rounded-md ${categoryConfig.color} flex items-center justify-center`}>
+                                      <CategoryIcon className="h-3.5 w-3.5" />
+                                    </div>
+                                    <span className="text-xs text-muted-foreground capitalize">{event.event_type}</span>
+                                  </div>
+                                  <h3 className="font-semibold line-clamp-2 mb-2 group-hover:text-primary transition-colors whitespace-normal">
+                                    {event.title}
+                                  </h3>
+                                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Calendar className="h-3.5 w-3.5" />
+                                      {formatEventDate(event.event_date)}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Users className="h-3.5 w-3.5" />
+                                      {event.attendees_count}
+                                    </span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
                         </div>
-                      </CardContent>
-                    </Card>}
-                </div>}
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    </div>
+                  )}
+
+                  {/* All Upcoming Events */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">All Upcoming Events</h3>
+                    <div className="grid gap-3 sm:gap-4">
+                      {upcomingEvents.length > 0 ? upcomingEvents.map(event => (
+                        <EventCard 
+                          key={event.id} 
+                          event={event} 
+                          onJoinEvent={handleJoinEventClick} 
+                          onViewDetails={event => setSelectedEvent(event)} 
+                        />
+                      )) : (
+                        <Card className="shadow-sm">
+                          <CardContent className="p-8 sm:p-12 text-center">
+                            <div className="flex flex-col items-center">
+                              <div className="p-3 bg-primary/10 rounded-full mb-4">
+                                <Calendar className="w-8 h-8 sm:w-12 sm:h-12 text-primary" />
+                              </div>
+                              <h3 className="text-base sm:text-lg font-semibold mb-2">No upcoming events</h3>
+                              <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+                                Host an event to bring the community together!
+                              </p>
+                              <Button onClick={handleHostEvent} className="w-full sm:w-auto bg-gradient-ai text-white">
+                                <Calendar className="mr-2 h-4 w-4" />
+                                Host an Event
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               </TabsContent>
 
               {/* Insights Tab */}
