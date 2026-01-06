@@ -155,17 +155,17 @@ export const LoyaltyProgramsSection = () => {
       {/* Tabs for Program Categories */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 mb-8">
-          <TabsTrigger value="learning" className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Learning Rewards
+          <TabsTrigger value="learning" className="flex items-center justify-center gap-2">
+            <BookOpen className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Learning Rewards</span>
           </TabsTrigger>
-          <TabsTrigger value="creator" className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Creator Rewards
+          <TabsTrigger value="creator" className="flex items-center justify-center gap-2">
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Creator Rewards</span>
           </TabsTrigger>
-          <TabsTrigger value="community" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Community Rewards
+          <TabsTrigger value="community" className="flex items-center justify-center gap-2">
+            <Users className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline">Community Rewards</span>
           </TabsTrigger>
         </TabsList>
 
