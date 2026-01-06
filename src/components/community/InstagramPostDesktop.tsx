@@ -371,7 +371,7 @@ export const InstagramPostDesktop = memo(({
         onClick={handleViewPost}
         className="px-4 pb-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
-        View all comments
+        View more
       </button>
 
       {/* CSS for heart animation */}
