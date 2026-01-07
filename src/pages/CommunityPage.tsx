@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
+import { FullscreenVideoModal } from "@/components/community/FullscreenVideoModal";
 import { EventDetailModal } from "@/components/community/EventDetailModal";
 import { TopicCard } from "@/components/community/TopicCard";
 import { EventCard } from "@/components/community/EventCard";
@@ -50,6 +51,9 @@ const CommunityPage = () => {
   const [insightCategory, setInsightCategory] = useState("all");
   const [selectedInsight, setSelectedInsight] = useState<CommunityInsight | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
+  
+  // Fullscreen video modal state
+  const [fullscreenVideo, setFullscreenVideo] = useState<{ url: string; poster?: string } | null>(null);
   
   // Track new content availability for scroll-up refresh
   const [hasNewContent, setHasNewContent] = useState(false);
@@ -215,14 +219,13 @@ const CommunityPage = () => {
     return "U";
   }, []);
 
-  // Handle video tap - navigate to Reels with video context
+  // Handle video tap - open fullscreen video modal
   const handleVideoTap = useCallback((videoUrl: string, insightId: string, videoIndex: number) => {
-    // Save current scroll position before navigating
-    setInsightsFeedScroll(window.scrollY);
-    
-    // Navigate to Reels with video URL for matching
-    navigate(`/community/reels?video=${encodeURIComponent(videoUrl)}&insight=${insightId}&source=insights`);
-  }, [navigate, setInsightsFeedScroll]);
+    // Find the insight to get the poster/thumbnail
+    const insight = insights.find(i => i.id === insightId);
+    const posterUrl = insight?.video_thumbnails?.[videoIndex];
+    setFullscreenVideo({ url: videoUrl, poster: posterUrl });
+  }, [insights]);
 
   // Memoize expensive computations
   const filteredInsights = useMemo(() => {
@@ -736,6 +739,14 @@ const CommunityPage = () => {
       {selectedInsight && <InsightDetailModal insight={selectedInsight} open={!!selectedInsight} onOpenChange={open => !open && setSelectedInsight(null)} />}
 
       {selectedEvent && <EventDetailModal event={selectedEvent} isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} onJoinEvent={handleJoinEventClick} />}
+
+      {/* Fullscreen Video Modal */}
+      <FullscreenVideoModal
+        videoUrl={fullscreenVideo?.url || ''}
+        posterUrl={fullscreenVideo?.poster}
+        isOpen={!!fullscreenVideo}
+        onClose={() => setFullscreenVideo(null)}
+      />
     </div>;
 };
 export default CommunityPage;
