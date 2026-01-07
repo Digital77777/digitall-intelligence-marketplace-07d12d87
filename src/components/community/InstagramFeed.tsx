@@ -277,13 +277,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
                 {isFetchingMore && <LoadingIndicator />}
               </>
             )}
-            
-            {/* End of feed indicator */}
-            {!hasMoreLocal && !hasMore && items.length > 6 && (
-              <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground">You're all caught up! 🎉</p>
-              </div>
-            )}
           </div>
         </div>
       );
@@ -337,12 +330,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
               <InfiniteScrollTrigger />
               {isFetchingMore && <LoadingIndicator />}
             </>
-          )}
-          
-          {!hasMoreLocal && !hasMore && items.length > 6 && (
-            <div className="py-6 text-center">
-              <p className="text-sm text-muted-foreground">You've seen all insights! 🎉</p>
-            </div>
           )}
         </div>
         <ScrollToTopButton 
