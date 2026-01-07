@@ -305,15 +305,42 @@ export const InstagramPostMobile = memo(({
         </div>
       )}
 
-      {/* Text-only post (no media) */}
+      {/* Text-only post (Facebook-style) */}
       {mediaItems.length === 0 && (
         <div 
-          className="px-4 py-6 bg-gradient-to-br from-muted/30 to-muted/10 min-h-[200px] flex items-center"
+          className="px-4 py-4"
           onClick={handleDoubleTap}
         >
-          <p className="text-lg leading-relaxed">
+          {/* Bold title */}
+          <h2 className="text-base font-bold text-foreground leading-snug mb-3">
+            {insight.title}
+          </h2>
+          {/* Content with Facebook-like typography */}
+          <div className="text-[15px] leading-relaxed text-foreground whitespace-pre-wrap">
             {isExpanded ? insight.content : contentPreview}
-          </p>
+            {isTruncated && !isExpanded && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(true);
+                }}
+                className="text-muted-foreground font-medium ml-1 hover:underline"
+              >
+                more
+              </button>
+            )}
+          </div>
+          {/* Double-tap heart animation for text posts */}
+          {showDoubleTapHeart && (
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+              <Heart 
+                className="w-24 h-24 text-red-500 fill-red-500 drop-shadow-lg" 
+                style={{ 
+                  animation: 'heartPulse 1s ease-out forwards'
+                }}
+              />
+            </div>
+          )}
         </div>
       )}
 
