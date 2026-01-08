@@ -8,6 +8,8 @@ import type { CommunityInsight } from "@/types/community";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
 import { RichTextRenderer } from "@/components/community/RichTextRenderer";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
 interface InsightCardProps {
   insight: CommunityInsight;
@@ -18,6 +20,8 @@ interface InsightCardProps {
 }
 
 export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitials, priority = false }: InsightCardProps) => {
+  const { isOfficial, badgeLabel } = useIsOfficialAccount(insight.profiles?.user_id);
+  
   const handleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     await onLikeClick(insight.id, insight.is_liked || false, insight.category);
@@ -79,9 +83,12 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm md:text-sm truncate">
-                {insight.profiles?.full_name || "Community Member"}
-              </p>
+              <div className="flex items-center gap-1.5">
+                <p className="font-medium text-sm md:text-sm truncate">
+                  {insight.profiles?.full_name || "Community Member"}
+                </p>
+                {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+              </div>
               <div className="flex flex-wrap items-center gap-2 md:gap-1.5">
                 <Badge variant="outline" className="text-xs md:text-xs px-2 md:px-1.5 py-0.5 md:py-0">
                   {insight.category}

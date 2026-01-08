@@ -1394,6 +1394,42 @@ export type Database = {
           },
         ]
       }
+      sponsored_accounts: {
+        Row: {
+          account_type: string
+          badge_label: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          priority_in_search: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_type?: string
+          badge_label?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          priority_in_search?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_type?: string
+          badge_label?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          priority_in_search?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       strategy_sessions: {
         Row: {
           consultant: string | null
@@ -1792,6 +1828,14 @@ export type Database = {
       }
       is_admin_email: { Args: never; Returns: boolean }
       is_current_user_admin: { Args: never; Returns: boolean }
+      is_official_account: {
+        Args: { p_user_id: string }
+        Returns: {
+          account_type: string
+          badge_label: string
+          is_official: boolean
+        }[]
+      }
       log_error: {
         Args: { p_error_context?: Json; p_error_message: string }
         Returns: undefined

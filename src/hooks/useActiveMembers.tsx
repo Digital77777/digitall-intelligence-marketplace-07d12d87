@@ -9,6 +9,8 @@ export interface ActiveMember {
   contributions: number;
   is_top_contributor: boolean;
   joined_at: string;
+  is_official?: boolean;
+  badge_label?: string;
 }
 
 export const useActiveMembers = (searchQuery?: string) => {
@@ -29,6 +31,16 @@ export const useActiveMembers = (searchQuery?: string) => {
 
       if (error) throw error;
 
+      // Fetch sponsored accounts for official status
+      const { data: sponsoredAccounts } = await supabase
+        .from("sponsored_accounts")
+        .select("user_id, badge_label, priority_in_search")
+        .eq("is_active", true);
+
+      const sponsoredMap = new Map(
+        sponsoredAccounts?.map((sa) => [sa.user_id, sa]) || []
+      );
+
       // For each profile, get their contributions using RPC
       const membersWithContributions = await Promise.all(
         profiles.map(async (profile) => {
@@ -36,6 +48,8 @@ export const useActiveMembers = (searchQuery?: string) => {
             "get_user_contributions",
             { p_user_id: profile.user_id }
           );
+
+          const sponsored = sponsoredMap.get(profile.user_id);
 
           if (rpcError) {
             console.error("Error fetching contributions:", rpcError);
@@ -47,6 +61,9 @@ export const useActiveMembers = (searchQuery?: string) => {
               contributions: 0,
               is_top_contributor: false,
               joined_at: profile.created_at,
+              is_official: !!sponsored,
+              badge_label: sponsored?.badge_label,
+              priority_in_search: sponsored?.priority_in_search || 0,
             };
           }
 
@@ -58,14 +75,22 @@ export const useActiveMembers = (searchQuery?: string) => {
             contributions: contributions || 0,
             is_top_contributor: (contributions || 0) >= 10,
             joined_at: profile.created_at,
+            is_official: !!sponsored,
+            badge_label: sponsored?.badge_label,
+            priority_in_search: sponsored?.priority_in_search || 0,
           };
         })
       );
 
-      // Sort by contributions
-      return membersWithContributions.sort(
-        (a, b) => b.contributions - a.contributions
-      );
+      // Sort by priority (official accounts first), then by contributions
+      return membersWithContributions.sort((a, b) => {
+        // Official accounts first
+        if (a.priority_in_search !== b.priority_in_search) {
+          return (b.priority_in_search || 0) - (a.priority_in_search || 0);
+        }
+        // Then by contributions
+        return b.contributions - a.contributions;
+      });
     },
   });
 };
