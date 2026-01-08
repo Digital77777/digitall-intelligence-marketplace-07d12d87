@@ -6,6 +6,8 @@ import type { CommunityInsight } from "@/types/community";
 import { formatDistanceToNow } from "date-fns";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
 interface InstagramPostMobileProps {
   insight: CommunityInsight;
@@ -29,6 +31,7 @@ export const InstagramPostMobile = memo(({
   const [isMuted, setIsMuted] = useState(true);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { isOfficial, badgeLabel } = useIsOfficialAccount(insight.profiles?.user_id);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<number>(0);
 
@@ -173,9 +176,12 @@ export const InstagramPostMobile = memo(({
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold leading-tight">
-              {insight.profiles?.full_name || "Community Member"}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold leading-tight">
+                {insight.profiles?.full_name || "Community Member"}
+              </span>
+              {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+            </div>
             <span className="text-xs text-muted-foreground">{timeAgo}</span>
           </div>
         </div>

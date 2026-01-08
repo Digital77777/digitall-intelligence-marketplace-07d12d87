@@ -14,6 +14,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useConnections } from "@/hooks/useConnections";
 import { useFollows } from "@/hooks/useFollows";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
 const PublicProfilePage = () => {
   const { userId } = useParams();
@@ -27,6 +29,7 @@ const PublicProfilePage = () => {
   const { data: followersCount = 0 } = useFollowersCount(userId || "");
   const { data: followingCount = 0 } = useFollowingCount(userId || "");
   const isFollowing = !!followStatus;
+  const { isOfficial, badgeLabel } = useIsOfficialAccount(userId);
 
   const { data: selectedInsight } = useQuery({
     queryKey: ["insight-detail", selectedInsightId],
@@ -168,11 +171,14 @@ const PublicProfilePage = () => {
                     {getInitials(profile.full_name || undefined, undefined)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 space-y-3 md:space-y-4 w-full">
+              <div className="flex-1 space-y-3 md:space-y-4 w-full">
                   <div className="text-center md:text-left">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-1 break-words">
-                      {profile.full_name || "Community Member"}
-                    </h1>
+                    <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap mb-1">
+                      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold break-words">
+                        {profile.full_name || "Community Member"}
+                      </h1>
+                      {isOfficial && <OfficialBadge label={badgeLabel} variant="inline" className="text-xs" />}
+                    </div>
                     {profile.headline && (
                       <p className="text-base sm:text-lg text-muted-foreground flex items-center justify-center md:justify-start gap-2 flex-wrap">
                         <Briefcase className="w-4 h-4 flex-shrink-0" />

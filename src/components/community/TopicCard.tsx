@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import type { CommunityTopic } from "@/types/community";
 import { RichTextRenderer } from "@/components/community/RichTextRenderer";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
 interface TopicCardProps {
   topic: CommunityTopic;
@@ -16,6 +18,7 @@ interface TopicCardProps {
 
 export const TopicCard = memo(({ topic, onTopicClick, getInitials }: TopicCardProps) => {
   const navigate = useNavigate();
+  const { isOfficial, badgeLabel } = useIsOfficialAccount(topic.profiles?.user_id);
 
   return (
     <Card 
@@ -40,9 +43,12 @@ export const TopicCard = memo(({ topic, onTopicClick, getInitials }: TopicCardPr
               }
             }}
           >
-            <p className="font-semibold text-sm leading-tight truncate">
-              {topic.profiles?.full_name || "Community Member"}
-            </p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-sm leading-tight truncate">
+                {topic.profiles?.full_name || "Community Member"}
+              </p>
+              {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+            </div>
             <p className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(topic.created_at), { addSuffix: true })}
             </p>

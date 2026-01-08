@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useOfficialAccounts, checkIsOfficial } from "@/hooks/useOfficialAccounts";
 
 interface Comment {
   id: string;
@@ -38,6 +40,7 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
   const inputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { data: officialAccounts } = useOfficialAccounts();
 
   // Fetch comments
   useEffect(() => {
@@ -226,21 +229,25 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
     e.stopPropagation();
   };
 
-  const renderComment = (comment: Comment, isReply = false, parentId?: string) => (
-    <div key={comment.id} className={`flex gap-3 group ${isReply ? "ml-10 mt-3" : ""}`}>
-      <Avatar className={isReply ? "w-7 h-7" : "w-9 h-9"}>
-        <AvatarImage src={comment.profile?.avatar_url || undefined} />
-        <AvatarFallback className="bg-primary/10 text-primary text-xs">
-          {getInitials(comment.profile?.full_name)}
-        </AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
-            <span className="font-semibold text-sm">
-              {comment.profile?.full_name || "Anonymous"}
-            </span>
-            <span className="text-sm ml-2">{comment.content}</span>
+  const renderComment = (comment: Comment, isReply = false, parentId?: string) => {
+    const { isOfficial, badgeLabel } = checkIsOfficial(comment.user_id, officialAccounts);
+    
+    return (
+      <div key={comment.id} className={`flex gap-3 group ${isReply ? "ml-10 mt-3" : ""}`}>
+        <Avatar className={isReply ? "w-7 h-7" : "w-9 h-9"}>
+          <AvatarImage src={comment.profile?.avatar_url || undefined} />
+          <AvatarFallback className="bg-primary/10 text-primary text-xs">
+            {getInitials(comment.profile?.full_name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <span className="font-semibold text-sm inline-flex items-center gap-1">
+                {comment.profile?.full_name || "Anonymous"}
+                {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+              </span>
+              <span className="text-sm ml-2">{comment.content}</span>
           </div>
           {user?.id === comment.user_id && (
             <Button
@@ -265,10 +272,11 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
               Reply
             </button>
           )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (!isOpen) return null;
 

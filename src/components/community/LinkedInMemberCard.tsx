@@ -3,6 +3,8 @@ import { X, UserPlus, Clock, Check } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
 export interface LinkedInMemberCardProps {
   member: {
@@ -36,6 +38,8 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
   isConnectPending,
   isFollowPending,
 }) => {
+  const { isOfficial, badgeLabel } = useIsOfficialAccount(member.user_id);
+  
   const getInitials = (name: string | null) => {
     if (!name) return "?";
     return name
@@ -173,9 +177,12 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       {/* Content */}
       <div className="px-3 pt-2 pb-4 text-center">
         {/* Name */}
-        <h3 className="font-semibold text-sm text-foreground line-clamp-1">
-          {member.full_name || "Anonymous User"}
-        </h3>
+        <div className="flex items-center justify-center gap-1.5">
+          <h3 className="font-semibold text-sm text-foreground line-clamp-1">
+            {member.full_name || "Anonymous User"}
+          </h3>
+          {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+        </div>
 
         {/* Headline or contributions */}
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 min-h-[2rem]">

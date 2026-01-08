@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CommunityEvent } from "@/types/community";
+import { OfficialBadge } from "@/components/ui/official-badge";
+import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
 interface EventCardProps {
   event: CommunityEvent;
@@ -12,6 +14,8 @@ interface EventCardProps {
 }
 
 export const EventCard = memo(({ event, onJoinEvent, onViewDetails }: EventCardProps) => {
+  const { isOfficial, badgeLabel } = useIsOfficialAccount(event.user_id);
+  
   const handleJoinClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     await onJoinEvent(event.id, event.is_registered || false);
@@ -118,11 +122,13 @@ export const EventCard = memo(({ event, onJoinEvent, onViewDetails }: EventCardP
                 <>
                   <Building2 className="w-3.5 h-3.5 shrink-0 text-primary" />
                   <span className="truncate font-medium">{event.hosted_by}</span>
+                  {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
                 </>
               ) : event.profiles?.full_name ? (
                 <>
                   <User className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Hosted by {event.profiles.full_name}</span>
+                  {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
                 </>
               ) : null}
             </div>
