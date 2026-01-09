@@ -8,6 +8,8 @@ interface ScrollToTopButtonProps {
   onRefresh?: () => Promise<void>;
   hasNewContent?: boolean;
   newContentCount?: number;
+  /** Position mode: 'fixed' (default) or 'relative' for inline positioning */
+  position?: 'fixed' | 'relative';
 }
 
 export const ScrollToTopButton = memo(({ 
@@ -15,7 +17,8 @@ export const ScrollToTopButton = memo(({
   className,
   onRefresh,
   hasNewContent = false,
-  newContentCount = 0
+  newContentCount = 0,
+  position = 'fixed'
 }: ScrollToTopButtonProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -49,7 +52,8 @@ export const ScrollToTopButton = memo(({
     });
   };
 
-  if (!isVisible) return null;
+  // For relative positioning, always show the button
+  if (position === 'fixed' && !isVisible) return null;
 
   return (
     <button
@@ -58,7 +62,7 @@ export const ScrollToTopButton = memo(({
       aria-label={hasNewContent ? `${newContentCount} new posts - tap to refresh` : "Scroll to top"}
       className={cn(
         // Base styles
-        "fixed z-50 rounded-full shadow-lg",
+        "rounded-full shadow-lg",
         "transition-all duration-300 ease-out",
         // Conditional sizing based on new content
         hasNewContent ? "px-4 py-3" : "p-3",
@@ -75,11 +79,11 @@ export const ScrollToTopButton = memo(({
         "hover:shadow-[0_6px_20px_hsl(var(--primary)/0.5)]",
         // Text color
         "text-primary-foreground",
-        // Animation
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+        // Animation for fixed position
+        position === 'fixed' && (isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"),
         isRefreshing && "cursor-wait",
-        // Position - bottom right, above mobile nav if present
-        "bottom-20 right-4 md:bottom-8 md:right-8",
+        // Position - fixed or relative
+        position === 'fixed' ? "fixed z-50 bottom-20 right-4 md:bottom-8 md:right-8" : "relative z-10",
         className
       )}
     >

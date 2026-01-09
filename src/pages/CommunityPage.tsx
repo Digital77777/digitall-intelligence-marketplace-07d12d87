@@ -26,6 +26,7 @@ import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { formatDistanceToNow, parseISO, isAfter, isBefore, addMinutes, isToday, isTomorrow, format } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { ScrollToTopButton } from "@/components/community/ScrollToTopButton";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -667,14 +668,12 @@ const CommunityPage = () => {
                 isFetchingMore={isFetchingNextPage}
                 hasMore={!!hasNextPage}
                 onLoadMore={handleLoadMoreInsights}
-                onRefresh={handleRefreshInsights}
-                hasNewContent={hasNewContent}
-                newContentCount={newContentCount}
                 type="insight"
                 onLikeClick={handleLikeInsight}
                 onViewClick={handleInsightView}
                 onVideoTap={handleVideoTap}
                 getInitials={getInitials}
+                hideScrollToTop
                 emptyState={
                   <Card className="mx-0 sm:mx-0">
                     <CardContent className="p-8 sm:p-12 text-center">
@@ -696,7 +695,7 @@ const CommunityPage = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Community Stats */}
-            <Card className="shadow-sm">
+            <Card className="shadow-sm relative">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">Community Stats</CardTitle>
               </CardHeader>
@@ -729,6 +728,16 @@ const CommunityPage = () => {
                   <span className="font-bold text-lg">{stats?.eventsThisWeek || 0}</span>
                 </div>
               </CardContent>
+              
+              {/* Scroll to Top Button positioned at bottom-right of Stats card */}
+              <div className="absolute -bottom-3 -right-3">
+                <ScrollToTopButton 
+                  position="relative"
+                  onRefresh={handleRefreshInsights}
+                  hasNewContent={hasNewContent}
+                  newContentCount={newContentCount}
+                />
+              </div>
             </Card>
 
           </div>
