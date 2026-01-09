@@ -29,6 +29,8 @@ interface InstagramFeedProps<T> {
   hasNewContent?: boolean;
   newContentCount?: number;
   className?: string;
+  /** Hide the scroll-to-top button (use when button is rendered externally) */
+  hideScrollToTop?: boolean;
 }
 
 // Individual feed item that loads progressively
@@ -141,7 +143,8 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   onRefresh,
   hasNewContent = false,
   newContentCount = 0,
-  className
+  className,
+  hideScrollToTop = false
 }: InstagramFeedProps<T>) {
   const isMobile = useIsMobile();
   // Progressive loading: show first item immediately, then batch load rest
@@ -357,11 +360,13 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
           ) : (
             feedContent
           )}
-          <ScrollToTopButton 
-            onRefresh={onRefresh}
-            hasNewContent={hasNewContent}
-            newContentCount={newContentCount}
-          />
+          {!hideScrollToTop && (
+            <ScrollToTopButton 
+              onRefresh={onRefresh}
+              hasNewContent={hasNewContent}
+              newContentCount={newContentCount}
+            />
+          )}
         </>
       );
     }
@@ -417,11 +422,13 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
             <LoopScrollTrigger />
           )}
         </div>
-        <ScrollToTopButton 
-          onRefresh={onRefresh}
-          hasNewContent={hasNewContent}
-          newContentCount={newContentCount}
-        />
+        {!hideScrollToTop && (
+          <ScrollToTopButton 
+            onRefresh={onRefresh}
+            hasNewContent={hasNewContent}
+            newContentCount={newContentCount}
+          />
+        )}
       </>
     );
   }
@@ -460,11 +467,13 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
           </>
         )}
       </div>
-      <ScrollToTopButton 
-        onRefresh={onRefresh}
-        hasNewContent={hasNewContent}
-        newContentCount={newContentCount}
-      />
+      {!hideScrollToTop && (
+        <ScrollToTopButton 
+          onRefresh={onRefresh}
+          hasNewContent={hasNewContent}
+          newContentCount={newContentCount}
+        />
+      )}
     </>
   );
 }
