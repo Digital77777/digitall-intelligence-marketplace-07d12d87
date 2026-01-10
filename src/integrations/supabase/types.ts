@@ -1836,6 +1836,10 @@ export type Database = {
           is_official: boolean
         }[]
       }
+      is_sponsored_account: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
       log_error: {
         Args: { p_error_context?: Json; p_error_message: string }
         Returns: undefined

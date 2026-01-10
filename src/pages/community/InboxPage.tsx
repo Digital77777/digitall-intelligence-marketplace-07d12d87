@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Reply, MessageCircle, UserPlus } from 'lucide-react';
+import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Reply, MessageCircle, UserPlus, PenSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,6 +21,8 @@ import { ReplyPreview } from '@/components/chat/ReplyPreview';
 import { QuotedMessage } from '@/components/chat/QuotedMessage';
 import { MessageActions } from '@/components/chat/MessageActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useIsCurrentUserSponsored } from '@/hooks/useOfficialAccounts';
+import { SponsoredUserSearch } from '@/components/chat/SponsoredUserSearch';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -29,6 +31,10 @@ const InboxPage = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [messageText, setMessageText] = useState('');
+  const [showUserSearch, setShowUserSearch] = useState(false);
+  
+  // Check if current user is a sponsored account
+  const { isSponsored } = useIsCurrentUserSponsored();
   
   // Get userId from URL, but prevent self-messaging
   const urlUserId = searchParams.get('userId');
@@ -182,8 +188,30 @@ const InboxPage = () => {
               {acceptedConnections.length} connections
             </p>
           </div>
+          {/* Message Anyone button for sponsored accounts */}
+          {isSponsored && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowUserSearch(true)}
+              className="rounded-xl gap-2"
+            >
+              <PenSquare className="h-4 w-4" />
+              <span className="hidden sm:inline">New Message</span>
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Sponsored User Search Modal */}
+      <SponsoredUserSearch
+        open={showUserSearch}
+        onOpenChange={setShowUserSearch}
+        onSelectUser={(userId) => {
+          handleSelectUser(userId);
+          setActiveTab('messages');
+        }}
+      />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Conversations & Connections */}

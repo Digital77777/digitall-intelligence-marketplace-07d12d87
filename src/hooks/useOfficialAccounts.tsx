@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SponsoredAccount {
   user_id: string;
@@ -32,6 +33,21 @@ export const useIsOfficialAccount = (userId: string | undefined) => {
   const account = accounts.find(a => a.user_id === userId);
   return {
     isOfficial: !!account,
+    badgeLabel: account?.badge_label,
+    accountType: account?.account_type,
+  };
+};
+
+// Hook to check if the current logged-in user is a sponsored account
+export const useIsCurrentUserSponsored = () => {
+  const { data: accounts } = useOfficialAccounts();
+  const { user } = useAuth();
+  
+  if (!user?.id || !accounts) return { isSponsored: false, badgeLabel: undefined };
+  
+  const account = accounts.find(a => a.user_id === user.id);
+  return {
+    isSponsored: !!account,
     badgeLabel: account?.badge_label,
     accountType: account?.account_type,
   };
