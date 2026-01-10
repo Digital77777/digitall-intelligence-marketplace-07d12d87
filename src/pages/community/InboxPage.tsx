@@ -21,8 +21,9 @@ import { ReplyPreview } from '@/components/chat/ReplyPreview';
 import { QuotedMessage } from '@/components/chat/QuotedMessage';
 import { MessageActions } from '@/components/chat/MessageActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIsCurrentUserSponsored } from '@/hooks/useOfficialAccounts';
+import { useIsCurrentUserSponsored, useOfficialAccounts } from '@/hooks/useOfficialAccounts';
 import { SponsoredUserSearch } from '@/components/chat/SponsoredUserSearch';
+import { OfficialBadge } from '@/components/ui/official-badge';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -35,6 +36,13 @@ const InboxPage = () => {
   
   // Check if current user is a sponsored account
   const { isSponsored } = useIsCurrentUserSponsored();
+  const { data: officialAccounts } = useOfficialAccounts();
+  
+  // Helper to check if a user is an official account
+  const getOfficialAccount = (userId: string | undefined) => {
+    if (!userId || !officialAccounts) return null;
+    return officialAccounts.find(a => a.user_id === userId) || null;
+  };
   
   // Get userId from URL, but prevent self-messaging
   const urlUserId = searchParams.get('userId');
@@ -306,15 +314,23 @@ const InboxPage = () => {
                         </div>
                         <div className="flex-1 min-w-0 text-left">
                           <div className="flex items-center justify-between mb-0.5">
-                            <p 
-                              className={`font-semibold text-sm truncate ${conv.unread_count > 0 ? 'text-foreground' : 'text-foreground/80'}`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/profile/${conv.user_id}`);
-                              }}
-                            >
-                              {conv.full_name || 'Unknown User'}
-                            </p>
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                              <p 
+                                className={`font-semibold text-sm truncate ${conv.unread_count > 0 ? 'text-foreground' : 'text-foreground/80'}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/profile/${conv.user_id}`);
+                                }}
+                              >
+                                {conv.full_name || 'Unknown User'}
+                              </p>
+                              {getOfficialAccount(conv.user_id) && (
+                                <OfficialBadge 
+                                  label={getOfficialAccount(conv.user_id)?.badge_label} 
+                                  variant="compact" 
+                                />
+                              )}
+                            </div>
                             {conv.last_message_time && (
                               <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
                                 {formatDistanceToNow(new Date(conv.last_message_time), { addSuffix: false })}
@@ -508,9 +524,17 @@ const InboxPage = () => {
                 className="flex-1 min-w-0 cursor-pointer"
                 onClick={() => navigate(`/profile/${selectedUserId}`)}
               >
-                <p className="font-semibold text-sm truncate hover:text-primary transition-colors">
-                  {selectedConversation?.full_name || 'Unknown User'}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold text-sm truncate hover:text-primary transition-colors">
+                    {selectedConversation?.full_name || 'Unknown User'}
+                  </p>
+                  {getOfficialAccount(selectedUserId) && (
+                    <OfficialBadge 
+                      label={getOfficialAccount(selectedUserId)?.badge_label} 
+                      variant="compact" 
+                    />
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                   <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                   Active now
