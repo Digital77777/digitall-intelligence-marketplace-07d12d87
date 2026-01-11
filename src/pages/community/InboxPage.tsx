@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Reply, MessageCircle, UserPlus, PenSquare } from 'lucide-react';
+import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Reply, MessageCircle, UserPlus, PenSquare, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,7 @@ import { MessageActions } from '@/components/chat/MessageActions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useIsCurrentUserSponsored, useOfficialAccounts } from '@/hooks/useOfficialAccounts';
 import { SponsoredUserSearch } from '@/components/chat/SponsoredUserSearch';
+import { BroadcastMessageModal } from '@/components/chat/BroadcastMessageModal';
 import { OfficialBadge } from '@/components/ui/official-badge';
 
 const InboxPage = () => {
@@ -33,7 +34,7 @@ const InboxPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [messageText, setMessageText] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
-  
+  const [showBroadcast, setShowBroadcast] = useState(false);
   // Check if current user is a sponsored account
   const { isSponsored } = useIsCurrentUserSponsored();
   const { data: officialAccounts } = useOfficialAccounts();
@@ -196,17 +197,28 @@ const InboxPage = () => {
               {acceptedConnections.length} connections
             </p>
           </div>
-          {/* Message Anyone button for sponsored accounts */}
+          {/* Broadcast & New Message buttons for sponsored accounts */}
           {isSponsored && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowUserSearch(true)}
-              className="rounded-xl gap-2"
-            >
-              <PenSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">New Message</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBroadcast(true)}
+                className="rounded-xl gap-2"
+              >
+                <Megaphone className="h-4 w-4" />
+                <span className="hidden sm:inline">Broadcast</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowUserSearch(true)}
+                className="rounded-xl gap-2"
+              >
+                <PenSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">New Message</span>
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -219,6 +231,12 @@ const InboxPage = () => {
           handleSelectUser(userId);
           setActiveTab('messages');
         }}
+      />
+
+      {/* Broadcast Message Modal */}
+      <BroadcastMessageModal
+        open={showBroadcast}
+        onOpenChange={setShowBroadcast}
       />
 
       <div className="flex-1 flex overflow-hidden">
