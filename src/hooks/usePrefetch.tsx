@@ -23,7 +23,7 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/community/inbox': () => import('@/pages/community/InboxPage'),
   '/community/browse-events': () => import('@/pages/community/BrowseEventsPage'),
   '/community/find-members': () => import('@/pages/community/FindMembersPage'),
-  '/community/reels': () => import('@/pages/community/ReelsPage'),
+  '/community/reels': () => import('@/pages/community/ReelsPage').then(m => m.default),
   '/community/share-insight': () => import('@/pages/community/ShareInsightPage'),
   '/community/start-topic': () => import('@/pages/community/StartTopicPage'),
   '/community/host-event': () => import('@/pages/community/HostEventPage'),
