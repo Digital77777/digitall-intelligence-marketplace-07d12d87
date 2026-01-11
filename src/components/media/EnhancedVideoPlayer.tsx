@@ -1,8 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { Play, Volume2, VolumeX, PictureInPicture2, Heart, Maximize, Minimize } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useReelsGestures } from "@/hooks/useReelsGestures";
-import { useReels } from "@/hooks/useReels";
 
 interface EnhancedVideoPlayerProps {
   src: string;
@@ -10,7 +8,6 @@ interface EnhancedVideoPlayerProps {
   className?: string;
   autoPlayOnScroll?: boolean;
   onLikeToggle?: () => void;
-  enableReelNavigation?: boolean;
 }
 
 export const EnhancedVideoPlayer = ({ 
@@ -19,7 +16,6 @@ export const EnhancedVideoPlayer = ({
   className = "", 
   autoPlayOnScroll = true, 
   onLikeToggle,
-  enableReelNavigation = true 
 }: EnhancedVideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,41 +33,6 @@ export const EnhancedVideoPlayer = ({
   const hideControlsTimeout = useRef<NodeJS.Timeout>();
   const muteIndicatorTimeout = useRef<NodeJS.Timeout>();
   const likeIndicatorTimeout = useRef<NodeJS.Timeout>();
-
-  const { findReelByVideoUrl, nextReel, prevReel, hasNext, hasPrev } = useReels();
-
-  const handleNextReel = () => {
-    if (!enableReelNavigation) return;
-    const currentReel = findReelByVideoUrl(src);
-    if (currentReel && hasNext) {
-      nextReel();
-    }
-  };
-
-  const handlePrevReel = () => {
-    if (!enableReelNavigation) return;
-    const currentReel = findReelByVideoUrl(src);
-    if (currentReel && hasPrev) {
-      prevReel();
-    }
-  };
-
-  const handleLikeToggle = () => {
-    setShowLikeIndicator(true);
-    if (likeIndicatorTimeout.current) clearTimeout(likeIndicatorTimeout.current);
-    likeIndicatorTimeout.current = setTimeout(() => setShowLikeIndicator(false), 800);
-    onLikeToggle?.();
-  };
-
-  useReelsGestures({
-    videoRef,
-    containerRef,
-    isFullscreen,
-    onNextReel: handleNextReel,
-    onPrevReel: handlePrevReel,
-    onLikeToggle: handleLikeToggle,
-    enabled: enableReelNavigation,
-  });
 
   // Autoplay on scroll
   useEffect(() => {

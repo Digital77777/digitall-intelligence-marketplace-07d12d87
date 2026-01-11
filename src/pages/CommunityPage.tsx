@@ -220,13 +220,13 @@ const CommunityPage = () => {
     return "U";
   }, []);
 
-  // Handle video tap - open fullscreen video modal
-  const handleVideoTap = useCallback((videoUrl: string, insightId: string, videoIndex: number) => {
-    // Find the insight to get the poster/thumbnail
-    const insight = insights.find(i => i.id === insightId);
-    const posterUrl = insight?.video_thumbnails?.[videoIndex];
-    setFullscreenVideo({ url: videoUrl, poster: posterUrl });
-  }, [insights]);
+  // Handle video tap - navigate to reels page
+  const handleVideoTap = useCallback((videoUrl: string, insightId: string, _videoIndex: number) => {
+    // Save current scroll position before navigating
+    setInsightsFeedScroll(window.scrollY);
+    // Navigate to reels with the video URL and source
+    navigate(`/community/reels?video=${encodeURIComponent(videoUrl)}&insight=${insightId}&source=insights`);
+  }, [navigate, setInsightsFeedScroll]);
 
   // Memoize expensive computations
   const filteredInsights = useMemo(() => {

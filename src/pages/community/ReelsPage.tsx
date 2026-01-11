@@ -1,370 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Share2, Volume2, VolumeX, Loader2, Plus, Music2, Bookmark } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ArrowLeft, Volume2, VolumeX, Search } from "lucide-react";
 import { useReels } from "@/hooks/useReels";
 import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
 import { SEOHead } from "@/components/SEOHead";
-import { ReelSkeleton } from "@/components/community/ReelSkeleton";
+import { TikTokReelsSkeleton } from "@/components/community/TikTokReelsSkeleton";
+import { TikTokReel } from "@/components/community/TikTokReel";
 import { CommentsOverlay } from "@/components/community/CommentsOverlay";
-
-interface ReelItemProps {
-  reel: {
-    id: string;
-    video_url: string;
-    thumbnail_url: string | null;
-    title: string | null;
-    user_id: string;
-    insight_id: string;
-    likes_count: number;
-    views_count: number;
-  };
-  isActive: boolean;
-  isMuted: boolean;
-  onMuteToggle: () => void;
-  onOpenComments: () => void;
-  commentsCount: number;
-}
-
-const ReelItem = ({ reel, isActive, isMuted, onMuteToggle, onOpenComments, commentsCount }: ReelItemProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [likesCount, setLikesCount] = useState(reel.likes_count);
-  const [showLikeAnimation, setShowLikeAnimation] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
-  const [videoError, setVideoError] = useState(false);
-  const [authorProfile, setAuthorProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const lastTapRef = useRef<number>(0);
-
-  // Fetch author profile
-  useEffect(() => {
-    const fetchAuthor = async () => {
-      const { data } = await supabase
-        .from("public_profiles")
-        .select("full_name, avatar_url")
-        .eq("user_id", reel.user_id)
-        .single();
-      if (data) setAuthorProfile(data);
-    };
-    fetchAuthor();
-  }, [reel.user_id]);
-
-  // Check if user has liked this reel
-  useEffect(() => {
-    const checkLike = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("insight_likes")
-        .select("id")
-        .eq("insight_id", reel.insight_id)
-        .eq("user_id", user.id)
-        .single();
-      setIsLiked(!!data);
-    };
-    checkLike();
-  }, [user, reel.insight_id]);
-
-  // Play/pause based on active state
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (isActive && !isPaused) {
-      video.muted = isMuted;
-      video.play().catch(() => {});
-    } else {
-      video.pause();
-      if (!isActive) video.currentTime = 0;
-    }
-  }, [isActive, isMuted, isPaused]);
-
-  const handleTap = useCallback(() => {
-    const now = Date.now();
-    if (now - lastTapRef.current < 300) {
-      // Double tap - like
-      if (!isLiked) {
-        handleLike();
-      }
-      setShowLikeAnimation(true);
-      setTimeout(() => setShowLikeAnimation(false), 800);
-    } else {
-      // Single tap - pause/play
-      setIsPaused(prev => !prev);
-    }
-    lastTapRef.current = now;
-  }, [isLiked]);
-
-  const handleLike = async () => {
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
-
-    try {
-      if (isLiked) {
-        await supabase
-          .from("insight_likes")
-          .delete()
-          .eq("insight_id", reel.insight_id)
-          .eq("user_id", user.id);
-        setIsLiked(false);
-        setLikesCount((prev) => Math.max(0, prev - 1));
-      } else {
-        await supabase.from("insight_likes").insert({
-          insight_id: reel.insight_id,
-          user_id: user.id,
-        });
-        setIsLiked(true);
-        setLikesCount((prev) => prev + 1);
-      }
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to update like", variant: "destructive" });
-    }
-  };
-
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: reel.title || "Check out this reel",
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast({ title: "Link copied!" });
-    }
-  };
-
-  const handleViewInsight = () => {
-    navigate(`/community?insight=${reel.insight_id}`);
-  };
-
-  const getInitials = (name: string | null) => {
-    if (!name) return "U";
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-  };
-
-  const formatCount = (count: number) => {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-    return count.toString();
-  };
-
-  const handleVideoError = () => {
-    setVideoError(true);
-    setIsBuffering(false);
-  };
-
-  return (
-    <div className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden">
-      {/* Full-screen video */}
-      {!videoError ? (
-        <video
-          ref={videoRef}
-          src={reel.video_url}
-          poster={reel.thumbnail_url || undefined}
-          className="absolute inset-0 w-full h-full object-cover"
-          loop
-          playsInline
-          muted={isMuted}
-          autoPlay={isActive}
-          onClick={handleTap}
-          onWaiting={() => setIsBuffering(true)}
-          onPlaying={() => setIsBuffering(false)}
-          onCanPlay={() => setIsBuffering(false)}
-          onError={handleVideoError}
-        />
-      ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
-          <p className="text-white/70 text-sm mb-2">Video unavailable</p>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={() => setVideoError(false)}
-            className="text-white border-white/30"
-          >
-            Retry
-          </Button>
-        </div>
-      )}
-
-      {/* Loading spinner */}
-      {isBuffering && isActive && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <Loader2 className="w-12 h-12 text-white animate-spin" />
-        </div>
-      )}
-
-      {/* Pause indicator */}
-      {isPaused && isActive && !isBuffering && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center">
-            <div className="w-0 h-0 border-l-[24px] border-l-white border-y-[14px] border-y-transparent ml-2" />
-          </div>
-        </div>
-      )}
-
-      {/* Double-tap like animation */}
-      {showLikeAnimation && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <Heart 
-            className="w-32 h-32 text-white fill-white animate-in zoom-in-50 fade-in duration-200" 
-            style={{ 
-              filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-              animation: 'heartPop 0.8s ease-out forwards'
-            }} 
-          />
-        </div>
-      )}
-
-      {/* Top gradient overlay */}
-      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 via-black/30 to-transparent z-10 pointer-events-none" />
-
-      {/* Bottom gradient overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
-
-      {/* Right side actions - Instagram style */}
-      <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20">
-        {/* Author avatar with follow button */}
-        <div className="relative mb-2">
-          <button 
-            onClick={() => navigate(`/profile/${reel.user_id}`)} 
-            className="block"
-          >
-            <Avatar className="w-12 h-12 border-2 border-white shadow-lg">
-              <AvatarImage src={authorProfile?.avatar_url || undefined} />
-              <AvatarFallback className="bg-gradient-to-br from-pink-500 to-purple-600 text-white font-semibold">
-                {getInitials(authorProfile?.full_name)}
-              </AvatarFallback>
-            </Avatar>
-          </button>
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center border-2 border-black">
-            <Plus className="w-3 h-3 text-white" />
-          </div>
-        </div>
-
-        {/* Like button */}
-        <button onClick={handleLike} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-          <div className={`p-0.5 ${isLiked ? "text-red-500" : "text-white"}`}>
-            <Heart 
-              className={`w-8 h-8 ${isLiked ? "fill-red-500" : ""}`} 
-              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-            />
-          </div>
-          <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-            {formatCount(likesCount)}
-          </span>
-        </button>
-
-        {/* Comment button */}
-        <button onClick={onOpenComments} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-          <div className="text-white p-0.5">
-            <MessageCircle 
-              className="w-8 h-8" 
-              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-            />
-          </div>
-          <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-            {commentsCount > 0 ? formatCount(commentsCount) : "Comment"}
-          </span>
-        </button>
-
-        {/* Share button */}
-        <button onClick={handleShare} className="flex flex-col items-center gap-1 active:scale-90 transition-transform">
-          <div className="text-white p-0.5">
-            <Share2 
-              className="w-7 h-7" 
-              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-            />
-          </div>
-        </button>
-
-        {/* Save button */}
-        <button 
-          onClick={() => setIsSaved(!isSaved)} 
-          className="flex flex-col items-center gap-1 active:scale-90 transition-transform"
-        >
-          <div className="text-white p-0.5">
-            <Bookmark 
-              className={`w-7 h-7 ${isSaved ? "fill-white" : ""}`}
-              style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }}
-            />
-          </div>
-        </button>
-
-        {/* Rotating music disc */}
-        <div className="mt-2">
-          <div 
-            className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg"
-            style={{ 
-              animation: isActive && !isPaused ? 'spin 3s linear infinite' : 'none',
-            }}
-          >
-            <Avatar className="w-full h-full rounded-lg">
-              <AvatarImage src={authorProfile?.avatar_url || undefined} className="object-cover" />
-              <AvatarFallback className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg">
-                <Music2 className="w-4 h-4 text-white/60" />
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom info - Instagram style */}
-      <div className="absolute bottom-6 left-4 right-20 z-20">
-        {/* Username */}
-        <button 
-          onClick={() => navigate(`/profile/${reel.user_id}`)} 
-          className="flex items-center gap-2 mb-2"
-        >
-          <span className="text-white font-bold text-base" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-            @{authorProfile?.full_name?.toLowerCase().replace(/\s+/g, "_") || "user"}
-          </span>
-        </button>
-        
-        {/* Caption */}
-        {reel.title && (
-          <p 
-            className="text-white text-sm line-clamp-2 leading-relaxed" 
-            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
-          >
-            {reel.title}
-          </p>
-        )}
-
-        {/* Audio indicator */}
-        <div className="flex items-center gap-2 mt-3">
-          <div className="flex items-center gap-2 bg-black/30 rounded-full px-3 py-1.5 backdrop-blur-sm">
-            <Music2 className="w-3.5 h-3.5 text-white" />
-            <span className="text-white text-xs font-medium truncate max-w-[150px]">
-              Original audio · {authorProfile?.full_name || "Creator"}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Mute button - bottom right corner */}
-      <button 
-        onClick={onMuteToggle} 
-        className="absolute bottom-8 right-4 z-20 p-2 rounded-full bg-black/40 backdrop-blur-sm active:scale-90 transition-transform"
-      >
-        {isMuted ? (
-          <VolumeX className="w-4 h-4 text-white" />
-        ) : (
-          <Volume2 className="w-4 h-4 text-white" />
-        )}
-      </button>
-    </div>
-  );
-};
+import { cn } from "@/lib/utils";
 
 const ReelsPage = () => {
   const navigate = useNavigate();
@@ -387,6 +31,7 @@ const ReelsPage = () => {
   
   const [activeIndex, setActiveIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(true);
+  const [activeTab, setActiveTab] = useState<"foryou" | "following">("foryou");
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Comments overlay state
@@ -396,9 +41,7 @@ const ReelsPage = () => {
   
   // Touch gesture state
   const touchStartY = useRef<number>(0);
-  const touchStartX = useRef<number>(0);
   const touchStartTime = useRef<number>(0);
-  const isScrolling = useRef<boolean>(false);
   
   // Preloaded video cache
   const preloadedVideos = useRef<Set<string>>(new Set());
@@ -487,125 +130,114 @@ const ReelsPage = () => {
     }
   }, [source, navigate, setReturnToFeed]);
 
-  // Set initial index if reelId provided (legacy support)
-  useEffect(() => {
-    if (initialReelId && reels.length > 0) {
-      const idx = reels.findIndex((r) => r.id === initialReelId);
-      if (idx !== -1) setActiveIndex(idx);
-    }
-  }, [initialReelId, reels]);
-
   // Handle scroll snap to detect active reel
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    let scrollTimeout: NodeJS.Timeout;
+    
     const handleScroll = () => {
-      const scrollTop = container.scrollTop;
-      const height = container.clientHeight;
-      const newIndex = Math.round(scrollTop / height);
-      if (newIndex !== activeIndex && newIndex >= 0 && newIndex < reels.length) {
-        setActiveIndex(newIndex);
-      }
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        const scrollTop = container.scrollTop;
+        const viewportHeight = window.innerHeight;
+        const newIndex = Math.round(scrollTop / viewportHeight);
+        
+        if (newIndex !== activeIndex && newIndex >= 0 && newIndex < reels.length) {
+          setActiveIndex(newIndex);
+        }
+      }, 50);
     };
 
     container.addEventListener("scroll", handleScroll, { passive: true });
-    return () => container.removeEventListener("scroll", handleScroll);
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      clearTimeout(scrollTimeout);
+    };
   }, [activeIndex, reels.length]);
 
-  // Scroll to reel on activeIndex change (for keyboard/swipe navigation)
-  const scrollToReel = useCallback((index: number) => {
-    const container = containerRef.current;
-    if (!container || index < 0 || index >= reels.length) return;
-    container.scrollTo({ top: index * container.clientHeight, behavior: "smooth" });
-  }, [reels.length]);
-
-  // Touch gesture handlers for swipe navigation
+  // Handle touch gestures for swipe navigation
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
-    touchStartX.current = e.touches[0].clientX;
     touchStartTime.current = Date.now();
-    isScrolling.current = false;
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isScrolling.current) return;
-    
-    const deltaX = Math.abs(e.touches[0].clientX - touchStartX.current);
-    const deltaY = Math.abs(e.touches[0].clientY - touchStartY.current);
-    
-    // Determine if this is a vertical scroll (for reels) vs horizontal gesture
-    if (deltaY > deltaX && deltaY > 10) {
-      isScrolling.current = true;
-    }
   }, []);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touchEndY = e.changedTouches[0].clientY;
-    const touchEndTime = Date.now();
     const deltaY = touchStartY.current - touchEndY;
-    const deltaTime = touchEndTime - touchStartTime.current;
+    const deltaTime = Date.now() - touchStartTime.current;
     
-    // Calculate velocity for swipe detection
-    const velocity = Math.abs(deltaY) / deltaTime;
-    const minSwipeDistance = 50;
-    const minVelocity = 0.3;
-    
-    // Fast swipe or sufficient distance triggers navigation
-    if ((Math.abs(deltaY) > minSwipeDistance || velocity > minVelocity) && isScrolling.current) {
+    // Quick swipe detection
+    if (Math.abs(deltaY) > 50 && deltaTime < 300) {
+      const container = containerRef.current;
+      if (!container) return;
+      
       if (deltaY > 0 && activeIndex < reels.length - 1) {
-        // Swipe up - go to next reel
-        scrollToReel(activeIndex + 1);
-        // Haptic feedback if available
-        if (navigator.vibrate) {
-          navigator.vibrate(10);
-        }
+        // Swipe up - next reel
+        container.scrollTo({
+          top: (activeIndex + 1) * window.innerHeight,
+          behavior: 'smooth'
+        });
       } else if (deltaY < 0 && activeIndex > 0) {
-        // Swipe down - go to previous reel
-        scrollToReel(activeIndex - 1);
-        if (navigator.vibrate) {
-          navigator.vibrate(10);
-        }
+        // Swipe down - previous reel
+        container.scrollTo({
+          top: (activeIndex - 1) * window.innerHeight,
+          behavior: 'smooth'
+        });
       }
     }
-  }, [activeIndex, reels.length, scrollToReel]);
+  }, [activeIndex, reels.length]);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowDown" || e.key === "j") {
+      const container = containerRef.current;
+      if (!container) return;
+
+      if (e.key === "ArrowDown" && activeIndex < reels.length - 1) {
         e.preventDefault();
-        const newIndex = Math.min(activeIndex + 1, reels.length - 1);
-        scrollToReel(newIndex);
-      } else if (e.key === "ArrowUp" || e.key === "k") {
+        container.scrollTo({
+          top: (activeIndex + 1) * window.innerHeight,
+          behavior: 'smooth'
+        });
+      } else if (e.key === "ArrowUp" && activeIndex > 0) {
         e.preventDefault();
-        const newIndex = Math.max(activeIndex - 1, 0);
-        scrollToReel(newIndex);
+        container.scrollTo({
+          top: (activeIndex - 1) * window.innerHeight,
+          behavior: 'smooth'
+        });
       } else if (e.key === "m") {
-        setIsMuted((prev) => !prev);
+        setIsMuted(prev => !prev);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeIndex, reels.length, scrollToReel]);
+  }, [activeIndex, reels.length]);
+
+  // Prevent body scroll when reels page is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
 
   if (isLoading) {
-    return <ReelSkeleton />;
+    return <TikTokReelsSkeleton />;
   }
 
   if (error) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
-        <SEOHead
-          title="Reels - Community Videos"
-          description="Watch engaging short-form video content from our AI community."
-        />
-        <p className="text-white text-lg mb-4">Failed to load reels</p>
-        <p className="text-white/60 text-sm mb-4">Please try again later</p>
-        <Button variant="outline" onClick={() => navigate("/community")}>
-          Back to Community
-        </Button>
+        <p className="text-white/70 text-lg mb-4">Failed to load reels</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="text-white border border-white/30 px-6 py-2 rounded-full"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
@@ -613,135 +245,122 @@ const ReelsPage = () => {
   if (reels.length === 0) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center z-50">
-        <SEOHead
-          title="Reels - Community Videos"
-          description="Watch engaging short-form video content from our AI community."
-        />
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-30 safe-area-inset-top">
-          <div className="flex items-center justify-between px-4 py-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 -ml-2"
-              onClick={handleBack}
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </Button>
-            <span className="text-white font-bold text-lg">Reels</span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 -mr-2"
-              onClick={() => navigate("/community/create-reel")}
-            >
-              <Plus className="w-6 h-6" />
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex flex-col items-center text-center px-6">
-          <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mb-6">
-            <Music2 className="w-10 h-10 text-white/60" />
-          </div>
-          <p className="text-white text-xl font-semibold mb-2">No reels yet</p>
-          <p className="text-white/60 text-sm mb-6 max-w-[280px]">
-            Be the first to share a short video with the community!
-          </p>
-          <Button 
-            onClick={() => navigate("/community/create-reel")}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-6"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Create Reel
-          </Button>
-        </div>
+        <p className="text-white/70 text-lg mb-2">No reels available</p>
+        <p className="text-white/50 text-sm mb-4">Be the first to create one!</p>
+        <button
+          onClick={() => navigate("/community/create-reel")}
+          className="bg-primary text-primary-foreground px-6 py-2 rounded-full font-medium"
+        >
+          Create Reel
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50">
+    <>
       <SEOHead
-        title="Reels - Community Videos"
-        description="Watch engaging short-form video content from our AI community."
+        title="Reels - Watch AI Community Videos"
+        description="Watch and discover AI-related short videos from our community members."
       />
       
-      {/* Header - Instagram style */}
-      <div className="absolute top-0 left-0 right-0 z-30 safe-area-inset-top">
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 -ml-2"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="w-6 h-6" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
-          </Button>
-          <span 
-            className="text-white font-bold text-lg"
-            style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}
-          >
-            Reels
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10 -mr-2"
-            onClick={() => navigate("/community/create-reel")}
-          >
-            <Plus className="w-6 h-6" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
-          </Button>
+      <div className="fixed inset-0 bg-black z-50">
+        {/* Top Navigation - TikTok style */}
+        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-4 bg-gradient-to-b from-black/60 to-transparent">
+          <div className="flex items-center justify-between">
+            {/* Back button */}
+            <button
+              onClick={handleBack}
+              className="p-2 rounded-full text-white"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </button>
+            
+            {/* Center tabs */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setActiveTab("following")}
+                className={cn(
+                  "text-base font-semibold transition-colors",
+                  activeTab === "following" ? "text-white" : "text-white/60"
+                )}
+              >
+                Following
+              </button>
+              <span className="text-white/30">|</span>
+              <button
+                onClick={() => setActiveTab("foryou")}
+                className={cn(
+                  "text-base font-semibold transition-colors",
+                  activeTab === "foryou" ? "text-white" : "text-white/60"
+                )}
+              >
+                For You
+              </button>
+            </div>
+            
+            {/* Search button */}
+            <button
+              onClick={() => navigate("/community")}
+              className="p-2 rounded-full text-white"
+            >
+              <Search className="w-6 h-6" />
+            </button>
+          </div>
+          
+          {/* Active tab indicator */}
+          <div className="flex justify-center mt-2">
+            <div 
+              className={cn(
+                "h-0.5 w-8 bg-white rounded-full transition-transform duration-200",
+                activeTab === "foryou" ? "translate-x-8" : "-translate-x-8"
+              )} 
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Reels container with snap scroll and touch gestures */}
-      <div
-        ref={containerRef}
-        className="w-full h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide touch-pan-y"
-        style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch" }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {reels.map((reel, index) => (
-          <div key={reel.id} className="w-full h-screen">
-            <ReelItem
+        {/* Mute button - bottom left */}
+        <button
+          onClick={() => setIsMuted(prev => !prev)}
+          className="absolute bottom-8 left-4 z-30 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white"
+        >
+          {isMuted ? (
+            <VolumeX className="w-5 h-5" />
+          ) : (
+            <Volume2 className="w-5 h-5" />
+          )}
+        </button>
+
+        {/* Reels container - vertical scroll with snap */}
+        <div
+          ref={containerRef}
+          className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          style={{ scrollSnapType: 'y mandatory' }}
+        >
+          {reels.map((reel, index) => (
+            <TikTokReel
+              key={reel.id}
               reel={reel}
               isActive={index === activeIndex}
               isMuted={isMuted}
-              onMuteToggle={() => setIsMuted((prev) => !prev)}
               onOpenComments={() => handleOpenComments(reel.insight_id)}
               commentsCount={commentsCounts[reel.insight_id] || 0}
             />
-          </div>
-        ))}
+          ))}
+        </div>
+
+        {/* Comments overlay */}
+        {selectedInsightId && (
+          <CommentsOverlay
+            isOpen={commentsOpen}
+            onClose={handleCloseComments}
+            insightId={selectedInsightId}
+          />
+        )}
       </div>
-
-      {/* Comments overlay */}
-      {selectedInsightId && (
-        <CommentsOverlay
-          insightId={selectedInsightId}
-          isOpen={commentsOpen}
-          onClose={handleCloseComments}
-        />
-      )}
-
-      {/* Custom styles for animations */}
-      <style>{`
-        @keyframes heartPop {
-          0% { transform: scale(0); opacity: 0; }
-          15% { transform: scale(1.2); opacity: 1; }
-          30% { transform: scale(0.95); }
-          45% { transform: scale(1.05); }
-          60% { transform: scale(1); }
-          100% { transform: scale(1); opacity: 0; }
-        }
-        .safe-area-inset-top {
-          padding-top: env(safe-area-inset-top, 0px);
-        }
-      `}</style>
-    </div>
+    </>
   );
 };
 
