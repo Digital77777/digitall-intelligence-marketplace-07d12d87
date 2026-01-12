@@ -21,19 +21,32 @@ const AIToolsPage = () => {
   const tools: AITool[] = [
     {
       id: 1,
-      name: "Lovable.dev",
-      title: "Lovable.dev",
-      description: "Build full-stack web applications with AI assistance. Create, iterate, and deploy production-ready apps in minutes.",
-      icon: Code2,
+      name: "Bolt.new",
+      title: "Bolt.new",
+      description: "Build and deploy full-stack web applications instantly with AI. Create production-ready apps in your browser.",
+      icon: Zap,
       category: "Development",
       features: ["AI-powered development", "Full-stack capabilities", "Instant deployment"],
       pricing: "Free",
       usage: "Free to start",
       gradient: "from-blue-500 to-cyan-500",
-      route: "https://lovable.dev"
+      route: "https://bolt.new"
     },
     {
       id: 2,
+      name: "ChatGPT",
+      title: "ChatGPT",
+      description: "OpenAI's powerful AI assistant for coding, writing, and problem-solving. Get help with any programming challenge.",
+      icon: Brain,
+      category: "Development",
+      features: ["Code generation", "Debugging assistance", "Learning support"],
+      pricing: "Free",
+      usage: "Free tier available",
+      gradient: "from-emerald-500 to-teal-500",
+      route: "https://chat.openai.com"
+    },
+    {
+      id: 3,
       name: "Replit",
       title: "Replit",
       description: "Collaborative coding platform with instant execution. Write, run, and share code in 50+ programming languages.",
@@ -46,7 +59,7 @@ const AIToolsPage = () => {
       route: "https://replit.com"
     },
     {
-      id: 3,
+      id: 4,
       name: "Cursor",
       title: "Cursor",
       description: "AI-first code editor built for productivity. Write code faster with intelligent AI pair programming.",
@@ -55,7 +68,7 @@ const AIToolsPage = () => {
       features: ["AI code completion", "Natural language editing", "Advanced refactoring"],
       pricing: "Free",
       usage: "Free trial available",
-      gradient: "from-emerald-500 to-teal-500",
+      gradient: "from-orange-500 to-red-500",
       route: "https://cursor.sh"
     }
   ];
@@ -78,7 +91,7 @@ const AIToolsPage = () => {
       difficulty: "Beginner",
       requiredTier: "starter",
       points: 100,
-      tools: ["Lovable.dev", "Replit"]
+      tools: ["Bolt.new", "Replit"]
     },
     {
       id: 2,
@@ -87,7 +100,7 @@ const AIToolsPage = () => {
       difficulty: "Intermediate",
       requiredTier: "creator",
       points: 250,
-      tools: ["Lovable.dev", "Cursor"]
+      tools: ["Bolt.new", "ChatGPT", "Cursor"]
     },
     {
       id: 3,
@@ -96,7 +109,7 @@ const AIToolsPage = () => {
       difficulty: "Advanced",
       requiredTier: "career",
       points: 500,
-      tools: ["Lovable.dev", "Replit", "Cursor"]
+      tools: ["Bolt.new", "Replit", "Cursor"]
     },
     {
       id: 4,
@@ -105,7 +118,7 @@ const AIToolsPage = () => {
       difficulty: "Beginner",
       requiredTier: "starter",
       points: 150,
-      tools: ["Lovable.dev", "Replit"]
+      tools: ["Bolt.new", "ChatGPT", "Replit"]
     },
     {
       id: 5,
@@ -114,7 +127,7 @@ const AIToolsPage = () => {
       difficulty: "Advanced",
       requiredTier: "career",
       points: 400,
-      tools: ["Lovable.dev", "Cursor"]
+      tools: ["Bolt.new", "ChatGPT", "Cursor"]
     }
   ];
 
@@ -167,8 +180,8 @@ const AIToolsPage = () => {
     <div className="min-h-screen bg-background">
       <SEOHead 
         title="AI Tools - Build Anything with AI"
-        description="Access powerful AI development tools including Lovable.dev, Replit, and Cursor. Build websites, apps, and AI-powered projects with ease."
-        keywords={["AI tools", "AI development", "Lovable.dev", "Replit", "Cursor", "code editor", "web development", "AI coding"]}
+        description="Access powerful AI development tools including Bolt.new, ChatGPT, Replit, and Cursor. Build websites, apps, and AI-powered projects with ease."
+        keywords={["AI tools", "AI development", "Bolt.new", "ChatGPT", "Replit", "Cursor", "code editor", "web development", "AI coding"]}
       />
       
       {/* Hero Section */}
