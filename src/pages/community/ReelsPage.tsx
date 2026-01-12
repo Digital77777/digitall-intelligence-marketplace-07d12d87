@@ -30,7 +30,7 @@ const ReelsPage = () => {
   });
   
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [activeTab, setActiveTab] = useState<"foryou" | "following">("foryou");
   const containerRef = useRef<HTMLDivElement>(null);
   
