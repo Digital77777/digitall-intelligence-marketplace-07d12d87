@@ -19,7 +19,7 @@ export const useCommunity = () => {
         let query = supabase
           .from("community_topics")
           .select("*")
-          .order("last_activity_at", { ascending: false });
+          .order("created_at", { ascending: false }); // Order by newest first
 
         if (searchQuery) {
           query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
@@ -58,11 +58,11 @@ export const useCommunity = () => {
             replies_count: repliesCountMap.get(topic.id) || 0,
           })) as CommunityTopic[];
           
-          // Apply recommendation algorithm
-          return scoreTopics(topicsWithProfiles);
+          // Return topics sorted by created_at (already sorted by DB)
+          return topicsWithProfiles;
         }
 
-        return scoreTopics(data as CommunityTopic[]);
+        return data as CommunityTopic[];
       },
       // Performance optimizations
       staleTime: 30 * 1000,

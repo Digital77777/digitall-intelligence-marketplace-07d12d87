@@ -23,6 +23,7 @@ import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import { InstagramFeed } from "@/components/community/InstagramFeed";
 import { useCommunity } from "@/hooks/useCommunity";
 import { useFeedScroll } from "@/contexts/FeedScrollContext";
+import { usePrefetch } from "@/hooks/usePrefetch";
 import { formatDistanceToNow, parseISO, isAfter, isBefore, addMinutes, isToday, isTomorrow, format } from "date-fns";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -63,6 +64,14 @@ const CommunityPage = () => {
   
   // Feed scroll context for restoring position when returning from Reels
   const { insightsFeedScroll, setInsightsFeedScroll, returnToFeed, setReturnToFeed } = useFeedScroll();
+  
+  // Prefetch reels data when community page loads for instant navigation
+  const { prefetchReelsData } = usePrefetch();
+  
+  useEffect(() => {
+    // Prefetch reels data in the background for instant loading
+    prefetchReelsData();
+  }, [prefetchReelsData]);
   
   const {
     user
