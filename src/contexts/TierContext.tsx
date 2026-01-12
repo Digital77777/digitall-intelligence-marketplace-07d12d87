@@ -16,7 +16,7 @@ export const TierProvider = ({ children }: { children: ReactNode }) => {
   const { subscription, loading, isAdminEmail } = useSubscription();
 
   const tierName = subscription?.tier?.name || null;
-  const maxToolsAccess = isAdminEmail ? 999999 : (subscription?.tier?.max_tools_access || 0);
+  const maxToolsAccess = isAdminEmail ? 999999 : (subscription?.tier?.max_tools_access || 3);
   const maxListings = isAdminEmail ? 999999 : (subscription?.tier?.max_listings || 0);
 
   const canAccessFeature = (feature: string): boolean => {
