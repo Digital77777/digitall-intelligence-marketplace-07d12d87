@@ -31,7 +31,7 @@ export const useReels = (options?: UseReelsOptions | string) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [initializedForReel, setInitializedForReel] = useState<string | null>(null);
 
-  // Fetch from community_reels table
+  // Fetch from community_reels table with instant loading
   const { data: reels = [], isLoading: reelsLoading, error: reelsError } = useQuery({
     queryKey: ["community-reels"],
     queryFn: async () => {
@@ -54,9 +54,12 @@ export const useReels = (options?: UseReelsOptions | string) => {
       })) as Reel[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes cache
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData, // Show stale data instantly
   });
 
-  // Fetch videos from insights that aren't already in reels
+  // Fetch videos from insights that aren't already in reels with instant loading
   const { data: insightVideos = [], isLoading: insightsLoading } = useQuery({
     queryKey: ["insight-videos-for-reels"],
     queryFn: async () => {
@@ -84,6 +87,9 @@ export const useReels = (options?: UseReelsOptions | string) => {
       ) as Reel[];
     },
     staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
+    placeholderData: (previousData) => previousData,
   });
 
   // Merge and deduplicate reels (prefer community_reels entries)

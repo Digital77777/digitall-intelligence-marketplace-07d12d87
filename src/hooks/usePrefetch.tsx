@@ -1,4 +1,6 @@
 import { useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 // Route-to-component mapping for prefetching
 const routeImports: Record<string, () => Promise<any>> = {
@@ -48,8 +50,63 @@ const routeImports: Record<string, () => Promise<any>> = {
 
 // Cache to track which routes have been prefetched
 const prefetchedRoutes = new Set<string>();
+const prefetchedData = new Set<string>();
 
 export const usePrefetch = () => {
+  const queryClient = useQueryClient();
+
+  // Prefetch reels data
+  const prefetchReelsData = useCallback(() => {
+    if (prefetchedData.has('reels')) return;
+    prefetchedData.add('reels');
+
+    // Prefetch community reels
+    queryClient.prefetchQuery({
+      queryKey: ["community-reels"],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("community_reels")
+          .select("*")
+          .order("created_at", { ascending: false, nullsFirst: false });
+        if (error) throw error;
+        return (data || []).map(reel => ({
+          ...reel,
+          created_at: reel.created_at || new Date().toISOString(),
+          likes_count: reel.likes_count || 0,
+          views_count: reel.views_count || 0,
+        }));
+      },
+      staleTime: 1000 * 60 * 5,
+    });
+
+    // Prefetch insight videos for reels
+    queryClient.prefetchQuery({
+      queryKey: ["insight-videos-for-reels"],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("community_insights")
+          .select("id, user_id, title, videos, video_thumbnails, likes_count, views_count, created_at")
+          .not("videos", "is", null)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return (data || []).flatMap((insight) => 
+          (insight.videos || []).map((url: string, i: number) => ({
+            id: `insight-video-${insight.id}-${i}`,
+            insight_id: insight.id,
+            user_id: insight.user_id,
+            video_url: url,
+            thumbnail_url: insight.video_thumbnails?.[i] || null,
+            title: insight.title,
+            created_at: insight.created_at,
+            likes_count: insight.likes_count || 0,
+            views_count: insight.views_count || 0,
+          }))
+        );
+      },
+      staleTime: 1000 * 60 * 5,
+    });
+  }, [queryClient]);
+
   const prefetchRoute = useCallback((path: string) => {
     // Skip if already prefetched
     if (prefetchedRoutes.has(path)) return;
@@ -67,7 +124,12 @@ export const usePrefetch = () => {
       prefetchedRoutes.delete(path);
       console.warn(`Failed to prefetch route: ${path}`, error);
     });
-  }, []);
+
+    // Also prefetch data for specific routes
+    if (path === '/community/reels') {
+      prefetchReelsData();
+    }
+  }, [prefetchReelsData]);
 
   const handleMouseEnter = useCallback((path: string) => {
     prefetchRoute(path);
@@ -80,6 +142,7 @@ export const usePrefetch = () => {
 
   return {
     prefetchRoute,
+    prefetchReelsData,
     handleMouseEnter,
     handleTouchStart,
   };
