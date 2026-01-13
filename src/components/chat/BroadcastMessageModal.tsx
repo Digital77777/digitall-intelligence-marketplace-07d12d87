@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, X, Send, Loader2, Users, Check, Megaphone } from 'lucide-react';
+import { Search, X, Send, Loader2, Users, Check, Megaphone, Image, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,6 +13,7 @@ import { useMessages } from '@/hooks/useMessages';
 import { useToast } from '@/hooks/use-toast';
 import { OfficialBadge } from '@/components/ui/official-badge';
 import { useOfficialAccounts } from '@/hooks/useOfficialAccounts';
+import { MessageMediaUploader } from '@/components/chat/MessageMediaUploader';
 
 interface UserProfile {
   user_id: string;
@@ -42,6 +43,7 @@ export const BroadcastMessageModal: React.FC<BroadcastMessageModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
 
   // Debounce search query
   useEffect(() => {
@@ -92,6 +94,7 @@ export const BroadcastMessageModal: React.FC<BroadcastMessageModalProps> = ({
       setResults([]);
       setSelectedUsers([]);
       setMessageContent('');
+      setSelectedMedia(null);
     }
   }, [open]);
 
@@ -127,10 +130,10 @@ export const BroadcastMessageModal: React.FC<BroadcastMessageModalProps> = ({
   };
 
   const handleSendBroadcast = async () => {
-    if (selectedUsers.length === 0 || !messageContent.trim()) {
+    if (selectedUsers.length === 0 || (!messageContent.trim() && !selectedMedia)) {
       toast({
         title: 'Missing information',
-        description: 'Please select at least one recipient and enter a message.',
+        description: 'Please select at least one recipient and enter a message or attach media.',
         variant: 'destructive',
       });
       return;
@@ -152,6 +155,8 @@ export const BroadcastMessageModal: React.FC<BroadcastMessageModalProps> = ({
         sendMessage.mutateAsync({
           receiverId: recipient.user_id,
           content: messageContent.trim(),
+          mediaUrl: selectedMedia?.url,
+          mediaType: selectedMedia?.type,
         })
       );
 
@@ -319,9 +324,57 @@ export const BroadcastMessageModal: React.FC<BroadcastMessageModalProps> = ({
             ) : null}
           </ScrollArea>
 
-          {/* Message Input */}
+          {/* Message Input with Media */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Message</label>
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">Message</label>
+              <MessageMediaUploader
+                onMediaSelected={(url, type) => setSelectedMedia({ url, type })}
+                onClear={() => setSelectedMedia(null)}
+                selectedMedia={null}
+                disabled={isSending}
+              />
+            </div>
+            
+            {/* Media Preview */}
+            {selectedMedia && (
+              <div className="p-3 bg-muted/30 rounded-xl">
+                <div className="relative inline-block">
+                  {selectedMedia.type === 'image' ? (
+                    <img
+                      src={selectedMedia.url}
+                      alt="Selected media"
+                      className="max-h-24 max-w-[150px] rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="relative">
+                      <video
+                        src={selectedMedia.url}
+                        className="max-h-24 max-w-[150px] rounded-lg object-cover"
+                        muted
+                        playsInline
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-lg">
+                        <Video className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full"
+                    onClick={() => setSelectedMedia(null)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {selectedMedia.type === 'image' ? '📷 Photo' : '🎬 Video'} will be sent
+                </p>
+              </div>
+            )}
+            
             <Textarea
               placeholder="Type your broadcast message..."
               value={messageContent}
@@ -346,7 +399,7 @@ export const BroadcastMessageModal: React.FC<BroadcastMessageModalProps> = ({
           <Button
             onClick={handleSendBroadcast}
             disabled={
-              selectedUsers.length === 0 || !messageContent.trim() || isSending
+              selectedUsers.length === 0 || (!messageContent.trim() && !selectedMedia) || isSending
             }
             className="rounded-xl gap-2"
           >

@@ -25,6 +25,8 @@ import { useIsCurrentUserSponsored, useOfficialAccounts } from '@/hooks/useOffic
 import { SponsoredUserSearch } from '@/components/chat/SponsoredUserSearch';
 import { BroadcastMessageModal } from '@/components/chat/BroadcastMessageModal';
 import { OfficialBadge } from '@/components/ui/official-badge';
+import { MessageMediaUploader } from '@/components/chat/MessageMediaUploader';
+import { MessageMedia } from '@/components/chat/MessageMedia';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -35,6 +37,7 @@ const InboxPage = () => {
   const [messageText, setMessageText] = useState('');
   const [showUserSearch, setShowUserSearch] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: 'image' | 'video' } | null>(null);
   // Check if current user is a sponsored account
   const { isSponsored } = useIsCurrentUserSponsored();
   const { data: officialAccounts } = useOfficialAccounts();
@@ -120,7 +123,10 @@ const InboxPage = () => {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || !selectedUserId) return;
+    
+    // Allow sending if there's text, media, or both
+    if (!selectedUserId) return;
+    if (!messageText.trim() && !selectedMedia) return;
 
     if (messageText.trim().length > 2000) {
       toast({
@@ -135,11 +141,14 @@ const InboxPage = () => {
       receiverId: selectedUserId,
       content: messageText.trim(),
       replyToId: replyToMessage?.id,
+      mediaUrl: selectedMedia?.url,
+      mediaType: selectedMedia?.type,
     });
 
     stopTyping();
     setMessageText('');
     setReplyToMessage(null);
+    setSelectedMedia(null);
   };
 
   const handleReply = (msg: Message) => {
@@ -610,11 +619,22 @@ const InboxPage = () => {
                               isSentByMe={isSender}
                             />
                           )}
+                          {/* Media display */}
+                          {msg.media_url && msg.media_type && (
+                            <div className="mb-2">
+                              <MessageMedia 
+                                mediaUrl={msg.media_url} 
+                                mediaType={msg.media_type as 'image' | 'video'} 
+                                isSender={isSender} 
+                              />
+                            </div>
+                          )}
+                          {/* Voice note or text content */}
                           {msg.voice_note_url ? (
                             <VoiceNotePlayer audioUrl={msg.voice_note_url} isSender={isSender} />
-                          ) : (
+                          ) : !msg.media_url || (msg.content && msg.content !== '📷 Photo' && msg.content !== '🎬 Video') ? (
                             <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                          )}
+                          ) : null}
                           <div className="flex items-center justify-between gap-2 mt-1.5">
                             <p
                               className={`text-[10px] ${
@@ -691,11 +711,53 @@ const InboxPage = () => {
                   </div>
                 ) : (
                   <form onSubmit={handleSendMessage}>
+                    {/* Media Preview for sponsored users */}
+                    {selectedMedia && (
+                      <div className="mb-2 p-3 bg-muted/30 rounded-xl">
+                        <div className="relative inline-block">
+                          {selectedMedia.type === 'image' ? (
+                            <img
+                              src={selectedMedia.url}
+                              alt="Selected media"
+                              className="max-h-32 max-w-[200px] rounded-lg object-cover"
+                            />
+                          ) : (
+                            <video
+                              src={selectedMedia.url}
+                              className="max-h-32 max-w-[200px] rounded-lg object-cover"
+                              muted
+                              playsInline
+                            />
+                          )}
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                            onClick={() => setSelectedMedia(null)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {selectedMedia.type === 'image' ? '📷 Photo' : '🎬 Video'} ready to send
+                        </p>
+                      </div>
+                    )}
                     <div className="flex items-end gap-2">
+                      {/* Media Upload Button - Only for sponsored accounts */}
+                      {isSponsored && (
+                        <MessageMediaUploader
+                          onMediaSelected={(url, type) => setSelectedMedia({ url, type })}
+                          onClear={() => setSelectedMedia(null)}
+                          selectedMedia={null}
+                          disabled={sendMessage.isPending}
+                        />
+                      )}
                       <div className="flex-1 relative">
                         <Input
                           ref={inputRef}
-                          placeholder="Type a message..."
+                          placeholder={selectedMedia ? "Add a caption..." : "Type a message..."}
                           value={messageText}
                           onChange={(e) => {
                             setMessageText(e.target.value);
@@ -720,7 +782,7 @@ const InboxPage = () => {
                         size="icon" 
                         variant="ghost"
                         onClick={startRecording}
-                        disabled={!!messageText.trim()}
+                        disabled={!!messageText.trim() || !!selectedMedia}
                         className="h-11 w-11 rounded-xl hover:bg-accent"
                       >
                         <Mic className="h-5 w-5" />
@@ -728,7 +790,7 @@ const InboxPage = () => {
                       <Button 
                         type="submit" 
                         size="icon" 
-                        disabled={!messageText.trim()}
+                        disabled={!messageText.trim() && !selectedMedia}
                         className="h-11 w-11 rounded-xl bg-primary hover:bg-primary/90"
                       >
                         <Send className="h-5 w-5" />
