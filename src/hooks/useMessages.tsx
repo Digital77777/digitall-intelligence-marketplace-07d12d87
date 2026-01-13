@@ -21,6 +21,8 @@ export interface Message {
   created_at: string;
   voice_note_url?: string | null;
   reply_to_id?: string | null;
+  media_url?: string | null;
+  media_type?: string | null;
   reply_to?: {
     id: string;
     content: string;
@@ -70,7 +72,9 @@ export const useMessages = () => {
             receiver_id,
             content,
             is_read,
-            created_at
+            created_at,
+            media_url,
+            media_type
           `)
           .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
           .order('created_at', { ascending: false });
@@ -94,11 +98,21 @@ export const useMessages = () => {
               .eq('user_id', partnerId)
               .single();
 
+            // Show media indicator in preview
+            let lastMessagePreview = msg.content;
+            if (msg.media_url && msg.media_type) {
+              if (msg.content && msg.content !== '📷 Photo' && msg.content !== '🎬 Video') {
+                lastMessagePreview = `${msg.media_type === 'image' ? '📷' : '🎬'} ${msg.content}`;
+              } else {
+                lastMessagePreview = msg.media_type === 'image' ? '📷 Photo' : '🎬 Video';
+              }
+            }
+
             conversationsMap.set(partnerId, {
               user_id: partnerId,
               full_name: profile?.full_name,
               avatar_url: profile?.avatar_url,
-              last_message: msg.content,
+              last_message: lastMessagePreview,
               last_message_time: msg.created_at,
               unread_count: 0,
             });
@@ -168,7 +182,9 @@ export const useMessages = () => {
             is_read,
             created_at,
             voice_note_url,
-            reply_to_id
+            reply_to_id,
+            media_url,
+            media_type
           `)
           .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`)
           .order('created_at', { ascending: true });
@@ -209,9 +225,16 @@ export const useMessages = () => {
 
   // Send a message
   const sendMessage = useMutation({
-    mutationFn: async ({ receiverId, content, voiceNoteUrl, replyToId }: { receiverId: string; content: string; voiceNoteUrl?: string; replyToId?: string }) => {
-      // Validate input - allow empty content if voice note is present
-      if (!voiceNoteUrl) {
+    mutationFn: async ({ receiverId, content, voiceNoteUrl, replyToId, mediaUrl, mediaType }: { 
+      receiverId: string; 
+      content: string; 
+      voiceNoteUrl?: string; 
+      replyToId?: string;
+      mediaUrl?: string;
+      mediaType?: 'image' | 'video';
+    }) => {
+      // Validate input - allow empty content if voice note or media is present
+      if (!voiceNoteUrl && !mediaUrl) {
         const validation = messageSchema.safeParse({ content });
         if (!validation.success) {
           throw new Error(validation.error.errors[0].message);
@@ -221,12 +244,22 @@ export const useMessages = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Determine message content
+      let messageContent = content;
+      if (voiceNoteUrl) {
+        messageContent = '🎤 Voice note';
+      } else if (mediaUrl && !content.trim()) {
+        messageContent = mediaType === 'video' ? '🎬 Video' : '📷 Photo';
+      }
+
       const { error } = await supabase.from('messages').insert({
         sender_id: user.id,
         receiver_id: receiverId,
-        content: voiceNoteUrl ? '🎤 Voice note' : content,
+        content: messageContent,
         voice_note_url: voiceNoteUrl || null,
         reply_to_id: replyToId || null,
+        media_url: mediaUrl || null,
+        media_type: mediaType || null,
       });
 
       if (error) throw error;
