@@ -29,115 +29,125 @@ export interface ConnectionWithProfile extends Connection {
   } | null;
 }
 
-export const useConnections = () => {
+// Standalone hook for connection status - can be called at component top level
+export const useConnectionStatus = (userId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["connection-status", user?.id, userId],
+    queryFn: async () => {
+      if (!user || !userId || user.id === userId) return null;
+
+      const { data, error } = await supabase
+        .from("user_connections")
+        .select("*")
+        .or(
+          `and(requester_id.eq.${user.id},recipient_id.eq.${userId}),and(requester_id.eq.${userId},recipient_id.eq.${user.id})`
+        )
+        .maybeSingle();
+
+      if (error) {
+        console.error("Connection status error:", error);
+        throw error;
+      }
+      return data as Connection | null;
+    },
+    enabled: !!user && !!userId && user.id !== userId,
+    staleTime: 30000,
+  });
+};
+
+// Standalone hook for pending requests
+export const usePendingRequests = () => {
+  const { user } = useAuth();
+
+  return useQuery<ConnectionWithProfile[]>({
+    queryKey: ["pending-connection-requests", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("user_connections")
+        .select("*")
+        .eq("recipient_id", user.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch requester profiles
+      if (data && data.length > 0) {
+        const requesterIds = data.map((conn) => conn.requester_id);
+        const { data: profiles } = await supabase
+          .from("public_profiles")
+          .select("user_id, full_name, avatar_url")
+          .in("user_id", requesterIds);
+
+        return data.map((conn) => ({
+          ...conn,
+          requester: profiles?.find((p) => p.user_id === conn.requester_id) || null,
+        })) as ConnectionWithProfile[];
+      }
+
+      return (data as ConnectionWithProfile[]) || [];
+    },
+    enabled: !!user,
+    staleTime: 30000,
+  });
+};
+
+// Standalone hook for accepted connections
+export const useAcceptedConnections = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["accepted-connections", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("user_connections")
+        .select("*")
+        .eq("status", "accepted")
+        .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .order("updated_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) return [];
+
+      // Get the other user's ID for each connection
+      const otherUserIds = data.map((conn) =>
+        conn.requester_id === user.id ? conn.recipient_id : conn.requester_id
+      );
+
+      const { data: profiles } = await supabase
+        .from("public_profiles")
+        .select("user_id, full_name, avatar_url, headline")
+        .in("user_id", otherUserIds);
+
+      return data.map((conn) => {
+        const otherUserId =
+          conn.requester_id === user.id ? conn.recipient_id : conn.requester_id;
+        const profile = profiles?.find((p) => p.user_id === otherUserId);
+        return {
+          ...conn,
+          connected_user: profile || null,
+        };
+      });
+    },
+    enabled: !!user,
+    staleTime: 30000,
+  });
+};
+
+// Standalone mutation hook for sending connection requests
+export const useSendConnectionRequest = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Get connection status with a specific user
-  const useConnectionStatus = (userId: string) => {
-    return useQuery({
-      queryKey: ["connection-status", user?.id, userId],
-      queryFn: async () => {
-        if (!user || !userId || user.id === userId) return null;
-
-        const { data, error } = await supabase
-          .from("user_connections")
-          .select("*")
-          .or(
-            `and(requester_id.eq.${user.id},recipient_id.eq.${userId}),and(requester_id.eq.${userId},recipient_id.eq.${user.id})`
-          )
-          .maybeSingle();
-
-        if (error) {
-          console.error("Connection status error:", error);
-          throw error;
-        }
-        return data;
-      },
-      enabled: !!user && !!userId && user.id !== userId,
-    });
-  };
-
-  // Get pending connection requests (received)
-  const usePendingRequests = () => {
-    return useQuery<ConnectionWithProfile[]>({
-      queryKey: ["pending-connection-requests"],
-      queryFn: async () => {
-        if (!user) return [];
-
-        const { data, error } = await supabase
-          .from("user_connections")
-          .select("*")
-          .eq("recipient_id", user.id)
-          .eq("status", "pending")
-          .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        // Fetch requester profiles
-        if (data && data.length > 0) {
-          const requesterIds = data.map((conn) => conn.requester_id);
-          const { data: profiles } = await supabase
-            .from("public_profiles")
-            .select("user_id, full_name, avatar_url")
-            .in("user_id", requesterIds);
-
-          return data.map((conn) => ({
-            ...conn,
-            requester: profiles?.find((p) => p.user_id === conn.requester_id) || null,
-          })) as ConnectionWithProfile[];
-        }
-
-        return data as ConnectionWithProfile[] || [];
-      },
-      enabled: !!user,
-    });
-  };
-
-  // Get all accepted connections
-  const useAcceptedConnections = () => {
-    return useQuery({
-      queryKey: ["accepted-connections"],
-      queryFn: async () => {
-        if (!user) return [];
-
-        const { data, error } = await supabase
-          .from("user_connections")
-          .select("*")
-          .eq("status", "accepted")
-          .or(`requester_id.eq.${user.id},recipient_id.eq.${user.id}`)
-          .order("updated_at", { ascending: false });
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) return [];
-
-        // Get the other user's ID for each connection
-        const otherUserIds = data.map((conn) =>
-          conn.requester_id === user.id ? conn.recipient_id : conn.requester_id
-        );
-
-        const { data: profiles } = await supabase
-          .from("public_profiles")
-          .select("user_id, full_name, avatar_url, headline")
-          .in("user_id", otherUserIds);
-
-        return data.map((conn) => {
-          const otherUserId = conn.requester_id === user.id ? conn.recipient_id : conn.requester_id;
-          const profile = profiles?.find((p) => p.user_id === otherUserId);
-          return {
-            ...conn,
-            connected_user: profile || null,
-          };
-        });
-      },
-      enabled: !!user,
-    });
-  };
-
-  // Send connection request
-  const sendConnectionRequest = useMutation({
+  return useMutation({
     mutationFn: async (recipientId: string) => {
       if (!user) throw new Error("Must be logged in");
       if (user.id === recipientId) throw new Error("Cannot connect with yourself");
@@ -153,11 +163,11 @@ export const useConnections = () => {
 
       if (existing) {
         throw new Error(
-          existing.status === "pending" 
-            ? "Connection request already pending" 
-            : existing.status === "accepted" 
-              ? "Already connected" 
-              : "Connection was previously declined"
+          existing.status === "pending"
+            ? "Connection request already pending"
+            : existing.status === "accepted"
+            ? "Already connected"
+            : "Connection was previously declined"
         );
       }
 
@@ -177,11 +187,8 @@ export const useConnections = () => {
       }
       return data;
     },
-    onSuccess: (_, recipientId) => {
-      // Invalidate all connection-related queries with specific user
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
-      queryClient.invalidateQueries({ queryKey: ["connection-status", user?.id, recipientId] });
-      queryClient.invalidateQueries({ queryKey: ["pending-requests"] });
       queryClient.invalidateQueries({ queryKey: ["pending-connection-requests"] });
       queryClient.invalidateQueries({ queryKey: ["accepted-connections"] });
       toast({
@@ -197,9 +204,14 @@ export const useConnections = () => {
       });
     },
   });
+};
 
-  // Accept connection request
-  const acceptConnectionRequest = useMutation({
+// Standalone mutation hook for accepting connection requests
+export const useAcceptConnectionRequest = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
     mutationFn: async (connectionId: string) => {
       const { data, error } = await supabase
         .from("user_connections")
@@ -214,13 +226,14 @@ export const useConnections = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-connection-requests"] });
       queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["accepted-connections"] });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
       toast({
         title: "Connection Accepted",
         description: "You are now connected!",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to accept connection request",
@@ -228,9 +241,14 @@ export const useConnections = () => {
       });
     },
   });
+};
 
-  // Ignore connection request
-  const ignoreConnectionRequest = useMutation({
+// Standalone mutation hook for ignoring connection requests
+export const useIgnoreConnectionRequest = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
     mutationFn: async (connectionId: string) => {
       const { data, error } = await supabase
         .from("user_connections")
@@ -250,7 +268,7 @@ export const useConnections = () => {
         description: "Connection request has been ignored.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to ignore connection request",
@@ -258,6 +276,13 @@ export const useConnections = () => {
       });
     },
   });
+};
+
+// Legacy hook for backward compatibility - deprecated, use standalone hooks instead
+export const useConnections = () => {
+  const sendConnectionRequest = useSendConnectionRequest();
+  const acceptConnectionRequest = useAcceptConnectionRequest();
+  const ignoreConnectionRequest = useIgnoreConnectionRequest();
 
   return {
     useConnectionStatus,
