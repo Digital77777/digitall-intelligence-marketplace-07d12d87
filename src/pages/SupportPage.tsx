@@ -3,23 +3,73 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { HeadphonesIcon, MessageSquare, Phone, Mail, Clock, Crown, CheckCircle2 } from 'lucide-react';
+import { HeadphonesIcon, MessageSquare, Phone, Mail, Clock, Crown, CheckCircle2, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function SupportPage() {
   const { toast } = useToast();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Message Sent",
-      description: "Your priority support request has been received. We'll respond within 15 minutes.",
-    });
-    setSubject('');
-    setMessage('');
+    
+    if (!subject.trim() || !message.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in both subject and message fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('send-support-request', {
+        body: {
+          subject: subject.trim(),
+          message: message.trim(),
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to send support request');
+      }
+
+      toast({
+        title: "Message Sent",
+        description: "Your priority support request has been received. We'll respond within 15 minutes.",
+      });
+      setSubject('');
+      setMessage('');
+    } catch (error: any) {
+      console.error('Error sending support request:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send your request. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWhatsAppChat = () => {
+    window.open('https://wa.me/27671642375', '_blank');
+  };
+
+  const handlePhoneCall = () => {
+    window.location.href = 'tel:+27671642375';
+  };
+
+  const handleEmailSupport = () => {
+    window.location.href = 'mailto:digitalintelligencemarketplace@gmail.com?subject=Support%20Request';
   };
 
   const supportChannels = [
@@ -28,29 +78,32 @@ export default function SupportPage() {
       title: 'Live Chat',
       description: 'Instant messaging with our support team',
       availability: 'Available 24/7',
-      action: 'Start Chat'
+      action: 'Start Chat',
+      onClick: handleWhatsAppChat,
     },
     {
       icon: Phone,
       title: 'Phone Support',
       description: 'Direct line to your account manager',
       availability: 'Mon-Fri 8AM-8PM',
-      action: 'Call Now'
+      action: 'Call Now',
+      onClick: handlePhoneCall,
     },
     {
       icon: Mail,
       title: 'Email Support',
       description: 'Detailed support via email',
       availability: 'Response within 15 min',
-      action: 'Send Email'
+      action: 'Send Email',
+      onClick: handleEmailSupport,
     }
   ];
 
   const accountManager = {
-    name: 'Sarah Johnson',
-    role: 'Senior Account Manager',
-    email: 'sarah.johnson@platform.com',
-    phone: '+27 11 123 4567'
+    name: 'DIM Support Team',
+    role: 'Account Manager',
+    email: 'digitalintelligencemarketplace@gmail.com',
+    phone: '+27 67 164 2375'
   };
 
   return (
@@ -80,6 +133,8 @@ export default function SupportPage() {
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   required
+                  disabled={isSubmitting}
+                  maxLength={200}
                 />
               </div>
 
@@ -92,6 +147,8 @@ export default function SupportPage() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required
+                  disabled={isSubmitting}
+                  maxLength={5000}
                 />
               </div>
 
@@ -100,8 +157,15 @@ export default function SupportPage() {
                 <span className="text-sm font-medium">Average response time: 12 minutes</span>
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
-                Send Priority Request
+              <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Send Priority Request'
+                )}
               </Button>
             </form>
           </CardContent>
@@ -118,7 +182,7 @@ export default function SupportPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="h-16 w-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl font-bold text-primary-foreground">
-                  SJ
+                  DIM
                 </div>
                 <div>
                   <p className="font-semibold">{accountManager.name}</p>
@@ -127,17 +191,23 @@ export default function SupportPage() {
               </div>
 
               <div className="space-y-3 pt-3 border-t">
-                <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleEmailSupport}
+                  className="flex items-center gap-3 w-full text-left hover:text-primary transition-colors"
+                >
                   <Mail className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{accountManager.email}</span>
-                </div>
-                <div className="flex items-center gap-3">
+                </button>
+                <button 
+                  onClick={handlePhoneCall}
+                  className="flex items-center gap-3 w-full text-left hover:text-primary transition-colors"
+                >
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">{accountManager.phone}</span>
-                </div>
+                </button>
               </div>
 
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full" onClick={handlePhoneCall}>
                 Schedule Call
               </Button>
             </CardContent>
@@ -182,7 +252,7 @@ export default function SupportPage() {
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>{channel.availability}</span>
                   </div>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full" onClick={channel.onClick}>
                     {channel.action}
                   </Button>
                 </CardContent>
