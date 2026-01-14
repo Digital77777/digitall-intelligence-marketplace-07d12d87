@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,22 +7,65 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
-import { useConnections } from "@/hooks/useConnections";
-import { useFollows } from "@/hooks/useFollows";
+import { useConnectionStatus, useSendConnectionRequest } from "@/hooks/useConnections";
+import { useFollowStatus, useFollowUser } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LinkedInMemberCard from "@/components/community/LinkedInMemberCard";
 import { LinkedInMemberCardSkeletonGrid } from "@/components/community/LinkedInMemberCardSkeleton";
 import { MemberSkeletonGrid } from "@/components/community/MemberCardSkeleton";
 
+// Separate component for member card to properly use hooks
+const MemberCardWithStatus = ({ 
+  member, 
+  onConnect, 
+  onFollow, 
+  onViewProfile,
+  isConnectPending,
+  isFollowPending
+}: { 
+  member: ActiveMember; 
+  onConnect: (id: string) => void;
+  onFollow: (id: string) => void;
+  onViewProfile: (id: string) => void;
+  isConnectPending: boolean;
+  isFollowPending: boolean;
+}) => {
+  const { user } = useAuth();
+  const { data: connectionStatus } = useConnectionStatus(member.user_id);
+  const { data: followStatus } = useFollowStatus(member.user_id);
+  const isOwnProfile = user?.id === member.user_id;
+  const isFollowing = !!followStatus;
+
+  const getConnectionStatusString = (): 'none' | 'pending' | 'accepted' => {
+    if (!connectionStatus) return 'none';
+    if (connectionStatus.status === 'accepted') return 'accepted';
+    if (connectionStatus.status === 'pending') return 'pending';
+    return 'none';
+  };
+
+  return (
+    <LinkedInMemberCard
+      member={member}
+      onConnect={onConnect}
+      onFollow={onFollow}
+      onViewProfile={onViewProfile}
+      connectionStatus={getConnectionStatusString()}
+      isFollowing={isFollowing}
+      isOwnProfile={isOwnProfile}
+      isConnectPending={isConnectPending}
+      isFollowPending={isFollowPending}
+    />
+  );
+};
+
 const FindMembersPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const { data: members = [], isLoading } = useActiveMembers(searchQuery);
-  const { sendConnectionRequest, useConnectionStatus } = useConnections();
-  const { followUser, unfollowUser, useFollowStatus } = useFollows();
+  const sendConnectionRequest = useSendConnectionRequest();
+  const followUser = useFollowUser();
 
   const topContributors = useMemo(() => {
     return members.filter((m) => m.is_top_contributor);
@@ -36,41 +79,8 @@ const FindMembersPage = () => {
     followUser.mutate(memberId);
   };
 
-  const handleUnfollow = (memberId: string) => {
-    unfollowUser.mutate(memberId);
-  };
-
   const handleViewProfile = (memberId: string) => {
     navigate(`/profile/${memberId}`);
-  };
-
-  // Member card wrapper for mobile that fetches connection/follow status
-  const MobileMemberCard = ({ member }: { member: ActiveMember }) => {
-    const { data: connectionStatus } = useConnectionStatus(member.user_id);
-    const { data: followStatus } = useFollowStatus(member.user_id);
-    const isOwnProfile = user?.id === member.user_id;
-    const isFollowing = !!followStatus;
-
-    const getConnectionStatusString = (): 'none' | 'pending' | 'accepted' => {
-      if (!connectionStatus) return 'none';
-      if (connectionStatus.status === 'accepted') return 'accepted';
-      if (connectionStatus.status === 'pending') return 'pending';
-      return 'none';
-    };
-
-    return (
-      <LinkedInMemberCard
-        member={member}
-        onConnect={handleConnect}
-        onFollow={handleFollow}
-        onViewProfile={handleViewProfile}
-        connectionStatus={getConnectionStatusString()}
-        isFollowing={isFollowing}
-        isOwnProfile={isOwnProfile}
-        isConnectPending={sendConnectionRequest.isPending}
-        isFollowPending={followUser.isPending}
-      />
-    );
   };
 
   // Mobile Layout - LinkedIn-style grid
@@ -135,7 +145,15 @@ const FindMembersPage = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {members.map((member) => (
-                    <MobileMemberCard key={member.user_id} member={member} />
+                    <MemberCardWithStatus 
+                      key={member.user_id} 
+                      member={member}
+                      onConnect={handleConnect}
+                      onFollow={handleFollow}
+                      onViewProfile={handleViewProfile}
+                      isConnectPending={sendConnectionRequest.isPending}
+                      isFollowPending={followUser.isPending}
+                    />
                   ))}
                 </div>
               )}
@@ -159,7 +177,15 @@ const FindMembersPage = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {topContributors.map((member) => (
-                    <MobileMemberCard key={member.user_id} member={member} />
+                    <MemberCardWithStatus 
+                      key={member.user_id} 
+                      member={member}
+                      onConnect={handleConnect}
+                      onFollow={handleFollow}
+                      onViewProfile={handleViewProfile}
+                      isConnectPending={sendConnectionRequest.isPending}
+                      isFollowPending={followUser.isPending}
+                    />
                   ))}
                 </div>
               )}
@@ -235,7 +261,15 @@ const FindMembersPage = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {members.map((member) => (
-                  <MobileMemberCard key={member.user_id} member={member} />
+                  <MemberCardWithStatus 
+                    key={member.user_id} 
+                    member={member}
+                    onConnect={handleConnect}
+                    onFollow={handleFollow}
+                    onViewProfile={handleViewProfile}
+                    isConnectPending={sendConnectionRequest.isPending}
+                    isFollowPending={followUser.isPending}
+                  />
                 ))}
               </div>
             )}
@@ -256,7 +290,15 @@ const FindMembersPage = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {topContributors.map((member) => (
-                  <MobileMemberCard key={member.user_id} member={member} />
+                  <MemberCardWithStatus 
+                    key={member.user_id} 
+                    member={member}
+                    onConnect={handleConnect}
+                    onFollow={handleFollow}
+                    onViewProfile={handleViewProfile}
+                    isConnectPending={sendConnectionRequest.isPending}
+                    isFollowPending={followUser.isPending}
+                  />
                 ))}
               </div>
             )}

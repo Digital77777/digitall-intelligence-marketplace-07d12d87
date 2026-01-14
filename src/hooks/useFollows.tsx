@@ -3,68 +3,80 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
-export const useFollows = () => {
+export interface FollowRecord {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+}
+
+export const useFollowStatus = (userId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["follow-status", user?.id, userId],
+    queryFn: async () => {
+      if (!user || !userId || user.id === userId) return null;
+
+      const { data, error } = await supabase
+        .from("user_follows")
+        .select("*")
+        .eq("follower_id", user.id)
+        .eq("following_id", userId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data as FollowRecord | null;
+    },
+    enabled: !!user && !!userId && user.id !== userId,
+    staleTime: 30000,
+  });
+};
+
+export const useFollowersCount = (userId: string) => {
+  return useQuery({
+    queryKey: ["followers-count", userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      
+      const { count, error } = await supabase
+        .from("user_follows")
+        .select("*", { count: "exact", head: true })
+        .eq("following_id", userId);
+
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!userId,
+    staleTime: 30000,
+  });
+};
+
+export const useFollowingCount = (userId: string) => {
+  return useQuery({
+    queryKey: ["following-count", userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      
+      const { count, error } = await supabase
+        .from("user_follows")
+        .select("*", { count: "exact", head: true })
+        .eq("follower_id", userId);
+
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!userId,
+    staleTime: 30000,
+  });
+};
+
+export const useFollowUser = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Check if current user is following a specific user
-  const useFollowStatus = (userId: string) => {
-    return useQuery({
-      queryKey: ["follow-status", user?.id, userId],
-      queryFn: async () => {
-        if (!user || !userId || user.id === userId) return null;
-
-        const { data, error } = await supabase
-          .from("user_follows")
-          .select("*")
-          .eq("follower_id", user.id)
-          .eq("following_id", userId)
-          .maybeSingle();
-
-        if (error) throw error;
-        return data;
-      },
-      enabled: !!user && !!userId && user.id !== userId,
-    });
-  };
-
-  // Get followers count for a user
-  const useFollowersCount = (userId: string) => {
-    return useQuery({
-      queryKey: ["followers-count", userId],
-      queryFn: async () => {
-        const { count, error } = await supabase
-          .from("user_follows")
-          .select("*", { count: "exact", head: true })
-          .eq("following_id", userId);
-
-        if (error) throw error;
-        return count || 0;
-      },
-      enabled: !!userId,
-    });
-  };
-
-  // Get following count for a user
-  const useFollowingCount = (userId: string) => {
-    return useQuery({
-      queryKey: ["following-count", userId],
-      queryFn: async () => {
-        const { count, error } = await supabase
-          .from("user_follows")
-          .select("*", { count: "exact", head: true })
-          .eq("follower_id", userId);
-
-        if (error) throw error;
-        return count || 0;
-      },
-      enabled: !!userId,
-    });
-  };
-
-  // Follow a user
-  const followUser = useMutation({
+  return useMutation({
     mutationFn: async (userId: string) => {
       if (!user) throw new Error("Must be logged in to follow");
       if (user.id === userId) throw new Error("Cannot follow yourself");
@@ -97,11 +109,9 @@ export const useFollows = () => {
       return data;
     },
     onSuccess: (_, userId) => {
-      // Invalidate all follow-related queries with specific user
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
-      queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
-      queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["following-count"] });
       toast({
         title: "Following",
         description: "You are now following this user",
@@ -116,9 +126,14 @@ export const useFollows = () => {
       console.error("Follow error:", error);
     },
   });
+};
 
-  // Unfollow a user
-  const unfollowUser = useMutation({
+export const useUnfollowUser = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (userId: string) => {
       if (!user) throw new Error("Must be logged in to unfollow");
 
@@ -134,11 +149,9 @@ export const useFollows = () => {
       }
     },
     onSuccess: (_, userId) => {
-      // Invalidate all follow-related queries with specific user
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
-      queryClient.invalidateQueries({ queryKey: ["follow-status", user?.id, userId] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
-      queryClient.invalidateQueries({ queryKey: ["following-count", user?.id] });
+      queryClient.invalidateQueries({ queryKey: ["following-count"] });
       toast({
         title: "Unfollowed",
         description: "You have unfollowed this user",
@@ -153,6 +166,12 @@ export const useFollows = () => {
       console.error("Unfollow error:", error);
     },
   });
+};
+
+// Legacy hook for backward compatibility - deprecated
+export const useFollows = () => {
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
 
   return {
     useFollowStatus,

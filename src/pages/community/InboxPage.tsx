@@ -11,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { useConnections } from '@/hooks/useConnections';
+import { usePendingRequests, useAcceptedConnections, useAcceptConnectionRequest, useIgnoreConnectionRequest } from '@/hooks/useConnections';
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
 import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
@@ -75,9 +75,10 @@ const InboxPage = () => {
   const { data: conversations, isLoading: conversationsLoading } = useConversations();
   const { data: messages, isLoading: messagesLoading } = useConversationMessages(selectedUserId);
   
-  const { usePendingRequests, useAcceptedConnections, acceptConnectionRequest, ignoreConnectionRequest } = useConnections();
   const { data: pendingRequests = [] } = usePendingRequests();
   const { data: acceptedConnections = [], isLoading: connectionsLoading } = useAcceptedConnections();
+  const acceptConnectionRequest = useAcceptConnectionRequest();
+  const ignoreConnectionRequest = useIgnoreConnectionRequest();
 
   const selectedConversation = conversations?.find((c) => c.user_id === selectedUserId);
 

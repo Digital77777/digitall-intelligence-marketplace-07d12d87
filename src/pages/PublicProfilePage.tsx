@@ -12,8 +12,8 @@ import { SEOHead } from "@/components/SEOHead";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useConnections } from "@/hooks/useConnections";
-import { useFollows } from "@/hooks/useFollows";
+import { useConnectionStatus, useSendConnectionRequest } from "@/hooks/useConnections";
+import { useFollowStatus, useFollowersCount, useFollowingCount, useFollowUser, useUnfollowUser } from "@/hooks/useFollows";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 
@@ -22,13 +22,19 @@ const PublicProfilePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null);
-  const { useConnectionStatus, sendConnectionRequest } = useConnections();
-  const { useFollowStatus, useFollowersCount, useFollowingCount, followUser, unfollowUser } = useFollows();
+  
+  // Connection hooks
   const { data: connectionStatus, isLoading: connectionLoading } = useConnectionStatus(userId || "");
+  const sendConnectionRequest = useSendConnectionRequest();
+  
+  // Follow hooks
   const { data: followStatus } = useFollowStatus(userId || "");
   const { data: followersCount = 0 } = useFollowersCount(userId || "");
   const { data: followingCount = 0 } = useFollowingCount(userId || "");
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
   const isFollowing = !!followStatus;
+  
   const { isOfficial, badgeLabel } = useIsOfficialAccount(userId);
 
   const { data: selectedInsight } = useQuery({
