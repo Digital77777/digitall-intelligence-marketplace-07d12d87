@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
 import { VideoTrimmer } from "@/components/media/VideoTrimmer";
+import { validateVideoDuration, MAX_VIDEO_DURATION_SECONDS, formatDuration } from "@/lib/videoValidation";
 
 const CreateReelPage = () => {
   const navigate = useNavigate();
@@ -26,8 +27,9 @@ const CreateReelPage = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [isTrimmed, setIsTrimmed] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -50,6 +52,20 @@ const CreateReelPage = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // Validate video duration (max 1 minute)
+    setIsValidating(true);
+    const durationResult = await validateVideoDuration(file, MAX_VIDEO_DURATION_SECONDS);
+    setIsValidating(false);
+
+    if (!durationResult.valid) {
+      toast({
+        title: "Video too long",
+        description: durationResult.message || `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can use the trimmer to shorten it.`,
+        variant: "destructive",
+      });
+      // Still allow the user to trim the video
     }
 
     setVideoFile(file);
