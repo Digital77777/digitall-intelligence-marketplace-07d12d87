@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Send, Search, MoreVertical, Check, X, Users, Mic, Reply, MessageCircle, UserPlus, PenSquare, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMessages, Message } from '@/hooks/useMessages';
@@ -27,6 +28,7 @@ import { BroadcastMessageModal } from '@/components/chat/BroadcastMessageModal';
 import { OfficialBadge } from '@/components/ui/official-badge';
 import { MessageMediaUploader } from '@/components/chat/MessageMediaUploader';
 import { MessageMedia } from '@/components/chat/MessageMedia';
+import { FormattedMessageText } from '@/components/chat/FormattedMessageText';
 
 const InboxPage = () => {
   const navigate = useNavigate();
@@ -56,7 +58,7 @@ const InboxPage = () => {
   const [replyToMessage, setReplyToMessage] = useState<Message | null>(null);
   const [activeTab, setActiveTab] = useState<string>('messages');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   
   // Prevent selecting self
   const handleSelectUser = (userId: string | undefined) => {
@@ -634,7 +636,7 @@ const InboxPage = () => {
                           {msg.voice_note_url ? (
                             <VoiceNotePlayer audioUrl={msg.voice_note_url} isSender={isSender} />
                           ) : !msg.media_url || (msg.content && msg.content !== '📷 Photo' && msg.content !== '🎬 Video') ? (
-                            <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                            <FormattedMessageText content={msg.content} />
                           ) : null}
                           <div className="flex items-center justify-between gap-2 mt-1.5">
                             <p
@@ -756,24 +758,40 @@ const InboxPage = () => {
                         />
                       )}
                       <div className="flex-1 relative">
-                        <Input
+                        <Textarea
                           ref={inputRef}
-                          placeholder={selectedMedia ? "Add a caption..." : "Type a message..."}
+                          placeholder={selectedMedia ? "Add a caption..." : "Type a message... (*bold*, _italic_, ~strike~)"}
                           value={messageText}
                           onChange={(e) => {
                             setMessageText(e.target.value);
+                            // Auto-resize textarea
+                            e.target.style.height = 'auto';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
                             if (e.target.value.trim()) {
                               startTyping();
                             } else {
                               stopTyping();
                             }
                           }}
+                          onKeyDown={(e) => {
+                            // Send on Enter without Shift, new line on Shift+Enter
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              if (messageText.trim() || selectedMedia) {
+                                const form = e.currentTarget.closest('form');
+                                if (form) {
+                                  form.requestSubmit();
+                                }
+                              }
+                            }
+                          }}
                           onBlur={stopTyping}
-                          className="pr-12 h-11 bg-muted/30 border-0 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20"
+                          className="min-h-[44px] max-h-[120px] py-2.5 px-4 bg-muted/30 border-0 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 resize-none overflow-y-auto"
                           maxLength={2000}
+                          rows={1}
                         />
                         {messageText.length > 1800 && (
-                          <span className={`absolute right-3 bottom-3 text-[10px] ${messageText.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                          <span className={`absolute right-3 bottom-2 text-[10px] ${messageText.length > 1900 ? 'text-destructive' : 'text-muted-foreground'}`}>
                             {messageText.length}/2000
                           </span>
                         )}
