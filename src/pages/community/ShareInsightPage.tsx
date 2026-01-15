@@ -272,7 +272,7 @@ const ShareInsightPage = () => {
                 <div className="space-y-2">
                   <Label>Cover Media (Optional)</Label>
                   <p className="text-xs text-muted-foreground">
-                    Upload one image or video to showcase your insight
+                    Upload one image or video (max 1 minute) to showcase your insight
                   </p>
                   <MediaUploader
                     images={coverImages}
@@ -282,6 +282,7 @@ const ShareInsightPage = () => {
                     maxImages={1}
                     maxVideos={1}
                     maxFileSize={20}
+                    maxVideoDuration={60}
                   />
                 </div>
 

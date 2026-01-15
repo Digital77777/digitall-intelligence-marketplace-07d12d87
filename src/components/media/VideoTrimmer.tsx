@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Scissors, Play, Pause, RotateCcw } from "lucide-react";
+import { Scissors, Play, Pause, RotateCcw, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { MAX_VIDEO_DURATION_SECONDS } from "@/lib/videoValidation";
 
 interface VideoTrimmerProps {
   videoFile: File;
   videoUrl: string;
   onTrimComplete: (trimmedBlob: Blob) => void;
   onCancel: () => void;
+  maxDuration?: number; // Max allowed duration in seconds
 }
 
 const formatTime = (seconds: number): string => {
@@ -23,6 +25,7 @@ export const VideoTrimmer = ({
   videoUrl,
   onTrimComplete,
   onCancel,
+  maxDuration = MAX_VIDEO_DURATION_SECONDS,
 }: VideoTrimmerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
@@ -313,7 +316,7 @@ export const VideoTrimmer = ({
           type="button"
           onClick={handleTrim}
           className="flex-1 bg-gradient-ai text-white"
-          disabled={isTrimming || trimmedDuration < 1}
+          disabled={isTrimming || trimmedDuration < 1 || trimmedDuration > maxDuration}
         >
           {isTrimming ? (
             <>
@@ -332,6 +335,19 @@ export const VideoTrimmer = ({
       {trimmedDuration < 1 && (
         <p className="text-xs text-destructive text-center">
           Video must be at least 1 second long
+        </p>
+      )}
+
+      {trimmedDuration > maxDuration && (
+        <div className="flex items-center justify-center gap-2 text-xs text-destructive text-center">
+          <AlertCircle className="w-3 h-3" />
+          <span>Video must be {maxDuration} seconds or less. Please trim further.</span>
+        </div>
+      )}
+
+      {trimmedDuration >= 1 && trimmedDuration <= maxDuration && (
+        <p className="text-xs text-muted-foreground text-center">
+          Selected: {Math.floor(trimmedDuration)} seconds (max {maxDuration}s)
         </p>
       )}
     </div>

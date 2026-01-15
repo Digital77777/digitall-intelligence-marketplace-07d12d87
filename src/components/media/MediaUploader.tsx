@@ -19,6 +19,7 @@ import { EnhancedImage } from './EnhancedImage';
 import { VideoPlayer } from './VideoPlayer';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { validateVideoDuration, MAX_VIDEO_DURATION_SECONDS, formatDuration } from '@/lib/videoValidation';
 
 interface MediaItem {
   id: string;
@@ -38,6 +39,7 @@ interface MediaUploaderProps {
   maxImages?: number;
   maxVideos?: number;
   maxFileSize?: number; // in MB
+  maxVideoDuration?: number; // in seconds
   bucket?: string;
 }
 
@@ -49,6 +51,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   maxImages = 10,
   maxVideos = 5,
   maxFileSize = 50,
+  maxVideoDuration = MAX_VIDEO_DURATION_SECONDS,
   bucket = 'community-insights'
 }) => {
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(() => [
@@ -208,6 +211,15 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       if (!isValidType) {
         toast.error(`Invalid file type for "${file.name}"`);
         continue;
+      }
+
+      // Validate video duration (max 1 minute)
+      if (type === 'video') {
+        const durationResult = await validateVideoDuration(file, maxVideoDuration);
+        if (!durationResult.valid) {
+          toast.error(durationResult.message || `Video must be ${formatDuration(maxVideoDuration)} or less`);
+          continue;
+        }
       }
 
       // Add temporary item with uploading state
@@ -415,7 +427,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                   Choose Files
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2">
-                  MP4, WebM up to {maxFileSize}MB
+                  MP4, WebM up to {maxFileSize}MB (max {maxVideoDuration}s)
                 </p>
               </div>
               
