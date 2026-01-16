@@ -1,17 +1,19 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Video, Loader2, Scissors } from "lucide-react";
+import { ArrowLeft, Upload, X, Video, Loader2, Scissors, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
 import { VideoTrimmer } from "@/components/media/VideoTrimmer";
 import { validateVideoDuration, MAX_VIDEO_DURATION_SECONDS, formatDuration } from "@/lib/videoValidation";
+import { cn } from "@/lib/utils";
 
 const CreateReelPage = () => {
   const navigate = useNavigate();
@@ -28,11 +30,19 @@ const CreateReelPage = () => {
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [isTrimmed, setIsTrimmed] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
+  const [videoDuration, setVideoDuration] = useState<number | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (videoPreview) {
+        URL.revokeObjectURL(videoPreview);
+      }
+    };
+  }, []);
 
+  const handleFileSelect = useCallback(async (file: File) => {
     // Validate file type
     const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
     if (!validTypes.includes(file.type)) {
@@ -54,33 +64,72 @@ const CreateReelPage = () => {
       return;
     }
 
-    // Validate video duration (max 1 minute)
+    // Validate video duration
     setIsValidating(true);
     const durationResult = await validateVideoDuration(file, MAX_VIDEO_DURATION_SECONDS);
     setIsValidating(false);
+    setVideoDuration(durationResult.duration);
 
     if (!durationResult.valid) {
       toast({
         title: "Video too long",
-        description: durationResult.message || `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can use the trimmer to shorten it.`,
+        description: durationResult.message || `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can trim it to fit.`,
         variant: "destructive",
       });
-      // Still allow the user to trim the video
+    }
+
+    // Cleanup previous preview
+    if (videoPreview) {
+      URL.revokeObjectURL(videoPreview);
     }
 
     setVideoFile(file);
     setVideoPreview(URL.createObjectURL(file));
     setShowTrimmer(true);
     setIsTrimmed(false);
-  };
+  }, [toast, videoPreview]);
 
-  const handleTrimComplete = (trimmedBlob: Blob) => {
-    // Clean up old preview
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFileSelect(file);
+  }, [handleFileSelect]);
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      handleFileSelect(file);
+    } else {
+      toast({
+        title: "Invalid file",
+        description: "Please drop a video file.",
+        variant: "destructive",
+      });
+    }
+  }, [handleFileSelect, toast]);
+
+  const handleTrimComplete = useCallback((trimmedBlob: Blob) => {
+    // Cleanup old preview
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
     }
     
-    // Create new file from trimmed blob
     const trimmedFile = new File([trimmedBlob], videoFile?.name || "trimmed-video.webm", {
       type: trimmedBlob.type,
     });
@@ -94,22 +143,24 @@ const CreateReelPage = () => {
       title: "Video trimmed",
       description: "Your video has been trimmed successfully.",
     });
-  };
+  }, [toast, videoFile?.name, videoPreview]);
 
-  const handleCancelTrim = () => {
+  const handleCancelTrim = useCallback(() => {
     setShowTrimmer(false);
-  };
+  }, []);
 
-  const removeVideo = () => {
+  const removeVideo = useCallback(() => {
     if (videoPreview) {
       URL.revokeObjectURL(videoPreview);
     }
     setVideoFile(null);
     setVideoPreview(null);
+    setVideoDuration(null);
+    setIsTrimmed(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }, [videoPreview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,10 +189,11 @@ const CreateReelPage = () => {
     }
 
     setIsUploading(true);
-    setUploadProgress(10);
+    setUploadProgress(5);
 
     try {
-      // Create a placeholder insight first (reels require an insight_id)
+      // Create insight
+      setUploadProgress(15);
       const { data: insight, error: insightError } = await supabase
         .from("community_insights")
         .insert({
@@ -157,10 +209,11 @@ const CreateReelPage = () => {
       if (insightError) throw insightError;
       setUploadProgress(30);
 
-      // Upload video to storage
-      const fileExt = videoFile.name.split(".").pop();
+      // Upload video
+      const fileExt = videoFile.name.split(".").pop() || "webm";
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
       
+      setUploadProgress(40);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from("reels")
         .upload(fileName, videoFile, {
@@ -169,7 +222,7 @@ const CreateReelPage = () => {
         });
 
       if (uploadError) throw uploadError;
-      setUploadProgress(70);
+      setUploadProgress(80);
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
@@ -177,6 +230,7 @@ const CreateReelPage = () => {
         .getPublicUrl(fileName);
 
       // Create reel record
+      setUploadProgress(90);
       const { error: reelError } = await supabase
         .from("community_reels")
         .insert({
@@ -213,8 +267,8 @@ const CreateReelPage = () => {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Please log in to create a reel</p>
-            <Button onClick={() => navigate("/auth")} className="mt-4">
+            <p className="text-muted-foreground mb-4">Please log in to create a reel</p>
+            <Button onClick={() => navigate("/auth")}>
               Log In
             </Button>
           </CardContent>
@@ -247,6 +301,9 @@ const CreateReelPage = () => {
                 <Video className="w-5 h-5" />
                 Create a Reel
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Share short videos up to {MAX_VIDEO_DURATION_SECONDS} seconds with the community
+              </p>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -255,16 +312,40 @@ const CreateReelPage = () => {
                   <Label>Video *</Label>
                   {!videoPreview ? (
                     <div
-                      className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
+                        isDragging 
+                          ? "border-primary bg-primary/5 scale-[1.02]" 
+                          : "border-muted-foreground/25 hover:border-primary/50",
+                        isValidating && "pointer-events-none opacity-70"
+                      )}
+                      onClick={() => !isValidating && fileInputRef.current?.click()}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+                      aria-label="Upload video"
                     >
-                      <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground mb-2">
-                        Click to upload or drag and drop
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        MP4, WebM, MOV, AVI (max 100MB)
-                      </p>
+                      {isValidating ? (
+                        <>
+                          <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
+                          <p className="text-sm text-muted-foreground">
+                            Validating video...
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {isDragging ? "Drop your video here" : "Click to upload or drag and drop"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            MP4, WebM, MOV, AVI (max 100MB, up to {MAX_VIDEO_DURATION_SECONDS}s)
+                          </p>
+                        </>
+                      )}
                     </div>
                   ) : showTrimmer ? (
                     <VideoTrimmer
@@ -272,42 +353,63 @@ const CreateReelPage = () => {
                       videoUrl={videoPreview}
                       onTrimComplete={handleTrimComplete}
                       onCancel={handleCancelTrim}
+                      maxDuration={MAX_VIDEO_DURATION_SECONDS}
                     />
                   ) : (
                     <div className="space-y-3">
-                      <div className="relative rounded-lg overflow-hidden bg-black aspect-[9/16] max-w-xs mx-auto">
+                      <div className="relative rounded-lg overflow-hidden bg-black aspect-[9/16] max-w-xs mx-auto shadow-lg">
                         <video
                           src={videoPreview}
                           className="w-full h-full object-contain"
                           controls
-                          muted
+                          playsInline
                         />
                         <Button
                           type="button"
                           variant="destructive"
                           size="icon"
-                          className="absolute top-2 right-2"
+                          className="absolute top-2 right-2 shadow-md"
                           onClick={removeVideo}
+                          aria-label="Remove video"
                         >
                           <X className="w-4 h-4" />
                         </Button>
                         {isTrimmed && (
-                          <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                          <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
                             <Scissors className="w-3 h-3" />
                             Trimmed
                           </div>
                         )}
+                        {/* Duration badge */}
+                        {videoDuration && (
+                          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                            {Math.floor(videoDuration)}s
+                          </div>
+                        )}
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full max-w-xs mx-auto flex"
-                        onClick={() => setShowTrimmer(true)}
-                      >
-                        <Scissors className="w-4 h-4 mr-2" />
-                        {isTrimmed ? "Trim Again" : "Trim Video"}
-                      </Button>
+                      <div className="flex gap-2 justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowTrimmer(true)}
+                        >
+                          <Scissors className="w-4 h-4 mr-2" />
+                          {isTrimmed ? "Trim Again" : "Trim Video"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            removeVideo();
+                            fileInputRef.current?.click();
+                          }}
+                        >
+                          <Upload className="w-4 h-4 mr-2" />
+                          Replace
+                        </Button>
+                      </div>
                     </div>
                   )}
                   <input
@@ -315,7 +417,8 @@ const CreateReelPage = () => {
                     type="file"
                     accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
                     className="hidden"
-                    onChange={handleFileSelect}
+                    onChange={handleInputChange}
+                    aria-label="Select video file"
                   />
                 </div>
 
@@ -328,7 +431,11 @@ const CreateReelPage = () => {
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Give your reel a catchy title"
                     maxLength={100}
+                    disabled={isUploading}
                   />
+                  <p className="text-xs text-muted-foreground text-right">
+                    {title.length}/100
+                  </p>
                 </div>
 
                 {/* Description */}
@@ -341,22 +448,30 @@ const CreateReelPage = () => {
                     placeholder="Add a description for your reel..."
                     rows={3}
                     maxLength={500}
+                    disabled={isUploading}
                   />
+                  <p className="text-xs text-muted-foreground text-right">
+                    {description.length}/500
+                  </p>
                 </div>
 
                 {/* Upload Progress */}
                 {isUploading && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
                     <div className="flex items-center justify-between text-sm">
-                      <span>Uploading...</span>
-                      <span>{uploadProgress}%</span>
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Uploading...
+                      </span>
+                      <span className="font-medium">{uploadProgress}%</span>
                     </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                    <p className="text-xs text-muted-foreground text-center">
+                      {uploadProgress < 30 && "Creating post..."}
+                      {uploadProgress >= 30 && uploadProgress < 80 && "Uploading video..."}
+                      {uploadProgress >= 80 && uploadProgress < 100 && "Finalizing..."}
+                      {uploadProgress === 100 && "Complete!"}
+                    </p>
                   </div>
                 )}
 
@@ -364,7 +479,7 @@ const CreateReelPage = () => {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-ai text-white"
-                  disabled={isUploading || !videoFile || !title.trim()}
+                  disabled={isUploading || !videoFile || !title.trim() || isValidating}
                 >
                   {isUploading ? (
                     <>
