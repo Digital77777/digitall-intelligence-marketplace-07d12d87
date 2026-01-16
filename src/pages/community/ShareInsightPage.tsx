@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Lightbulb, Eye, Edit } from "lucide-react";
+import { ArrowLeft, Lightbulb, Eye, Edit, X, Scissors, Upload, Video as VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,17 @@ import { MediaUploader } from "@/components/media/MediaUploader";
 import { generateVideoThumbnail } from "@/lib/videoThumbnail";
 import { useToast } from "@/hooks/use-toast";
 import { InsightPreview } from "@/components/community/InsightPreview";
+import { VideoTrimmer } from "@/components/media/VideoTrimmer";
+import { validateVideoDuration, MAX_VIDEO_DURATION_SECONDS, formatDuration } from "@/lib/videoValidation";
+import { supabase } from "@/integrations/supabase/client";
 
 const ShareInsightPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const { createInsight } = useCommunity();
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,9 +35,145 @@ const ShareInsightPage = () => {
   const [coverImages, setCoverImages] = useState<string[]>([]);
   const [coverVideos, setCoverVideos] = useState<string[]>([]);
   const [videoThumbnails, setVideoThumbnails] = useState<string[]>([]);
+  
+  // Video trimming states
+  const [pendingVideoFile, setPendingVideoFile] = useState<File | null>(null);
+  const [pendingVideoPreview, setPendingVideoPreview] = useState<string | null>(null);
+  const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
+  const [isVideoTrimmed, setIsVideoTrimmed] = useState(false);
+  const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle direct video file selection for trimming
+  const handleVideoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload MP4, WebM, MOV, or AVI video files.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (100MB max)
+    if (file.size > 100 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Video must be less than 100MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check video duration
+    const durationResult = await validateVideoDuration(file, MAX_VIDEO_DURATION_SECONDS);
+    if (!durationResult.valid) {
+      toast({
+        title: "Video too long",
+        description: `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can use the trimmer to shorten it.`,
+        variant: "destructive",
+      });
+    }
+
+    setPendingVideoFile(file);
+    setPendingVideoPreview(URL.createObjectURL(file));
+    setShowVideoTrimmer(true);
+    setIsVideoTrimmed(false);
+  };
+
+  const handleTrimComplete = async (trimmedBlob: Blob) => {
+    if (!user) return;
+    
+    setIsUploadingVideo(true);
+    
+    try {
+      // Upload trimmed video to storage
+      const fileExt = pendingVideoFile?.name.split('.').pop() || 'webm';
+      const fileName = `${user.id}/videos/${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('community-insights')
+        .upload(fileName, trimmedBlob, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('community-insights')
+        .getPublicUrl(data.path);
+
+      // Generate thumbnail
+      const thumbnail = await generateVideoThumbnail(publicUrl, 1);
+      
+      setCoverVideos([publicUrl]);
+      setVideoThumbnails([thumbnail]);
+      setShowVideoTrimmer(false);
+      setIsVideoTrimmed(true);
+      
+      // Clean up preview URL
+      if (pendingVideoPreview) {
+        URL.revokeObjectURL(pendingVideoPreview);
+      }
+      setPendingVideoFile(null);
+      setPendingVideoPreview(null);
+
+      toast({
+        title: "Video uploaded",
+        description: "Your trimmed video has been uploaded successfully.",
+      });
+    } catch (error: any) {
+      console.error('Video upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload video. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingVideo(false);
+    }
+  };
+
+  const handleCancelTrim = () => {
+    if (pendingVideoPreview) {
+      URL.revokeObjectURL(pendingVideoPreview);
+    }
+    setPendingVideoFile(null);
+    setPendingVideoPreview(null);
+    setShowVideoTrimmer(false);
+  };
+
+  const removeUploadedVideo = async () => {
+    // Try to delete from storage
+    if (coverVideos[0]?.includes('supabase.co/storage')) {
+      try {
+        const url = new URL(coverVideos[0]);
+        const pathParts = url.pathname.split('/storage/v1/object/public/');
+        if (pathParts.length > 1) {
+          const [bucketName, ...filePath] = pathParts[1].split('/');
+          await supabase.storage.from(bucketName).remove([filePath.join('/')]);
+        }
+      } catch (error) {
+        console.error('Failed to delete from storage:', error);
+      }
+    }
+    
+    setCoverVideos([]);
+    setVideoThumbnails([]);
+    setIsVideoTrimmed(false);
+    
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
   };
 
   const handleVideosChange = async (videos: string[]) => {
@@ -269,21 +410,139 @@ const ShareInsightPage = () => {
                   </p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Cover Media (Optional)</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Upload one image or video (max 1 minute) to showcase your insight
-                  </p>
-                  <MediaUploader
-                    images={coverImages}
-                    videos={coverVideos}
-                    onImagesChange={setCoverImages}
-                    onVideosChange={handleVideosChange}
-                    maxImages={1}
-                    maxVideos={1}
-                    maxFileSize={20}
-                    maxVideoDuration={60}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <Label>Cover Media (Optional)</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Upload one image or video (max 1 minute) to showcase your insight. Videos can be trimmed before upload.
+                    </p>
+                  </div>
+
+                  {/* Video with Trimmer Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <VideoIcon className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium">Video (with preview & trim)</Label>
+                    </div>
+                    
+                    {!coverVideos.length && !showVideoTrimmer ? (
+                      <Card>
+                        <CardContent className="p-4">
+                          <div 
+                            className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                            onClick={() => videoInputRef.current?.click()}
+                          >
+                            <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground mb-1">
+                              Click to upload a video
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              MP4, WebM, MOV (max 100MB, up to 60s)
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : showVideoTrimmer && pendingVideoFile && pendingVideoPreview ? (
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Scissors className="w-4 h-4 text-primary" />
+                              <span className="text-sm font-medium">Trim Your Video</span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCancelTrim}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <VideoTrimmer
+                            videoFile={pendingVideoFile}
+                            videoUrl={pendingVideoPreview}
+                            onTrimComplete={handleTrimComplete}
+                            onCancel={handleCancelTrim}
+                            maxDuration={MAX_VIDEO_DURATION_SECONDS}
+                          />
+                          {isUploadingVideo && (
+                            <div className="mt-3 text-center">
+                              <p className="text-sm text-muted-foreground">Uploading video...</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ) : coverVideos.length > 0 ? (
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-w-md mx-auto">
+                              <video
+                                src={coverVideos[0]}
+                                className="w-full h-full object-contain"
+                                controls
+                                muted
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="icon"
+                                className="absolute top-2 right-2"
+                                onClick={removeUploadedVideo}
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                              {isVideoTrimmed && (
+                                <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                  <Scissors className="w-3 h-3" />
+                                  Trimmed
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex gap-2 justify-center">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  removeUploadedVideo();
+                                  videoInputRef.current?.click();
+                                }}
+                              >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Replace Video
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ) : null}
+                    
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
+                      className="hidden"
+                      onChange={handleVideoFileSelect}
+                    />
+                  </div>
+
+                  {/* Image Upload - Using existing MediaUploader */}
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Or use the standard uploader for images:
+                    </p>
+                    <MediaUploader
+                      images={coverImages}
+                      videos={[]}
+                      onImagesChange={setCoverImages}
+                      onVideosChange={() => {}}
+                      maxImages={1}
+                      maxVideos={0}
+                      maxFileSize={20}
+                    />
+                  </div>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
