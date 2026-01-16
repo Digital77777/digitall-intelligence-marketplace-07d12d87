@@ -1,12 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Lightbulb, Eye, Edit, X, Scissors, Upload, Video as VideoIcon } from "lucide-react";
+import { ArrowLeft, Lightbulb, Eye, Edit, X, Scissors, Upload, Video as VideoIcon, Loader2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useCommunity } from "@/hooks/useCommunity";
 import { useAuth } from "@/hooks/useAuth";
 import { MediaUploader } from "@/components/media/MediaUploader";
@@ -16,6 +17,7 @@ import { InsightPreview } from "@/components/community/InsightPreview";
 import { VideoTrimmer } from "@/components/media/VideoTrimmer";
 import { validateVideoDuration, MAX_VIDEO_DURATION_SECONDS, formatDuration } from "@/lib/videoValidation";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const ShareInsightPage = () => {
   const navigate = useNavigate();
@@ -42,16 +44,25 @@ const ShareInsightPage = () => {
   const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
   const [isVideoTrimmed, setIsVideoTrimmed] = useState(false);
   const [isUploadingVideo, setIsUploadingVideo] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingVideoPreview) {
+        URL.revokeObjectURL(pendingVideoPreview);
+      }
+    };
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   // Handle direct video file selection for trimming
-  const handleVideoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handleVideoFileSelect = useCallback(async (file: File) => {
     // Validate file type
     const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
     if (!validTypes.includes(file.type)) {
@@ -74,31 +85,77 @@ const ShareInsightPage = () => {
     }
 
     // Check video duration
+    setIsValidating(true);
     const durationResult = await validateVideoDuration(file, MAX_VIDEO_DURATION_SECONDS);
+    setIsValidating(false);
+    
     if (!durationResult.valid) {
       toast({
         title: "Video too long",
-        description: `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can use the trimmer to shorten it.`,
+        description: `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can trim it to fit.`,
         variant: "destructive",
       });
+    }
+
+    // Cleanup previous preview
+    if (pendingVideoPreview) {
+      URL.revokeObjectURL(pendingVideoPreview);
     }
 
     setPendingVideoFile(file);
     setPendingVideoPreview(URL.createObjectURL(file));
     setShowVideoTrimmer(true);
     setIsVideoTrimmed(false);
-  };
+  }, [toast, pendingVideoPreview]);
 
-  const handleTrimComplete = async (trimmedBlob: Blob) => {
+  const handleVideoInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleVideoFileSelect(file);
+  }, [handleVideoFileSelect]);
+
+  // Drag and drop handlers
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('video/')) {
+      handleVideoFileSelect(file);
+    } else {
+      toast({
+        title: "Invalid file",
+        description: "Please drop a video file.",
+        variant: "destructive",
+      });
+    }
+  }, [handleVideoFileSelect, toast]);
+
+  const handleTrimComplete = useCallback(async (trimmedBlob: Blob) => {
     if (!user) return;
     
     setIsUploadingVideo(true);
+    setUploadProgress(0);
     
     try {
       // Upload trimmed video to storage
+      setUploadProgress(20);
       const fileExt = pendingVideoFile?.name.split('.').pop() || 'webm';
       const fileName = `${user.id}/videos/${Date.now()}.${fileExt}`;
       
+      setUploadProgress(40);
       const { data, error } = await supabase.storage
         .from('community-insights')
         .upload(fileName, trimmedBlob, {
@@ -107,20 +164,23 @@ const ShareInsightPage = () => {
         });
 
       if (error) throw error;
+      setUploadProgress(70);
 
       const { data: { publicUrl } } = supabase.storage
         .from('community-insights')
         .getPublicUrl(data.path);
 
       // Generate thumbnail
+      setUploadProgress(85);
       const thumbnail = await generateVideoThumbnail(publicUrl, 1);
       
       setCoverVideos([publicUrl]);
       setVideoThumbnails([thumbnail]);
       setShowVideoTrimmer(false);
       setIsVideoTrimmed(true);
+      setUploadProgress(100);
       
-      // Clean up preview URL
+      // Cleanup preview URL
       if (pendingVideoPreview) {
         URL.revokeObjectURL(pendingVideoPreview);
       }
@@ -140,19 +200,23 @@ const ShareInsightPage = () => {
       });
     } finally {
       setIsUploadingVideo(false);
+      setUploadProgress(0);
     }
-  };
+  }, [user, pendingVideoFile, pendingVideoPreview, toast]);
 
-  const handleCancelTrim = () => {
+  const handleCancelTrim = useCallback(() => {
     if (pendingVideoPreview) {
       URL.revokeObjectURL(pendingVideoPreview);
     }
     setPendingVideoFile(null);
     setPendingVideoPreview(null);
     setShowVideoTrimmer(false);
-  };
+    if (videoInputRef.current) {
+      videoInputRef.current.value = "";
+    }
+  }, [pendingVideoPreview]);
 
-  const removeUploadedVideo = async () => {
+  const removeUploadedVideo = useCallback(async () => {
     // Try to delete from storage
     if (coverVideos[0]?.includes('supabase.co/storage')) {
       try {
@@ -174,7 +238,7 @@ const ShareInsightPage = () => {
     if (videoInputRef.current) {
       videoInputRef.current.value = "";
     }
-  };
+  }, [coverVideos]);
 
   const handleVideosChange = async (videos: string[]) => {
     setCoverVideos(videos);
@@ -429,16 +493,40 @@ const ShareInsightPage = () => {
                       <Card>
                         <CardContent className="p-4">
                           <div 
-                            className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                            onClick={() => videoInputRef.current?.click()}
+                            className={cn(
+                              "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200",
+                              isDragging 
+                                ? "border-primary bg-primary/5 scale-[1.02]" 
+                                : "border-muted-foreground/25 hover:border-primary/50",
+                              isValidating && "pointer-events-none opacity-70"
+                            )}
+                            onClick={() => !isValidating && videoInputRef.current?.click()}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && videoInputRef.current?.click()}
+                            aria-label="Upload video"
                           >
-                            <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-                            <p className="text-sm text-muted-foreground mb-1">
-                              Click to upload a video
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              MP4, WebM, MOV (max 100MB, up to 60s)
-                            </p>
+                            {isValidating ? (
+                              <>
+                                <Loader2 className="w-10 h-10 mx-auto mb-3 text-primary animate-spin" />
+                                <p className="text-sm text-muted-foreground">
+                                  Validating video...
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground mb-1">
+                                  {isDragging ? "Drop your video here" : "Click to upload or drag and drop"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  MP4, WebM, MOV (max 100MB, up to {MAX_VIDEO_DURATION_SECONDS}s)
+                                </p>
+                              </>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -455,6 +543,7 @@ const ShareInsightPage = () => {
                               variant="ghost"
                               size="sm"
                               onClick={handleCancelTrim}
+                              aria-label="Cancel trimming"
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -467,8 +556,15 @@ const ShareInsightPage = () => {
                             maxDuration={MAX_VIDEO_DURATION_SECONDS}
                           />
                           {isUploadingVideo && (
-                            <div className="mt-3 text-center">
-                              <p className="text-sm text-muted-foreground">Uploading video...</p>
+                            <div className="mt-4 space-y-2">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="flex items-center gap-2">
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  Uploading...
+                                </span>
+                                <span className="font-medium">{uploadProgress}%</span>
+                              </div>
+                              <Progress value={uploadProgress} className="h-2" />
                             </div>
                           )}
                         </CardContent>
@@ -477,24 +573,25 @@ const ShareInsightPage = () => {
                       <Card>
                         <CardContent className="p-4">
                           <div className="space-y-3">
-                            <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-w-md mx-auto">
+                            <div className="relative rounded-lg overflow-hidden bg-black aspect-video max-w-md mx-auto shadow-lg">
                               <video
                                 src={coverVideos[0]}
                                 className="w-full h-full object-contain"
                                 controls
-                                muted
+                                playsInline
                               />
                               <Button
                                 type="button"
                                 variant="destructive"
                                 size="icon"
-                                className="absolute top-2 right-2"
+                                className="absolute top-2 right-2 shadow-md"
                                 onClick={removeUploadedVideo}
+                                aria-label="Remove video"
                               >
                                 <X className="w-4 h-4" />
                               </Button>
                               {isVideoTrimmed && (
-                                <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                                <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
                                   <Scissors className="w-3 h-3" />
                                   Trimmed
                                 </div>
@@ -524,7 +621,8 @@ const ShareInsightPage = () => {
                       type="file"
                       accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
                       className="hidden"
-                      onChange={handleVideoFileSelect}
+                      onChange={handleVideoInputChange}
+                      aria-label="Select video file"
                     />
                   </div>
 
