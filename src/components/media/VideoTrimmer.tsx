@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Scissors, Play, Pause, RotateCcw, AlertCircle } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Scissors, Play, Pause, RotateCcw, AlertCircle, Clock, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { MAX_VIDEO_DURATION_SECONDS } from "@/lib/videoValidation";
+import { cn } from "@/lib/utils";
 
 interface VideoTrimmerProps {
   videoFile: File;
@@ -215,6 +217,34 @@ export const VideoTrimmer = ({
   }, [startTime, endTime, videoUrl, videoFile, onTrimComplete]);
 
   const trimmedDuration = endTime - startTime;
+  
+  // Calculate duration progress percentage
+  const durationProgress = useMemo(() => {
+    if (maxDuration <= 0) return 0;
+    return Math.min((trimmedDuration / maxDuration) * 100, 100);
+  }, [trimmedDuration, maxDuration]);
+
+  // Determine the status of the duration
+  const durationStatus = useMemo(() => {
+    if (trimmedDuration < 1) return 'too-short';
+    if (trimmedDuration > maxDuration) return 'too-long';
+    if (trimmedDuration >= maxDuration * 0.9) return 'near-limit';
+    return 'valid';
+  }, [trimmedDuration, maxDuration]);
+
+  // Get progress bar color based on status
+  const getProgressColor = () => {
+    switch (durationStatus) {
+      case 'too-short':
+        return 'bg-yellow-500';
+      case 'too-long':
+        return 'bg-destructive';
+      case 'near-limit':
+        return 'bg-orange-500';
+      default:
+        return 'bg-primary';
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -243,11 +273,66 @@ export const VideoTrimmer = ({
         </button>
       </div>
 
+      {/* Real-time Duration Indicator */}
+      <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">Duration</span>
+          </div>
+          <div className={cn(
+            "flex items-center gap-1.5 text-sm font-semibold",
+            durationStatus === 'valid' && "text-primary",
+            durationStatus === 'near-limit' && "text-orange-500",
+            durationStatus === 'too-long' && "text-destructive",
+            durationStatus === 'too-short' && "text-yellow-600"
+          )}>
+            {durationStatus === 'valid' && <CheckCircle2 className="w-4 h-4" />}
+            {durationStatus === 'too-long' && <AlertCircle className="w-4 h-4" />}
+            <span>{Math.floor(trimmedDuration)}s</span>
+            <span className="text-muted-foreground font-normal">/ {maxDuration}s</span>
+          </div>
+        </div>
+        
+        {/* Visual Progress Bar */}
+        <div className="relative">
+          <div className="w-full h-3 bg-muted rounded-full overflow-hidden">
+            <div 
+              className={cn(
+                "h-full transition-all duration-200 ease-out rounded-full",
+                getProgressColor()
+              )}
+              style={{ width: `${Math.min(durationProgress, 100)}%` }}
+            />
+          </div>
+          
+          {/* Max limit marker */}
+          <div 
+            className="absolute top-0 w-0.5 h-3 bg-foreground/30"
+            style={{ left: '100%', transform: 'translateX(-100%)' }}
+          />
+        </div>
+        
+        {/* Status message */}
+        <div className={cn(
+          "text-xs text-center",
+          durationStatus === 'valid' && "text-muted-foreground",
+          durationStatus === 'near-limit' && "text-orange-500",
+          durationStatus === 'too-long' && "text-destructive",
+          durationStatus === 'too-short' && "text-yellow-600"
+        )}>
+          {durationStatus === 'too-short' && "Video must be at least 1 second"}
+          {durationStatus === 'too-long' && `Trim ${Math.ceil(trimmedDuration - maxDuration)}s more to fit the limit`}
+          {durationStatus === 'near-limit' && "Almost at the limit!"}
+          {durationStatus === 'valid' && "Duration is within limit ✓"}
+        </div>
+      </div>
+
       {/* Timeline */}
       <div className="space-y-2 px-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Start: {formatTime(startTime)}</span>
-          <span>Current: {formatTime(currentTime)}</span>
+          <span className="text-primary font-medium">Current: {formatTime(currentTime)}</span>
           <span>End: {formatTime(endTime)}</span>
         </div>
         
@@ -263,7 +348,7 @@ export const VideoTrimmer = ({
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>0:00</span>
           <span className="font-medium text-primary">
-            Trimmed: {formatTime(trimmedDuration)}
+            Selected: {formatTime(trimmedDuration)}
           </span>
           <span>{formatTime(duration)}</span>
         </div>
@@ -316,7 +401,7 @@ export const VideoTrimmer = ({
           type="button"
           onClick={handleTrim}
           className="flex-1 bg-gradient-ai text-white"
-          disabled={isTrimming || trimmedDuration < 1 || trimmedDuration > maxDuration}
+          disabled={isTrimming || durationStatus === 'too-short' || durationStatus === 'too-long'}
         >
           {isTrimming ? (
             <>
@@ -331,25 +416,6 @@ export const VideoTrimmer = ({
           )}
         </Button>
       </div>
-
-      {trimmedDuration < 1 && (
-        <p className="text-xs text-destructive text-center">
-          Video must be at least 1 second long
-        </p>
-      )}
-
-      {trimmedDuration > maxDuration && (
-        <div className="flex items-center justify-center gap-2 text-xs text-destructive text-center">
-          <AlertCircle className="w-3 h-3" />
-          <span>Video must be {maxDuration} seconds or less. Please trim further.</span>
-        </div>
-      )}
-
-      {trimmedDuration >= 1 && trimmedDuration <= maxDuration && (
-        <p className="text-xs text-muted-foreground text-center">
-          Selected: {Math.floor(trimmedDuration)} seconds (max {maxDuration}s)
-        </p>
-      )}
     </div>
   );
 };
