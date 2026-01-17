@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MAX_VIDEO_DURATION_SECONDS } from "@/lib/videoValidation";
-import { compressVideo, formatFileSize, shouldCompress } from "@/lib/videoCompression";
+import { formatFileSize, shouldCompress } from "@/lib/videoCompression";
 import { cn } from "@/lib/utils";
 
 interface VideoTrimmerProps {
@@ -47,9 +47,7 @@ export const VideoTrimmer = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Compression states
-  const [isCompressing, setIsCompressing] = useState(false);
-  const [compressionProgress, setCompressionProgress] = useState(0);
+  // Compression states (simplified)
   const [compressionQuality, setCompressionQuality] = useState<CompressionQuality>('auto');
   const [compressionStats, setCompressionStats] = useState<{
     originalSize: number;
@@ -172,6 +170,8 @@ export const VideoTrimmer = ({
     setTrimProgress(0);
     setCompressionStats(null);
 
+    const trimDuration = endTime - startTime;
+    
     try {
       const video = videoRef.current;
       const canvas = document.createElement("canvas");
@@ -179,17 +179,20 @@ export const VideoTrimmer = ({
       
       if (!ctx) throw new Error("Could not get canvas context");
 
-      canvas.width = video.videoWidth || 720;
-      canvas.height = video.videoHeight || 1280;
+      // Use lower resolution for faster processing
+      const scale = compressionQuality === 'low' ? 0.5 : compressionQuality === 'medium' ? 0.75 : 1;
+      canvas.width = Math.round((video.videoWidth || 720) * scale);
+      canvas.height = Math.round((video.videoHeight || 1280) * scale);
 
-      // Create source video
+      // Create source video for playback
       const sourceVideo = document.createElement("video");
       sourceVideo.src = videoUrl;
-      sourceVideo.muted = true;
+      sourceVideo.muted = false; // Keep audio
       sourceVideo.playsInline = true;
+      sourceVideo.volume = 1;
       
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error("Video load timeout")), 15000);
+        const timeout = setTimeout(() => reject(new Error("Video load timeout")), 10000);
         sourceVideo.onloadedmetadata = () => {
           clearTimeout(timeout);
           resolve();
@@ -201,54 +204,44 @@ export const VideoTrimmer = ({
         sourceVideo.load();
       });
 
+      // Set to start position
       sourceVideo.currentTime = startTime;
-      
       await new Promise<void>((resolve) => {
         sourceVideo.onseeked = () => resolve();
       });
 
-      // MediaRecorder setup
-      const stream = canvas.captureStream(30);
+      // Create stream from canvas
+      const canvasStream = canvas.captureStream(30);
       
+      // Capture audio from the video element
+      let audioStream: MediaStream | null = null;
       try {
         const audioCtx = new AudioContext();
         const source = audioCtx.createMediaElementSource(sourceVideo);
         const dest = audioCtx.createMediaStreamDestination();
         source.connect(dest);
         source.connect(audioCtx.destination);
-        dest.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+        audioStream = dest.stream;
+        audioStream.getAudioTracks().forEach(track => canvasStream.addTrack(track));
       } catch {
         console.log("Audio capture not available");
       }
 
+      // Select codec and bitrate
       const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
         : "video/webm";
 
-      // Adjust bitrate based on compression quality
-      let videoBitrate = 5_000_000; // default 5 Mbps
-      if (compressionQuality !== 'none') {
-        switch (compressionQuality) {
-          case 'low':
-            videoBitrate = 1_000_000; // 1 Mbps
-            break;
-          case 'medium':
-            videoBitrate = 2_500_000; // 2.5 Mbps
-            break;
-          case 'high':
-            videoBitrate = 4_000_000; // 4 Mbps
-            break;
-          case 'auto':
-            // Auto-select based on file size
-            const sizeMB = videoFile.size / (1024 * 1024);
-            if (sizeMB > 50) videoBitrate = 1_500_000;
-            else if (sizeMB > 20) videoBitrate = 2_500_000;
-            else videoBitrate = 4_000_000;
-            break;
-        }
+      let videoBitrate = 4_000_000;
+      if (compressionQuality === 'low') videoBitrate = 1_000_000;
+      else if (compressionQuality === 'medium') videoBitrate = 2_000_000;
+      else if (compressionQuality === 'high') videoBitrate = 3_500_000;
+      else if (compressionQuality === 'auto') {
+        const sizeMB = videoFile.size / (1024 * 1024);
+        videoBitrate = sizeMB > 30 ? 1_500_000 : sizeMB > 15 ? 2_500_000 : 3_500_000;
       }
 
-      const mediaRecorder = new MediaRecorder(stream, {
+      const mediaRecorder = new MediaRecorder(canvasStream, {
         mimeType,
         videoBitsPerSecond: videoBitrate,
       });
@@ -264,78 +257,76 @@ export const VideoTrimmer = ({
         };
       });
 
+      // Start recording and play video in real-time (FAST!)
       mediaRecorder.start(100);
-
-      // Render frames with progress
-      const trimDuration = endTime - startTime;
-      const frameRate = 30;
-      const totalFrames = Math.ceil(trimDuration * frameRate);
       
-      for (let frame = 0; frame <= totalFrames; frame++) {
-        const frameTime = startTime + (frame / frameRate);
-        if (frameTime > endTime) break;
-        
-        sourceVideo.currentTime = frameTime;
-        
-        await new Promise<void>((resolve) => {
-          sourceVideo.onseeked = () => {
-            ctx.drawImage(sourceVideo, 0, 0, canvas.width, canvas.height);
-            resolve();
-          };
-        });
-        
-        // Update progress (trimming is first 80%)
-        setTrimProgress(Math.round((frame / totalFrames) * 80));
-        await new Promise((r) => setTimeout(r, 1000 / frameRate));
-      }
-
-      mediaRecorder.stop();
+      // Real-time rendering loop using requestAnimationFrame
+      let animationId: number;
+      const startTimestamp = performance.now();
       
-      let trimmedBlob = await recordingPromise;
-      setTrimProgress(85);
-      
-      // Apply additional compression if quality is not 'none' and file is still large
-      if (compressionQuality !== 'none' && trimmedBlob.size > 10 * 1024 * 1024) {
-        setIsTrimming(false);
-        setIsCompressing(true);
-        setCompressionProgress(0);
+      const renderFrame = () => {
+        const elapsed = (performance.now() - startTimestamp) / 1000;
+        const progress = Math.min((elapsed / trimDuration) * 100, 100);
+        setTrimProgress(Math.round(progress));
         
-        try {
-          const compressionResult = await compressVideo(trimmedBlob, {
-            quality: compressionQuality === 'auto' ? 'auto' : compressionQuality,
-            onProgress: setCompressionProgress,
-          });
-          
-          setCompressionStats({
-            originalSize: trimmedBlob.size,
-            compressedSize: compressionResult.compressedSize,
-            ratio: compressionResult.compressionRatio,
-          });
-          
-          trimmedBlob = compressionResult.blob;
-        } catch (compError) {
-          console.warn('Compression failed, using trimmed video:', compError);
-        } finally {
-          setIsCompressing(false);
+        // Draw current frame to canvas
+        ctx.drawImage(sourceVideo, 0, 0, canvas.width, canvas.height);
+        
+        if (sourceVideo.currentTime < endTime && !sourceVideo.paused) {
+          animationId = requestAnimationFrame(renderFrame);
         }
-      }
+      };
+
+      // Play and record
+      sourceVideo.play();
+      animationId = requestAnimationFrame(renderFrame);
+
+      // Wait for video to reach end time or finish
+      await new Promise<void>((resolve) => {
+        const checkEnd = setInterval(() => {
+          if (sourceVideo.currentTime >= endTime || sourceVideo.ended) {
+            clearInterval(checkEnd);
+            sourceVideo.pause();
+            cancelAnimationFrame(animationId);
+            resolve();
+          }
+        }, 50);
+        
+        // Safety timeout
+        setTimeout(() => {
+          clearInterval(checkEnd);
+          sourceVideo.pause();
+          cancelAnimationFrame(animationId);
+          resolve();
+        }, (trimDuration + 2) * 1000);
+      });
+
+      // Stop recording
+      mediaRecorder.stop();
+      setTrimProgress(95);
+      
+      const trimmedBlob = await recordingPromise;
       
       // Cleanup
+      sourceVideo.pause();
       sourceVideo.remove();
       canvas.remove();
       
-      // Set final compression stats if not already set
-      if (!compressionStats) {
-        const originalSize = videoFile.size;
-        const compressedSize = trimmedBlob.size;
-        if (compressedSize < originalSize * 0.9) {
-          setCompressionStats({
-            originalSize,
-            compressedSize,
-            ratio: originalSize / compressedSize,
-          });
-        }
+      // Show compression stats
+      const originalSize = videoFile.size;
+      const compressedSize = trimmedBlob.size;
+      if (compressedSize < originalSize * 0.95) {
+        setCompressionStats({
+          originalSize,
+          compressedSize,
+          ratio: originalSize / compressedSize,
+        });
       }
+      
+      setTrimProgress(100);
+      
+      // Small delay to show 100%
+      await new Promise(r => setTimeout(r, 200));
       
       onTrimComplete(trimmedBlob);
     } catch (error) {
@@ -346,7 +337,7 @@ export const VideoTrimmer = ({
       setIsTrimming(false);
       setTrimProgress(0);
     }
-  }, [startTime, endTime, videoUrl, videoFile, onTrimComplete, compressionQuality, compressionStats]);
+  }, [startTime, endTime, videoUrl, videoFile, onTrimComplete, compressionQuality]);
 
   const trimmedDuration = endTime - startTime;
   
@@ -417,37 +408,45 @@ export const VideoTrimmer = ({
           </div>
         )}
 
-        {/* Trimming overlay with progress */}
+        {/* WhatsApp-style processing overlay */}
         {isTrimming && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3">
-            <Scissors className="w-10 h-10 text-primary animate-pulse" />
-            <div className="w-3/4 space-y-2">
-              <Progress value={trimProgress} className="h-2" />
-              <p className="text-center text-sm text-white">
-                Trimming video... {trimProgress}%
-              </p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90">
+            {/* Circular progress indicator */}
+            <div className="relative w-20 h-20 mb-4">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  className="text-white/20"
+                />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  className="text-primary transition-all duration-200"
+                  strokeDasharray={`${trimProgress * 2.83} 283`}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-white text-lg font-semibold">{trimProgress}%</span>
+              </div>
             </div>
+            <p className="text-white text-sm font-medium">Processing video...</p>
+            <p className="text-white/60 text-xs mt-1">This will only take a moment</p>
           </div>
         )}
 
-        {/* Compression overlay with progress */}
-        {isCompressing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3">
-            <Zap className="w-10 h-10 text-yellow-400 animate-pulse" />
-            <div className="w-3/4 space-y-2">
-              <Progress value={compressionProgress} className="h-2 [&>div]:bg-yellow-400" />
-              <p className="text-center text-sm text-white">
-                Compressing video... {compressionProgress}%
-              </p>
-              <p className="text-center text-xs text-white/70">
-                Optimizing for faster uploads
-              </p>
-            </div>
-          </div>
-        )}
         
         {/* Play/Pause overlay */}
-        {!isLoading && !isTrimming && !isCompressing && (
+        {!isLoading && !isTrimming && (
           <button
             onClick={handlePlayPause}
             className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
@@ -547,7 +546,7 @@ export const VideoTrimmer = ({
             <Select
               value={compressionQuality}
               onValueChange={(value) => setCompressionQuality(value as CompressionQuality)}
-              disabled={isTrimming || isCompressing}
+              disabled={isTrimming}
             >
               <SelectTrigger id="compression-quality" className="h-8 text-xs flex-1">
                 <SelectValue />
@@ -624,7 +623,7 @@ export const VideoTrimmer = ({
           step={0.1}
           onValueChange={handleRangeChange}
           className="w-full touch-pan-y"
-          disabled={isTrimming || isCompressing}
+          disabled={isTrimming}
           aria-label="Trim range selector"
         />
         
@@ -645,7 +644,7 @@ export const VideoTrimmer = ({
           size="sm"
           onClick={handlePlayPause}
           className="flex-1"
-          disabled={isTrimming || isCompressing || isLoading}
+          disabled={isTrimming || isLoading}
           aria-label={isPlaying ? "Pause" : "Preview selection"}
         >
           {isPlaying ? (
@@ -666,7 +665,7 @@ export const VideoTrimmer = ({
           variant="ghost"
           size="sm"
           onClick={handleReset}
-          disabled={isTrimming || isCompressing}
+          disabled={isTrimming}
           aria-label="Reset trim selection"
         >
           <RotateCcw className="w-4 h-4" aria-hidden="true" />
@@ -680,7 +679,7 @@ export const VideoTrimmer = ({
           variant="outline"
           onClick={onCancel}
           className="flex-1"
-          disabled={isTrimming || isCompressing}
+          disabled={isTrimming}
         >
           Cancel
         </Button>
@@ -688,22 +687,17 @@ export const VideoTrimmer = ({
           type="button"
           onClick={handleTrim}
           className="flex-1 bg-gradient-ai text-white"
-          disabled={isTrimming || isCompressing || durationStatus === 'too-short' || durationStatus === 'too-long' || isLoading}
-          aria-busy={isTrimming || isCompressing}
+          disabled={isTrimming || durationStatus === 'too-short' || durationStatus === 'too-long' || isLoading}
+          aria-busy={isTrimming}
         >
           {isTrimming ? (
             <>
-              <Scissors className="w-4 h-4 mr-2 animate-pulse" aria-hidden="true" />
-              Trimming...
-            </>
-          ) : isCompressing ? (
-            <>
-              <Zap className="w-4 h-4 mr-2 animate-pulse" aria-hidden="true" />
-              Compressing...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+              Processing...
             </>
           ) : (
             <>
-              <Scissors className="w-4 h-4 mr-2" aria-hidden="true" />
+              <Zap className="w-4 h-4 mr-2" aria-hidden="true" />
               {compressionQuality !== 'none' ? 'Trim & Optimize' : 'Apply Trim'}
             </>
           )}
