@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Scissors, Play, Pause, RotateCcw, AlertCircle, Clock, CheckCircle2, Volume2, VolumeX, Loader2 } from "lucide-react";
+import { Scissors, Play, Pause, RotateCcw, AlertCircle, Clock, CheckCircle2, Volume2, VolumeX, Loader2, Zap, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MAX_VIDEO_DURATION_SECONDS } from "@/lib/videoValidation";
+import { compressVideo, formatFileSize, shouldCompress } from "@/lib/videoCompression";
 import { cn } from "@/lib/utils";
 
 interface VideoTrimmerProps {
@@ -13,7 +15,10 @@ interface VideoTrimmerProps {
   onTrimComplete: (trimmedBlob: Blob) => void;
   onCancel: () => void;
   maxDuration?: number;
+  enableCompression?: boolean;
 }
+
+type CompressionQuality = 'auto' | 'low' | 'medium' | 'high' | 'none';
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -28,6 +33,7 @@ export const VideoTrimmer = ({
   onTrimComplete,
   onCancel,
   maxDuration = MAX_VIDEO_DURATION_SECONDS,
+  enableCompression = true,
 }: VideoTrimmerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [duration, setDuration] = useState(0);
@@ -40,6 +46,23 @@ export const VideoTrimmer = ({
   const [isMuted, setIsMuted] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Compression states
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState(0);
+  const [compressionQuality, setCompressionQuality] = useState<CompressionQuality>('auto');
+  const [compressionStats, setCompressionStats] = useState<{
+    originalSize: number;
+    compressedSize: number;
+    ratio: number;
+  } | null>(null);
+  
+  // Determine if compression is recommended
+  const isCompressionRecommended = useMemo(() => {
+    if (!enableCompression) return false;
+    const trimDuration = endTime - startTime;
+    return shouldCompress(videoFile.size, trimDuration);
+  }, [videoFile.size, startTime, endTime, enableCompression]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -147,6 +170,7 @@ export const VideoTrimmer = ({
 
     setIsTrimming(true);
     setTrimProgress(0);
+    setCompressionStats(null);
 
     try {
       const video = videoRef.current;
@@ -201,9 +225,32 @@ export const VideoTrimmer = ({
         ? "video/webm;codecs=vp9"
         : "video/webm";
 
+      // Adjust bitrate based on compression quality
+      let videoBitrate = 5_000_000; // default 5 Mbps
+      if (compressionQuality !== 'none') {
+        switch (compressionQuality) {
+          case 'low':
+            videoBitrate = 1_000_000; // 1 Mbps
+            break;
+          case 'medium':
+            videoBitrate = 2_500_000; // 2.5 Mbps
+            break;
+          case 'high':
+            videoBitrate = 4_000_000; // 4 Mbps
+            break;
+          case 'auto':
+            // Auto-select based on file size
+            const sizeMB = videoFile.size / (1024 * 1024);
+            if (sizeMB > 50) videoBitrate = 1_500_000;
+            else if (sizeMB > 20) videoBitrate = 2_500_000;
+            else videoBitrate = 4_000_000;
+            break;
+        }
+      }
+
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: 5000000,
+        videoBitsPerSecond: videoBitrate,
       });
 
       const chunks: Blob[] = [];
@@ -237,18 +284,58 @@ export const VideoTrimmer = ({
           };
         });
         
-        // Update progress
-        setTrimProgress(Math.round((frame / totalFrames) * 100));
+        // Update progress (trimming is first 80%)
+        setTrimProgress(Math.round((frame / totalFrames) * 80));
         await new Promise((r) => setTimeout(r, 1000 / frameRate));
       }
 
       mediaRecorder.stop();
       
-      const trimmedBlob = await recordingPromise;
+      let trimmedBlob = await recordingPromise;
+      setTrimProgress(85);
+      
+      // Apply additional compression if quality is not 'none' and file is still large
+      if (compressionQuality !== 'none' && trimmedBlob.size > 10 * 1024 * 1024) {
+        setIsTrimming(false);
+        setIsCompressing(true);
+        setCompressionProgress(0);
+        
+        try {
+          const compressionResult = await compressVideo(trimmedBlob, {
+            quality: compressionQuality === 'auto' ? 'auto' : compressionQuality,
+            onProgress: setCompressionProgress,
+          });
+          
+          setCompressionStats({
+            originalSize: trimmedBlob.size,
+            compressedSize: compressionResult.compressedSize,
+            ratio: compressionResult.compressionRatio,
+          });
+          
+          trimmedBlob = compressionResult.blob;
+        } catch (compError) {
+          console.warn('Compression failed, using trimmed video:', compError);
+        } finally {
+          setIsCompressing(false);
+        }
+      }
       
       // Cleanup
       sourceVideo.remove();
       canvas.remove();
+      
+      // Set final compression stats if not already set
+      if (!compressionStats) {
+        const originalSize = videoFile.size;
+        const compressedSize = trimmedBlob.size;
+        if (compressedSize < originalSize * 0.9) {
+          setCompressionStats({
+            originalSize,
+            compressedSize,
+            ratio: originalSize / compressedSize,
+          });
+        }
+      }
       
       onTrimComplete(trimmedBlob);
     } catch (error) {
@@ -259,7 +346,7 @@ export const VideoTrimmer = ({
       setIsTrimming(false);
       setTrimProgress(0);
     }
-  }, [startTime, endTime, videoUrl, videoFile, onTrimComplete]);
+  }, [startTime, endTime, videoUrl, videoFile, onTrimComplete, compressionQuality, compressionStats]);
 
   const trimmedDuration = endTime - startTime;
   
@@ -333,18 +420,34 @@ export const VideoTrimmer = ({
         {/* Trimming overlay with progress */}
         {isTrimming && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3">
-            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            <Scissors className="w-10 h-10 text-primary animate-pulse" />
             <div className="w-3/4 space-y-2">
               <Progress value={trimProgress} className="h-2" />
               <p className="text-center text-sm text-white">
-                Processing... {trimProgress}%
+                Trimming video... {trimProgress}%
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Compression overlay with progress */}
+        {isCompressing && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3">
+            <Zap className="w-10 h-10 text-yellow-400 animate-pulse" />
+            <div className="w-3/4 space-y-2">
+              <Progress value={compressionProgress} className="h-2 [&>div]:bg-yellow-400" />
+              <p className="text-center text-sm text-white">
+                Compressing video... {compressionProgress}%
+              </p>
+              <p className="text-center text-xs text-white/70">
+                Optimizing for faster uploads
               </p>
             </div>
           </div>
         )}
         
         {/* Play/Pause overlay */}
-        {!isLoading && !isTrimming && (
+        {!isLoading && !isTrimming && !isCompressing && (
           <button
             onClick={handlePlayPause}
             className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
@@ -422,7 +525,91 @@ export const VideoTrimmer = ({
         </p>
       </div>
 
-      {/* Timeline */}
+      {/* Compression Settings */}
+      {enableCompression && (
+        <div className="bg-muted/30 rounded-lg p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-yellow-500" aria-hidden="true" />
+              <span className="text-sm font-medium">Compression</span>
+              {isCompressionRecommended && (
+                <span className="text-xs bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 px-2 py-0.5 rounded-full">
+                  Recommended
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <Label htmlFor="compression-quality" className="text-xs text-muted-foreground whitespace-nowrap">
+              Quality:
+            </Label>
+            <Select
+              value={compressionQuality}
+              onValueChange={(value) => setCompressionQuality(value as CompressionQuality)}
+              disabled={isTrimming || isCompressing}
+            >
+              <SelectTrigger id="compression-quality" className="h-8 text-xs flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-3 h-3" />
+                    <span>Auto (Recommended)</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="high">High Quality (4 Mbps)</SelectItem>
+                <SelectItem value="medium">Medium (2.5 Mbps)</SelectItem>
+                <SelectItem value="low">Low (1 Mbps) - Fastest</SelectItem>
+                <SelectItem value="none">No Compression</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <p className="text-xs text-muted-foreground">
+            {compressionQuality === 'auto' && "Automatically selects best quality based on file size"}
+            {compressionQuality === 'high' && "Best quality, larger file size"}
+            {compressionQuality === 'medium' && "Balanced quality and file size"}
+            {compressionQuality === 'low' && "Smallest file size, faster uploads"}
+            {compressionQuality === 'none' && "No compression applied, original quality"}
+          </p>
+          
+          {/* Original file size indicator */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Original size:</span>
+            <span className="font-medium">{formatFileSize(videoFile.size)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Compression Results */}
+      {compressionStats && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-2">
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-sm font-medium">Compression Complete</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="text-center">
+              <p className="text-muted-foreground">Before</p>
+              <p className="font-medium">{formatFileSize(compressionStats.originalSize)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-muted-foreground">After</p>
+              <p className="font-medium text-green-600 dark:text-green-400">
+                {formatFileSize(compressionStats.compressedSize)}
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-muted-foreground">Saved</p>
+              <p className="font-medium text-green-600 dark:text-green-400">
+                {Math.round((1 - compressionStats.compressedSize / compressionStats.originalSize) * 100)}%
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="space-y-2 px-2">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Start: {formatTime(startTime)}</span>
@@ -437,7 +624,7 @@ export const VideoTrimmer = ({
           step={0.1}
           onValueChange={handleRangeChange}
           className="w-full touch-pan-y"
-          disabled={isTrimming}
+          disabled={isTrimming || isCompressing}
           aria-label="Trim range selector"
         />
         
@@ -458,7 +645,7 @@ export const VideoTrimmer = ({
           size="sm"
           onClick={handlePlayPause}
           className="flex-1"
-          disabled={isTrimming || isLoading}
+          disabled={isTrimming || isCompressing || isLoading}
           aria-label={isPlaying ? "Pause" : "Preview selection"}
         >
           {isPlaying ? (
@@ -479,7 +666,7 @@ export const VideoTrimmer = ({
           variant="ghost"
           size="sm"
           onClick={handleReset}
-          disabled={isTrimming}
+          disabled={isTrimming || isCompressing}
           aria-label="Reset trim selection"
         >
           <RotateCcw className="w-4 h-4" aria-hidden="true" />
@@ -493,7 +680,7 @@ export const VideoTrimmer = ({
           variant="outline"
           onClick={onCancel}
           className="flex-1"
-          disabled={isTrimming}
+          disabled={isTrimming || isCompressing}
         >
           Cancel
         </Button>
@@ -501,18 +688,23 @@ export const VideoTrimmer = ({
           type="button"
           onClick={handleTrim}
           className="flex-1 bg-gradient-ai text-white"
-          disabled={isTrimming || durationStatus === 'too-short' || durationStatus === 'too-long' || isLoading}
-          aria-busy={isTrimming}
+          disabled={isTrimming || isCompressing || durationStatus === 'too-short' || durationStatus === 'too-long' || isLoading}
+          aria-busy={isTrimming || isCompressing}
         >
           {isTrimming ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
-              Processing...
+              <Scissors className="w-4 h-4 mr-2 animate-pulse" aria-hidden="true" />
+              Trimming...
+            </>
+          ) : isCompressing ? (
+            <>
+              <Zap className="w-4 h-4 mr-2 animate-pulse" aria-hidden="true" />
+              Compressing...
             </>
           ) : (
             <>
               <Scissors className="w-4 h-4 mr-2" aria-hidden="true" />
-              Apply Trim
+              {compressionQuality !== 'none' ? 'Trim & Optimize' : 'Apply Trim'}
             </>
           )}
         </Button>
