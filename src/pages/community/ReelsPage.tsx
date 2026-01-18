@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Volume2, VolumeX, Search } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, Search, Plus } from "lucide-react";
 import { useReels } from "@/hooks/useReels";
 import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -299,13 +299,26 @@ const ReelsPage = () => {
               </button>
             </div>
             
-            {/* Search button */}
-            <button
-              onClick={() => navigate("/community")}
-              className="p-2 rounded-full text-white"
-            >
-              <Search className="w-6 h-6" />
-            </button>
+            {/* Right side buttons */}
+            <div className="flex items-center gap-1">
+              {/* Upload button */}
+              <button
+                onClick={() => navigate("/community/create-reel")}
+                className="p-2 rounded-full text-white hover:bg-white/10 transition-colors"
+                aria-label="Create new reel"
+              >
+                <Plus className="w-6 h-6" />
+              </button>
+              
+              {/* Search button */}
+              <button
+                onClick={() => navigate("/community")}
+                className="p-2 rounded-full text-white hover:bg-white/10 transition-colors"
+                aria-label="Search"
+              >
+                <Search className="w-6 h-6" />
+              </button>
+            </div>
           </div>
           
           {/* Active tab indicator */}
