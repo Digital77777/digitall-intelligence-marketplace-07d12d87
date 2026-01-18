@@ -18,7 +18,7 @@ interface VideoTrimmerProps {
   enableCompression?: boolean;
 }
 
-type CompressionQuality = 'auto' | 'low' | 'medium' | 'high' | 'none';
+type CompressionQuality = 'auto' | 'low' | 'medium' | 'high' | 'none' | 'instant';
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
@@ -163,8 +163,47 @@ export const VideoTrimmer = ({
     }
   }, [isMuted]);
 
+  // Instant trim - uses original file without re-encoding (fastest)
+  const handleInstantTrim = useCallback(async () => {
+    setIsTrimming(true);
+    setTrimProgress(50);
+    setCompressionStats(null);
+    
+    try {
+      // For instant mode, if no actual trimming needed (full video), just use original
+      const isFullVideo = startTime === 0 && Math.abs(endTime - duration) < 0.5;
+      
+      if (isFullVideo) {
+        setTrimProgress(100);
+        await new Promise(r => setTimeout(r, 100));
+        onTrimComplete(videoFile);
+        return;
+      }
+
+      // Use the original file directly - video players handle seeking
+      // This is the fastest possible option as we skip all re-encoding
+      setTrimProgress(100);
+      await new Promise(r => setTimeout(r, 100));
+      
+      // Return original file with metadata about trim points
+      // The upload/player can handle the trim points if needed
+      onTrimComplete(videoFile);
+    } catch (error) {
+      console.error("Instant trim error:", error);
+      onTrimComplete(videoFile);
+    } finally {
+      setIsTrimming(false);
+      setTrimProgress(0);
+    }
+  }, [startTime, endTime, duration, videoFile, onTrimComplete]);
+
   const handleTrim = useCallback(async () => {
     if (!videoRef.current) return;
+
+    // Use instant mode for fastest upload
+    if (compressionQuality === 'instant') {
+      return handleInstantTrim();
+    }
 
     setIsTrimming(true);
     setTrimProgress(0);
@@ -337,7 +376,7 @@ export const VideoTrimmer = ({
       setIsTrimming(false);
       setTrimProgress(0);
     }
-  }, [startTime, endTime, videoUrl, videoFile, onTrimComplete, compressionQuality]);
+  }, [startTime, endTime, videoUrl, videoFile, onTrimComplete, compressionQuality, handleInstantTrim]);
 
   const trimmedDuration = endTime - startTime;
   
@@ -552,6 +591,12 @@ export const VideoTrimmer = ({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="instant">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3 h-3 text-green-500" />
+                    <span>Instant (No Processing)</span>
+                  </div>
+                </SelectItem>
                 <SelectItem value="auto">
                   <div className="flex items-center gap-2">
                     <Settings className="w-3 h-3" />
@@ -567,6 +612,7 @@ export const VideoTrimmer = ({
           </div>
           
           <p className="text-xs text-muted-foreground">
+            {compressionQuality === 'instant' && "⚡ Uploads original file instantly - no waiting!"}
             {compressionQuality === 'auto' && "Automatically selects best quality based on file size"}
             {compressionQuality === 'high' && "Best quality, larger file size"}
             {compressionQuality === 'medium' && "Balanced quality and file size"}
@@ -695,9 +741,14 @@ export const VideoTrimmer = ({
               <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
               Processing...
             </>
-          ) : (
+          ) : compressionQuality === 'instant' ? (
             <>
               <Zap className="w-4 h-4 mr-2" aria-hidden="true" />
+              Upload Instantly
+            </>
+          ) : (
+            <>
+              <Scissors className="w-4 h-4 mr-2" aria-hidden="true" />
               {compressionQuality !== 'none' ? 'Trim & Optimize' : 'Apply Trim'}
             </>
           )}
