@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Video, Loader2, Scissors, AlertCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Video, Loader2, Scissors, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useBackgroundUpload } from "@/contexts/BackgroundUploadContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
 import { VideoTrimmer } from "@/components/media/VideoTrimmer";
@@ -19,19 +20,19 @@ const CreateReelPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { uploadReel, hasActiveUploads } = useBackgroundUpload();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [showTrimmer, setShowTrimmer] = useState(false);
   const [isTrimmed, setIsTrimmed] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [videoDuration, setVideoDuration] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isStartingUpload, setIsStartingUpload] = useState(false);
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -188,77 +189,51 @@ const CreateReelPage = () => {
       return;
     }
 
-    setIsUploading(true);
-    setUploadProgress(5);
+    setIsStartingUpload(true);
 
     try {
-      // Create insight
-      setUploadProgress(15);
-      const { data: insight, error: insightError } = await supabase
-        .from("community_insights")
-        .insert({
-          user_id: user.id,
-          title: title.trim(),
-          content: description.trim() || title.trim(),
-          category: "reel",
-          is_published: true,
-        })
-        .select()
-        .single();
+      // Generate a thumbnail from the video for the upload indicator
+      let thumbnail: string | undefined;
+      try {
+        const video = document.createElement('video');
+        video.src = videoPreview || '';
+        video.currentTime = 0.5;
+        await new Promise(resolve => { video.onloadeddata = resolve; video.load(); });
+        const canvas = document.createElement('canvas');
+        canvas.width = 80;
+        canvas.height = 80;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(video, 0, 0, 80, 80);
+        thumbnail = canvas.toDataURL('image/jpeg', 0.5);
+      } catch (e) {
+        // Thumbnail generation failed, continue without it
+      }
 
-      if (insightError) throw insightError;
-      setUploadProgress(30);
-
-      // Upload video
-      const fileExt = videoFile.name.split(".").pop() || "webm";
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      
-      setUploadProgress(40);
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("reels")
-        .upload(fileName, videoFile, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (uploadError) throw uploadError;
-      setUploadProgress(80);
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from("reels")
-        .getPublicUrl(fileName);
-
-      // Create reel record
-      setUploadProgress(90);
-      const { error: reelError } = await supabase
-        .from("community_reels")
-        .insert({
-          user_id: user.id,
-          insight_id: insight.id,
-          video_url: publicUrl,
-          title: title.trim(),
-        });
-
-      if (reelError) throw reelError;
-      setUploadProgress(100);
-
-      toast({
-        title: "Reel uploaded!",
-        description: "Your reel has been published successfully.",
+      // Start background upload
+      await uploadReel({
+        userId: user.id,
+        videoFile,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        thumbnail,
       });
 
+      toast({
+        title: "Upload started!",
+        description: "Your reel is uploading in the background. You can continue browsing.",
+      });
+
+      // Navigate away immediately - upload continues in background
       navigate("/community/reels");
     } catch (error: any) {
-      console.error("Upload error:", error);
+      console.error("Upload start error:", error);
       toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload reel. Please try again.",
+        title: "Failed to start upload",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
+      setIsStartingUpload(false);
     }
   };
 
@@ -431,7 +406,7 @@ const CreateReelPage = () => {
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Give your reel a catchy title"
                     maxLength={100}
-                    disabled={isUploading}
+                    disabled={isStartingUpload}
                   />
                   <p className="text-xs text-muted-foreground text-right">
                     {title.length}/100
@@ -448,29 +423,19 @@ const CreateReelPage = () => {
                     placeholder="Add a description for your reel..."
                     rows={3}
                     maxLength={500}
-                    disabled={isUploading}
+                    disabled={isStartingUpload}
                   />
                   <p className="text-xs text-muted-foreground text-right">
                     {description.length}/500
                   </p>
                 </div>
 
-                {/* Upload Progress */}
-                {isUploading && (
-                  <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Uploading...
-                      </span>
-                      <span className="font-medium">{uploadProgress}%</span>
-                    </div>
-                    <Progress value={uploadProgress} className="h-2" />
-                    <p className="text-xs text-muted-foreground text-center">
-                      {uploadProgress < 30 && "Creating post..."}
-                      {uploadProgress >= 30 && uploadProgress < 80 && "Uploading video..."}
-                      {uploadProgress >= 80 && uploadProgress < 100 && "Finalizing..."}
-                      {uploadProgress === 100 && "Complete!"}
+                {/* Background Upload Info */}
+                {hasActiveUploads && (
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-sm text-primary flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Previous upload in progress...
                     </p>
                   </div>
                 )}
@@ -479,17 +444,17 @@ const CreateReelPage = () => {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-ai text-white"
-                  disabled={isUploading || !videoFile || !title.trim() || isValidating}
+                  disabled={isStartingUpload || !videoFile || !title.trim() || isValidating}
                 >
-                  {isUploading ? (
+                  {isStartingUpload ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Uploading...
+                      Starting Upload...
                     </>
                   ) : (
                     <>
-                      <Upload className="w-4 h-4 mr-2" />
-                      Publish Reel
+                      <Zap className="w-4 h-4 mr-2" />
+                      Publish & Continue Browsing
                     </>
                   )}
                 </Button>
