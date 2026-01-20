@@ -89,6 +89,7 @@ const InstallPWAPage = lazy(() => import("./pages/InstallPWAPage"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const EditListingPage = lazy(() => import("./pages/EditListingPage"));
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
+const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 
 // Optimized QueryClient with aggressive caching for instant data access
 const queryClient = new QueryClient({
@@ -243,6 +244,7 @@ const routeGroups: AppRoute[] = [
   { path: "/install-pwa", component: InstallPWAPage },
   { path: "/profile/:userId", component: PublicProfilePage, protected: true },
   { path: "/edit-listing/:id", component: EditListingPage, protected: true },
+  { path: "/feedback", component: FeedbackPage, protected: true },
 ];
 
 const App = () => {
