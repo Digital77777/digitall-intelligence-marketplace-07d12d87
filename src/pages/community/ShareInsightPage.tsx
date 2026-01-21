@@ -323,7 +323,8 @@ const ShareInsightPage = () => {
         content: formData.content.trim(),
         category: formData.category,
         read_time: formData.readTime || undefined,
-        cover_image: coverImages[0] || undefined,
+        cover_image: coverImages.length > 0 ? coverImages[0] : undefined,
+        images: coverImages.length > 1 ? coverImages : undefined,
         videos: coverVideos.length > 0 ? coverVideos : undefined,
         video_thumbnails: videoThumbnails.length > 0 ? videoThumbnails : undefined,
       });
@@ -478,7 +479,7 @@ const ShareInsightPage = () => {
                   <div>
                     <Label>Cover Media (Optional)</Label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Upload one image or video (max 1 minute) to showcase your insight. Videos can be trimmed before upload.
+                      Upload up to 5 images or a video (max 1 minute) to showcase your insight. Videos can be trimmed before upload.
                     </p>
                   </div>
 
@@ -629,14 +630,14 @@ const ShareInsightPage = () => {
                   {/* Image Upload - Using existing MediaUploader */}
                   <div className="space-y-2">
                     <p className="text-xs text-muted-foreground">
-                      Or use the standard uploader for images:
+                      Or upload images (up to 5):
                     </p>
                     <MediaUploader
                       images={coverImages}
                       videos={[]}
                       onImagesChange={setCoverImages}
                       onVideosChange={() => {}}
-                      maxImages={1}
+                      maxImages={5}
                       maxVideos={0}
                       maxFileSize={20}
                     />
