@@ -528,6 +528,7 @@ export const useCommunity = () => {
       category: string;
       read_time?: string;
       cover_image?: string;
+      images?: string[];
       videos?: string[];
       video_thumbnails?: string[];
     }) => {

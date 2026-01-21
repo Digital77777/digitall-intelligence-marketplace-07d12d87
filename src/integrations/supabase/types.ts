@@ -326,6 +326,7 @@ export type Database = {
           cover_image: string | null
           created_at: string
           id: string
+          images: string[] | null
           is_published: boolean | null
           likes_count: number | null
           read_time: string | null
@@ -342,6 +343,7 @@ export type Database = {
           cover_image?: string | null
           created_at?: string
           id?: string
+          images?: string[] | null
           is_published?: boolean | null
           likes_count?: number | null
           read_time?: string | null
@@ -358,6 +360,7 @@ export type Database = {
           cover_image?: string | null
           created_at?: string
           id?: string
+          images?: string[] | null
           is_published?: boolean | null
           likes_count?: number | null
           read_time?: string | null
