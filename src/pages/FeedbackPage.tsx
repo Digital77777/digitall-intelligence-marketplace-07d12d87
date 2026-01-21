@@ -39,7 +39,6 @@ const FeedbackPage: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Using rpc for type safety until types regenerate
       const { error } = await supabase
         .from('user_feedback' as any)
         .insert({
@@ -49,6 +48,16 @@ const FeedbackPage: React.FC = () => {
         });
 
       if (error) throw error;
+
+      // Send email notification to admins (non-blocking)
+      supabase.functions.invoke('send-feedback-notification', {
+        body: {
+          category,
+          message: message.trim(),
+          userEmail: user.email,
+          userName: user.user_metadata?.full_name || user.email,
+        },
+      }).catch(console.error);
 
       toast.success('Thank you for your feedback!');
       setCategory('');
