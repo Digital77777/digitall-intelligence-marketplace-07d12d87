@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Eye, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Heart, Eye, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import type { CommunityInsight } from "@/types/community";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
 import { RichTextRenderer } from "@/components/community/RichTextRenderer";
+import { cn } from "@/lib/utils";
 
 interface InsightDetailModalProps {
   insight: CommunityInsight;
@@ -17,6 +20,14 @@ interface InsightDetailModalProps {
 }
 
 export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetailModalProps) => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Combine cover_image with images array for gallery
+  const allImages = [
+    ...(insight.cover_image ? [insight.cover_image] : []),
+    ...(insight.images || []).filter(img => img !== insight.cover_image)
+  ];
+  
   // Fetch profiles of users who liked this insight
   const { data: likedByUsers } = useQuery({
     queryKey: ["insight-likes-profiles", insight.id],
@@ -44,6 +55,14 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
       return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
     }
     return "U";
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
   return (
@@ -78,20 +97,66 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
             </div>
           </div>
 
-          {/* Cover Image */}
-          {insight.cover_image && (
-            <div className="rounded-lg overflow-hidden bg-muted/30">
+          {/* Image Gallery/Carousel */}
+          {allImages.length > 0 && (
+            <div className="relative rounded-lg overflow-hidden bg-muted/30">
               <EnhancedImage
-                src={insight.cover_image}
-                alt={insight.title}
+                src={allImages[currentImageIndex]}
+                alt={`${insight.title} - Image ${currentImageIndex + 1}`}
                 category="ai"
-                className="w-full h-64 sm:h-80 object-contain"
+                className="w-full h-auto max-h-[400px] object-contain"
               />
+              
+              {/* Navigation arrows for multiple images */}
+              {allImages.length > 1 && (
+                <>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-md"
+                    onClick={prevImage}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-md"
+                    onClick={nextImage}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Image counter */}
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-background/80 px-3 py-1 rounded-full text-xs font-medium">
+                    {currentImageIndex + 1} / {allImages.length}
+                  </div>
+                </>
+              )}
+              
+              {/* Thumbnail dots for multiple images */}
+              {allImages.length > 1 && allImages.length <= 10 && (
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {allImages.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={cn(
+                        "w-2 h-2 rounded-full transition-all",
+                        index === currentImageIndex
+                          ? "bg-primary w-4"
+                          : "bg-background/60 hover:bg-background/80"
+                      )}
+                      aria-label={`Go to image ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
           
-          {/* Cover Video */}
-          {!insight.cover_image && insight.videos && insight.videos.length > 0 && (
+          {/* Cover Video (only if no images) */}
+          {allImages.length === 0 && insight.videos && insight.videos.length > 0 && (
             <div className="rounded-lg overflow-hidden bg-black">
               <EnhancedVideoPlayer
                 src={insight.videos[0]}
