@@ -78,6 +78,7 @@ export interface CommunityInsight {
   likes_count: number;
   views_count: number;
   cover_image?: string | null;
+  images?: string[] | null;
   videos?: string[] | null;
   video_thumbnails?: string[] | null;
   read_time?: string | null;
