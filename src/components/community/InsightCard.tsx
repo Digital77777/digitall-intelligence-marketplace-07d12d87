@@ -1,5 +1,5 @@
-import React, { memo, useCallback } from "react";
-import { Heart, Eye } from "lucide-react";
+import React, { memo, useCallback, useState, useEffect } from "react";
+import { Heart, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
 import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
+import useEmblaCarousel from "embla-carousel-react";
+import { cn } from "@/lib/utils";
 
 interface InsightCardProps {
   insight: CommunityInsight;
@@ -21,6 +23,40 @@ interface InsightCardProps {
 
 export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitials, priority = false }: InsightCardProps) => {
   const { isOfficial, badgeLabel } = useIsOfficialAccount(insight.profiles?.user_id);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Combine cover_image with images array for gallery
+  const allImages = [
+    ...(insight.cover_image ? [insight.cover_image] : []),
+    ...(insight.images || []).filter(img => img !== insight.cover_image)
+  ];
+  
+  // Embla carousel for swipe gestures on multi-image insights
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true,
+    skipSnaps: false,
+  });
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCurrentImageIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  const handleCarouselClick = useCallback((e: React.MouseEvent) => {
+    // Only prevent card click if we're swiping
+    if (allImages.length > 1) {
+      e.stopPropagation();
+      onViewClick(insight);
+    }
+  }, [allImages.length, insight, onViewClick]);
   
   const handleLikeClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,7 +72,7 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
   }, []);
 
   // Check if this is a text-only insight (no media)
-  const hasMedia = insight.cover_image || (insight.videos && insight.videos.length > 0);
+  const hasMedia = insight.cover_image || (insight.videos && insight.videos.length > 0) || (insight.images && insight.images.length > 0);
 
   return (
     <Card 
@@ -44,11 +80,11 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
       onClick={handleCardClick}
     >
       <CardContent className="p-0 rounded-xl overflow-hidden">
-        {/* Media section - Instagram-style full width on mobile, constrained on desktop */}
-        {insight.cover_image && (
+        {/* Media section - Instagram-style with swipe support for multiple images */}
+        {allImages.length === 1 && (
           <div className="w-full relative overflow-hidden rounded-t-xl h-auto md:h-40">
             <EnhancedImage 
-              src={insight.cover_image} 
+              src={allImages[0]} 
               alt={insight.title}
               className="w-full h-full object-contain md:object-cover rounded-t-xl"
               enableBlurUp={true}
@@ -56,7 +92,42 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
             />
           </div>
         )}
-        {!insight.cover_image && insight.videos && insight.videos.length > 0 && (
+        {allImages.length > 1 && (
+          <div className="w-full relative overflow-hidden rounded-t-xl" onClick={handleCarouselClick}>
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex">
+                {allImages.map((image, index) => (
+                  <div key={index} className="flex-[0_0_100%] min-w-0">
+                    <div className="h-auto md:h-40">
+                      <EnhancedImage 
+                        src={image} 
+                        alt={`${insight.title} - ${index + 1}`}
+                        className="w-full h-full object-contain md:object-cover rounded-t-xl"
+                        enableBlurUp={true}
+                        priority={priority && index === 0}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Pagination dots */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {allImages.map((_, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-all",
+                    index === currentImageIndex
+                      ? "bg-primary w-3"
+                      : "bg-white/60"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {allImages.length === 0 && insight.videos && insight.videos.length > 0 && (
           <div 
             className="w-full relative overflow-hidden rounded-t-xl"
             onClick={handleVideoClick}
