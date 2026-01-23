@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useEffect, lazy, Suspense, startTransition } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,8 +15,9 @@ import { DeploymentDiagnostics } from "./components/DeploymentDiagnostics";
 import { SkipToContent } from "./components/SkipToContent";
 import { UpdatePrompt } from "./components/UpdatePrompt";
 import { FloatingUploadIndicator } from "./components/upload/FloatingUploadIndicator";
+import { useAutoPrefetch } from "./hooks/usePrefetch";
 
-// Eager-loaded pages for instant navigation
+// Eager-loaded pages for instant navigation (core user journeys)
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -26,9 +27,10 @@ import MarketplacePage from "./pages/MarketplacePage";
 import CommunityPage from "./pages/CommunityPage";
 import ReferralPage from "./pages/ReferralPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import LearningPaths from "./pages/LearningPaths";
+import MyActivityPage from "./pages/MyActivityPage";
 
-// Learning - Lazy loaded
-const LearningPaths = lazy(() => import("./pages/LearningPaths"));
+// Learning - Lazy loaded (secondary pages)
 const FoundationPath = lazy(() => import("./pages/course/FoundationPath"));
 const PracticalSkills = lazy(() => import("./pages/course/PracticalSkills"));
 const TechnicalDeveloper = lazy(() => import("./pages/course/TechnicalDeveloper"));
@@ -62,7 +64,6 @@ const StartSellingPage = lazy(() => import("./pages/StartSellingPage"));
 const CreatorSuitePage = lazy(() => import("./pages/CreatorSuitePage"));
 
 // Community - Lazy loaded
-const MyActivityPage = lazy(() => import("./pages/MyActivityPage"));
 const TopicDetailPage = lazy(() => import("./pages/community/TopicDetailPage"));
 const BrowseEventsPage = lazy(() => import("./pages/community/BrowseEventsPage"));
 const FindMembersPage = lazy(() => import("./pages/community/FindMembersPage"));
@@ -95,19 +96,21 @@ const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes - data stays fresh longer
-      gcTime: 10 * 60 * 1000, // 10 minutes - cache persists longer
+      staleTime: 10 * 60 * 1000, // 10 minutes - data stays fresh longer
+      gcTime: 30 * 60 * 1000, // 30 minutes - cache persists much longer
       retry: 1,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
+      refetchOnMount: false, // Don't refetch if data is in cache
     },
   },
 });
 
-// PrivateRoute wrapper - minimal loading state
+// PrivateRoute wrapper - invisible loading state
 const PrivateRoute = ({ children }: { children: JSX.Element }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen" />;
+  // Use an invisible placeholder instead of loading text
+  if (loading) return <div className="min-h-screen bg-background" aria-busy="true" />;
   return user ? children : <Navigate to="/auth" replace />;
 };
 
@@ -135,9 +138,12 @@ const useIsImmersivePage = () => {
   return immersiveRoutes.some(route => location.pathname.startsWith(route));
 };
 
-// Layout wrapper that conditionally shows navigation
+// Layout wrapper that conditionally shows navigation and triggers prefetch
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const isImmersive = useIsImmersivePage();
+  
+  // Auto-prefetch core routes and data on mount
+  useAutoPrefetch();
   
   if (isImmersive) {
     return (
@@ -270,7 +276,8 @@ const App = () => {
                     <Toaster position="top-right" />
                     <BrowserRouter>
                       <AppLayout>
-                        <Suspense fallback={<div className="min-h-screen flex items-center justify-center" role="status" aria-label="Loading page content"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+                        {/* Invisible suspense fallback - pages load instantly or show their own skeleton */}
+                        <Suspense fallback={<div className="min-h-screen bg-background" aria-busy="true" />}>
                           <Routes>
                             {routeGroups.map(renderRoute)}
                             <Route path="*" element={<NotFound />} />

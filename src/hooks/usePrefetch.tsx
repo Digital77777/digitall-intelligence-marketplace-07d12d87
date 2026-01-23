@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,17 +19,15 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/marketplace/freelance-services': () => import('@/pages/FreelanceServicesPage'),
   '/marketplace/post-jobs': () => import('@/pages/PostJobsPage'),
   '/marketplace/ai-development': () => import('@/pages/AIDevelopmentPage'),
-  // Community routes - full prefetch support
   '/community': () => import('@/pages/CommunityPage'),
   '/community/my-activity': () => import('@/pages/MyActivityPage'),
   '/community/inbox': () => import('@/pages/community/InboxPage'),
   '/community/browse-events': () => import('@/pages/community/BrowseEventsPage'),
   '/community/find-members': () => import('@/pages/community/FindMembersPage'),
-  '/community/reels': () => import('@/pages/community/ReelsPage').then(m => m.default),
+  '/community/reels': () => import('@/pages/community/ReelsPage'),
   '/community/share-insight': () => import('@/pages/community/ShareInsightPage'),
   '/community/start-topic': () => import('@/pages/community/StartTopicPage'),
   '/community/host-event': () => import('@/pages/community/HostEventPage'),
-  // Other routes
   '/referrals': () => import('@/pages/ReferralPage'),
   '/subscription': () => import('@/pages/SubscriptionPage'),
   '/analytics': () => import('@/pages/AnalyticsPage'),
@@ -46,21 +44,68 @@ const routeImports: Record<string, () => Promise<any>> = {
   '/job-listings': () => import('@/pages/JobListingsPage'),
   '/create-freelancer-profile': () => import('@/pages/CreateFreelancerProfilePage'),
   '/create-job-posting': () => import('@/pages/CreateJobPostingPage'),
+  '/feedback': () => import('@/pages/FeedbackPage'),
 };
 
 // Cache to track which routes have been prefetched
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
 
+// Core routes to prefetch on app load
+const coreRoutes = [
+  '/dashboard',
+  '/learning-paths',
+  '/ai-tools',
+  '/marketplace',
+  '/community',
+  '/referrals',
+  '/subscription',
+];
+
 export const usePrefetch = () => {
   const queryClient = useQueryClient();
+
+  // Prefetch community data
+  const prefetchCommunityData = useCallback(() => {
+    if (prefetchedData.has('community')) return;
+    prefetchedData.add('community');
+
+    // Prefetch insights
+    queryClient.prefetchQuery({
+      queryKey: ["community-insights"],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from("community_insights")
+          .select("id, title, category, cover_image, likes_count, views_count, created_at, user_id")
+          .eq("is_published", true)
+          .order("created_at", { ascending: false })
+          .limit(20);
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
+    });
+
+    // Prefetch events
+    queryClient.prefetchQuery({
+      queryKey: ["community-events"],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from("community_events")
+          .select("id, title, event_type, event_date, location, attendees_count")
+          .gte("event_date", new Date().toISOString().split('T')[0])
+          .order("event_date", { ascending: true })
+          .limit(10);
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
+    });
+  }, [queryClient]);
 
   // Prefetch reels data
   const prefetchReelsData = useCallback(() => {
     if (prefetchedData.has('reels')) return;
     prefetchedData.add('reels');
 
-    // Prefetch community reels
     queryClient.prefetchQuery({
       queryKey: ["community-reels"],
       queryFn: async () => {
@@ -76,10 +121,9 @@ export const usePrefetch = () => {
           views_count: reel.views_count || 0,
         }));
       },
-      staleTime: 1000 * 60 * 5,
+      staleTime: 1000 * 60 * 10,
     });
 
-    // Prefetch insight videos for reels
     queryClient.prefetchQuery({
       queryKey: ["insight-videos-for-reels"],
       queryFn: async () => {
@@ -103,47 +147,99 @@ export const usePrefetch = () => {
           }))
         );
       },
-      staleTime: 1000 * 60 * 5,
+      staleTime: 1000 * 60 * 10,
+    });
+  }, [queryClient]);
+
+  // Prefetch marketplace data
+  const prefetchMarketplaceData = useCallback(() => {
+    if (prefetchedData.has('marketplace')) return;
+    prefetchedData.add('marketplace');
+
+    queryClient.prefetchQuery({
+      queryKey: ["marketplace-listings-preview"],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from("marketplace_listings")
+          .select("id, title, price, images, listing_type, created_at")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(12);
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
     });
   }, [queryClient]);
 
   const prefetchRoute = useCallback((path: string) => {
-    // Skip if already prefetched
     if (prefetchedRoutes.has(path)) return;
     
-    // Get the import function for this route
     const importFn = routeImports[path];
     if (!importFn) return;
 
-    // Mark as prefetched immediately to avoid duplicate requests
     prefetchedRoutes.add(path);
 
-    // Prefetch the route component
-    importFn().catch((error) => {
-      // Remove from cache if prefetch fails
-      prefetchedRoutes.delete(path);
-      console.warn(`Failed to prefetch route: ${path}`, error);
-    });
+    // Use requestIdleCallback for non-blocking prefetch
+    const prefetch = () => {
+      importFn().catch((error) => {
+        prefetchedRoutes.delete(path);
+        console.warn(`Failed to prefetch route: ${path}`, error);
+      });
+    };
 
-    // Also prefetch data for specific routes
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(prefetch, { timeout: 2000 });
+    } else {
+      setTimeout(prefetch, 100);
+    }
+
+    // Prefetch associated data
     if (path === '/community/reels') {
       prefetchReelsData();
+    } else if (path === '/community' || path.startsWith('/community/')) {
+      prefetchCommunityData();
+    } else if (path === '/marketplace' || path.startsWith('/marketplace/')) {
+      prefetchMarketplaceData();
     }
-  }, [prefetchReelsData]);
+  }, [prefetchReelsData, prefetchCommunityData, prefetchMarketplaceData]);
+
+  // Prefetch core routes on mount
+  const prefetchCoreRoutes = useCallback(() => {
+    // Delay to not block initial render
+    setTimeout(() => {
+      coreRoutes.forEach(route => {
+        prefetchRoute(route);
+      });
+      // Also prefetch core data
+      prefetchCommunityData();
+      prefetchMarketplaceData();
+    }, 1000);
+  }, [prefetchRoute, prefetchCommunityData, prefetchMarketplaceData]);
 
   const handleMouseEnter = useCallback((path: string) => {
     prefetchRoute(path);
   }, [prefetchRoute]);
 
   const handleTouchStart = useCallback((path: string) => {
-    // For mobile, prefetch on touch start for instant navigation
     prefetchRoute(path);
   }, [prefetchRoute]);
 
   return {
     prefetchRoute,
     prefetchReelsData,
+    prefetchCommunityData,
+    prefetchMarketplaceData,
+    prefetchCoreRoutes,
     handleMouseEnter,
     handleTouchStart,
   };
+};
+
+// Hook to auto-prefetch on app load
+export const useAutoPrefetch = () => {
+  const { prefetchCoreRoutes } = usePrefetch();
+
+  useEffect(() => {
+    prefetchCoreRoutes();
+  }, [prefetchCoreRoutes]);
 };
