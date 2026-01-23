@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Heart, TrendingUp, Eye, Play } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import useEmblaCarousel from "embla-carousel-react";
+import { cn } from "@/lib/utils";
 
 interface InsightPreviewProps {
   title: string;
@@ -12,6 +14,7 @@ interface InsightPreviewProps {
   category: string;
   readTime?: string;
   coverImage?: string;
+  coverImages?: string[];
   coverVideo?: string;
   videoThumbnail?: string;
 }
@@ -22,10 +25,36 @@ export const InsightPreview: React.FC<InsightPreviewProps> = ({
   category,
   readTime,
   coverImage,
+  coverImages = [],
   coverVideo,
   videoThumbnail,
 }) => {
   const { user } = useAuth();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Combine single coverImage with coverImages array
+  const allImages = coverImage 
+    ? [coverImage, ...coverImages.filter(img => img !== coverImage)]
+    : coverImages;
+  
+  // Embla carousel for swipe gestures
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true,
+    skipSnaps: false,
+  });
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCurrentImageIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
   
   const getInitials = (name?: string, email?: string) => {
     if (name) {
@@ -42,16 +71,47 @@ export const InsightPreview: React.FC<InsightPreviewProps> = ({
   return (
     <Card className="overflow-hidden max-w-full">
       <CardContent className="p-0">
-        {coverImage && (
+        {allImages.length === 1 && (
           <div className="w-full relative overflow-hidden">
             <img 
-              src={coverImage} 
+              src={allImages[0]} 
               alt={title || "Preview"}
               className="w-full h-auto object-contain"
             />
           </div>
         )}
-        {!coverImage && coverVideo && (
+        {allImages.length > 1 && (
+          <div className="w-full relative overflow-hidden">
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex">
+                {allImages.map((image, index) => (
+                  <div key={index} className="flex-[0_0_100%] min-w-0">
+                    <img 
+                      src={image} 
+                      alt={`${title || "Preview"} - ${index + 1}`}
+                      className="w-full h-auto object-contain"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Pagination dots */}
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {allImages.map((_, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full transition-all",
+                    index === currentImageIndex
+                      ? "bg-primary w-3"
+                      : "bg-white/60"
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        {allImages.length === 0 && coverVideo && (
           <div className="w-full relative overflow-hidden group">
             {videoThumbnail ? (
               <div className="relative">

@@ -386,6 +386,7 @@ const ShareInsightPage = () => {
               category={formData.category}
               readTime={formData.readTime}
               coverImage={coverImages[0]}
+              coverImages={coverImages}
               coverVideo={coverVideos[0]}
               videoThumbnail={videoThumbnails[0]}
             />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { EnhancedVideoPlayer } from "@/components/media/EnhancedVideoPlayer";
 import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 import { cn } from "@/lib/utils";
+import useEmblaCarousel from "embla-carousel-react";
 
 interface InsightDetailModalProps {
   insight: CommunityInsight;
@@ -27,6 +28,34 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
     ...(insight.cover_image ? [insight.cover_image] : []),
     ...(insight.images || []).filter(img => img !== insight.cover_image)
   ];
+  
+  // Embla carousel for swipe gestures
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true,
+    skipSnaps: false,
+  });
+
+  // Sync embla with current index
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCurrentImageIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  // Reset to first image when modal opens
+  useEffect(() => {
+    if (open && emblaApi) {
+      emblaApi.scrollTo(0, true);
+      setCurrentImageIndex(0);
+    }
+  }, [open, emblaApi]);
   
   // Fetch profiles of users who liked this insight
   const { data: likedByUsers } = useQuery({
@@ -57,13 +86,17 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
     return "U";
   };
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
-  };
+  const nextImage = useCallback(() => {
+    emblaApi?.scrollNext();
+  }, [emblaApi]);
 
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
+  const prevImage = useCallback(() => {
+    emblaApi?.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollToImage = useCallback((index: number) => {
+    emblaApi?.scrollTo(index);
+  }, [emblaApi]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,15 +130,32 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
             </div>
           </div>
 
-          {/* Image Gallery/Carousel */}
+          {/* Image Gallery/Carousel with swipe support */}
           {allImages.length > 0 && (
             <div className="relative rounded-lg overflow-hidden bg-muted/30">
-              <EnhancedImage
-                src={allImages[currentImageIndex]}
-                alt={`${insight.title} - Image ${currentImageIndex + 1}`}
-                category="ai"
-                className="w-full h-auto max-h-[400px] object-contain"
-              />
+              {allImages.length === 1 ? (
+                <EnhancedImage
+                  src={allImages[0]}
+                  alt={`${insight.title} - Image 1`}
+                  category="ai"
+                  className="w-full h-auto max-h-[400px] object-contain"
+                />
+              ) : (
+                <div className="overflow-hidden" ref={emblaRef}>
+                  <div className="flex">
+                    {allImages.map((image, index) => (
+                      <div key={index} className="flex-[0_0_100%] min-w-0">
+                        <EnhancedImage
+                          src={image}
+                          alt={`${insight.title} - Image ${index + 1}`}
+                          category="ai"
+                          className="w-full h-auto max-h-[400px] object-contain"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               
               {/* Navigation arrows for multiple images */}
               {allImages.length > 1 && (
@@ -113,7 +163,7 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-md"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-md hidden md:flex"
                     onClick={prevImage}
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -121,7 +171,7 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
                   <Button
                     variant="secondary"
                     size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-md"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 hover:bg-background shadow-md hidden md:flex"
                     onClick={nextImage}
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -140,7 +190,7 @@ export const InsightDetailModal = ({ insight, open, onOpenChange }: InsightDetai
                   {allImages.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setCurrentImageIndex(index)}
+                      onClick={() => scrollToImage(index)}
                       className={cn(
                         "w-2 h-2 rounded-full transition-all",
                         index === currentImageIndex
