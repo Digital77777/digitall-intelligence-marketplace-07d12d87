@@ -24,7 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { category, message, userEmail, userName }: FeedbackNotificationRequest = await req.json();
 
-    const adminEmail = "admin@digitall-intelligence.com"; // Update with your admin email
+    const adminEmail = "digitalintelligencemarketplace@gmail.com";
 
     const emailResponse = await resend.emails.send({
       from: "Digitall Intelligence <onboarding@resend.dev>",
