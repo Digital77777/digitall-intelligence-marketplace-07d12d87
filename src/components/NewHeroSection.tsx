@@ -4,42 +4,38 @@ import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, Brain, TrendingUp, Zap, Target, Rocket } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
 const NewHeroSection = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [userCount, setUserCount] = useState<number | null>(null);
-
   useEffect(() => {
     const fetchUserCount = async () => {
-      const { count } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      const {
+        count
+      } = await supabase.from('profiles').select('*', {
+        count: 'exact',
+        head: true
+      });
       setUserCount(count);
     };
-    
     fetchUserCount();
 
     // Subscribe to real-time changes
-    const channel = supabase
-      .channel('profiles-count-hero')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'profiles' },
-        () => setUserCount(prev => (prev ?? 0) + 1)
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'profiles' },
-        () => setUserCount(prev => Math.max(0, (prev ?? 1) - 1))
-      )
-      .subscribe();
-
+    const channel = supabase.channel('profiles-count-hero').on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'profiles'
+    }, () => setUserCount(prev => (prev ?? 0) + 1)).on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'profiles'
+    }, () => setUserCount(prev => Math.max(0, (prev ?? 1) - 1))).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, []);
-
   const handleNavigation = (path: string) => {
     if (!user) {
       navigate("/auth");
@@ -47,9 +43,7 @@ const NewHeroSection = () => {
       navigate(path);
     }
   };
-
-  return (
-    <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden">
+  return <section className="relative min-h-screen flex items-center justify-center px-6 py-20 overflow-hidden">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
       
@@ -82,20 +76,11 @@ const NewHeroSection = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4 animate-fade-in">
-            <Button
-              size="lg"
-              onClick={() => handleNavigation("/learning-paths")}
-              className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all"
-            >
+            <Button size="lg" onClick={() => handleNavigation("/learning-paths")} className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all">
               <Rocket className="w-5 h-5 mr-2" />
               Start Learning Free
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => handleNavigation("/ai-tools")}
-              className="text-lg px-8 py-6 border-2 hover:bg-accent/10 transition-all"
-            >
+            <Button size="lg" variant="outline" onClick={() => handleNavigation("/ai-tools")} className="text-lg px-8 py-6 border-2 hover:bg-accent/10 transition-all">
               <Zap className="w-5 h-5 mr-2" />
               Explore AI Tools
             </Button>
@@ -114,7 +99,7 @@ const NewHeroSection = () => {
             </div>
 
             <div className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-lg group">
-              <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-primary-glow">
                 <Target className="w-6 h-6 text-secondary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">Learning Paths</h3>
@@ -153,8 +138,6 @@ const NewHeroSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default NewHeroSection;
