@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Volume2, VolumeX, Search, Plus } from "lucide-react";
-import { useReels } from "@/hooks/useReels";
+import { useInfiniteReels } from "@/hooks/useInfiniteReels";
 import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
@@ -23,7 +23,15 @@ const ReelsPage = () => {
   // Feed scroll context for returning to Insights
   const { setReturnToFeed } = useFeedScroll();
   
-  const { reels, isLoading, error, initialIndex } = useReels({
+  const { 
+    reels, 
+    isLoading, 
+    error, 
+    initialIndex,
+    hasMore,
+    isFetchingMore,
+    loadMoreIfNeeded,
+  } = useInfiniteReels({
     initialReelId,
     initialVideoUrl,
     initialInsightId,
@@ -146,6 +154,12 @@ const ReelsPage = () => {
         
         if (newIndex !== activeIndex && newIndex >= 0 && newIndex < reels.length) {
           setActiveIndex(newIndex);
+          
+          // Load more reels when approaching the end
+          const remainingReels = reels.length - newIndex;
+          if (remainingReels <= 3 && hasMore && !isFetchingMore) {
+            loadMoreIfNeeded();
+          }
         }
       }, 50);
     };

@@ -6,6 +6,7 @@ import type { CommunityTopic, CommunityEvent, CommunityInsight } from "@/types/c
 import { scoreTopics, scoreInsights, trackContentView } from "@/lib/recommendationAlgorithm";
 
 const INSIGHTS_PAGE_SIZE = 12;
+const TOPICS_PAGE_SIZE = 15;
 
 export const useCommunity = () => {
   const { toast } = useToast();
@@ -69,6 +70,70 @@ export const useCommunity = () => {
       gcTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
       placeholderData: (previousData) => previousData,
+    });
+  };
+
+  // Infinite scroll version of topics query
+  const useInfiniteTopics = (searchQuery?: string) => {
+    return useInfiniteQuery({
+      queryKey: ["community-topics-infinite", searchQuery],
+      queryFn: async ({ pageParam = 0 }) => {
+        let query = supabase
+          .from("community_topics")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .range(pageParam * TOPICS_PAGE_SIZE, (pageParam + 1) * TOPICS_PAGE_SIZE - 1);
+
+        if (searchQuery) {
+          query = query.or(`title.ilike.%${searchQuery}%,content.ilike.%${searchQuery}%`);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          return { topics: [] as CommunityTopic[], nextPage: undefined };
+        }
+
+        const userIds = [...new Set(data.map(t => t.user_id))];
+        const topicIds = data.map(t => t.id);
+        
+        // Fetch profiles and replies count in parallel
+        const [profilesResult, repliesResult] = await Promise.all([
+          supabase
+            .from("public_profiles")
+            .select("user_id, full_name, avatar_url")
+            .in("user_id", userIds),
+          supabase
+            .from("topic_replies")
+            .select("topic_id")
+            .in("topic_id", topicIds),
+        ]);
+
+        const profilesMap = new Map(profilesResult.data?.map(p => [p.user_id, p]) || []);
+        
+        // Count replies per topic
+        const repliesCountMap = new Map<string, number>();
+        repliesResult.data?.forEach(r => {
+          repliesCountMap.set(r.topic_id, (repliesCountMap.get(r.topic_id) || 0) + 1);
+        });
+        
+        const topicsWithProfiles = data.map(topic => ({
+          ...topic,
+          profiles: profilesMap.get(topic.user_id),
+          replies_count: repliesCountMap.get(topic.id) || 0,
+        })) as CommunityTopic[];
+        
+        return {
+          topics: topicsWithProfiles,
+          nextPage: data.length === TOPICS_PAGE_SIZE ? pageParam + 1 : undefined
+        };
+      },
+      initialPageParam: 0,
+      getNextPageParam: (lastPage) => lastPage.nextPage,
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
     });
   };
 
@@ -792,6 +857,7 @@ export const useCommunity = () => {
 
   return {
     useTopics,
+    useInfiniteTopics,
     createTopic,
     useTopicDetail,
     createReply,
