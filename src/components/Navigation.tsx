@@ -40,7 +40,7 @@ const Navigation = () => {
     path: "/community"
   }, {
     icon: Gift,
-    label: "Win R1000",
+    label: "Programs",
     path: "/referrals"
   }];
   return <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border" aria-label="Main navigation">
