@@ -110,7 +110,7 @@ const NewHeroSection = () => {
 
             <div className="p-6 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all hover:shadow-lg group">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform bg-primary-glow">
-                <TrendingUp className="w-6 h-6 bg-accent-foreground text-primary-foreground" />
+                <TrendingUp className="w-6 h-6 text-primary-foreground bg-accent-foreground" />
               </div>
               <h3 className="text-xl font-semibold text-foreground mb-2">100% Free Access</h3>
               <p className="text-muted-foreground">
