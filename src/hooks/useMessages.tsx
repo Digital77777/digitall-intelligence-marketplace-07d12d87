@@ -98,6 +98,24 @@ export const useMessages = () => {
               .eq('user_id', partnerId)
               .single();
 
+            // Check if this is an official/sponsored account (for fallback display name)
+            let displayName = profile?.full_name;
+            let avatarUrl = profile?.avatar_url;
+            
+            if (!displayName) {
+              // Check sponsored_accounts for official account info
+              const { data: sponsored } = await supabase
+                .from('sponsored_accounts')
+                .select('badge_label')
+                .eq('user_id', partnerId)
+                .eq('is_active', true)
+                .single();
+              
+              if (sponsored) {
+                displayName = sponsored.badge_label || 'DIM Community';
+              }
+            }
+
             // Show media indicator in preview
             let lastMessagePreview = msg.content;
             if (msg.media_url && msg.media_type) {
@@ -110,8 +128,8 @@ export const useMessages = () => {
 
             conversationsMap.set(partnerId, {
               user_id: partnerId,
-              full_name: profile?.full_name,
-              avatar_url: profile?.avatar_url,
+              full_name: displayName,
+              avatar_url: avatarUrl,
               last_message: lastMessagePreview,
               last_message_time: msg.created_at,
               unread_count: 0,
