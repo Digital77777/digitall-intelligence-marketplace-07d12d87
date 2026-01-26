@@ -2,10 +2,43 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Sparkles, Brain, TrendingUp, Zap, Target, Rocket } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const NewHeroSection = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [userCount, setUserCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchUserCount = async () => {
+      const { count } = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      setUserCount(count);
+    };
+    
+    fetchUserCount();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('profiles-count-hero')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        () => setUserCount(prev => (prev ?? 0) + 1)
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'profiles' },
+        () => setUserCount(prev => Math.max(0, (prev ?? 1) - 1))
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleNavigation = (path: string) => {
     if (!user) {
@@ -104,7 +137,7 @@ const NewHeroSection = () => {
           {/* Trust indicators */}
           <div className="flex flex-wrap justify-center items-center gap-8 pt-12 text-muted-foreground">
             <div className="text-center">
-              <div className="text-3xl font-bold text-foreground">10K+</div>
+              <div className="text-3xl font-bold text-foreground">{userCount !== null ? userCount.toLocaleString() : "..."}</div>
               <div className="text-sm">Active Learners</div>
             </div>
             <div className="hidden sm:block w-px h-12 bg-border" />
