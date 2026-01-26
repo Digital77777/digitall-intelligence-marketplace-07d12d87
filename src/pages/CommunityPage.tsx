@@ -78,6 +78,7 @@ const CommunityPage = () => {
   } = useAuth();
   const {
     useTopics,
+    useInfiniteTopics,
     useEvents,
     useInfiniteInsights,
     useStats,
@@ -85,10 +86,21 @@ const CommunityPage = () => {
     toggleInsightLike,
     trackContentView
   } = useCommunity();
+  
+  // Use infinite query for topics
   const {
-    data: topics,
-    isLoading: topicsLoading
-  } = useTopics(searchQuery);
+    data: topicsData,
+    isLoading: topicsLoading,
+    isFetchingNextPage: isFetchingNextTopics,
+    hasNextPage: hasNextTopicsPage,
+    fetchNextPage: fetchNextTopics,
+  } = useInfiniteTopics(searchQuery);
+  
+  // Flatten topics pages
+  const topics = useMemo(() => {
+    return topicsData?.pages.flatMap(page => page.topics) || [];
+  }, [topicsData]);
+  
   const {
     data: events,
     isLoading: eventsLoading
@@ -245,12 +257,19 @@ const CommunityPage = () => {
     });
   }, [insights, insightCategory]);
   
-  // Load more handler for infinite scroll
+  // Load more handler for infinite scroll - insights
   const handleLoadMoreInsights = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Load more handler for infinite scroll - topics
+  const handleLoadMoreTopics = useCallback(() => {
+    if (hasNextTopicsPage && !isFetchingNextTopics) {
+      fetchNextTopics();
+    }
+  }, [hasNextTopicsPage, isFetchingNextTopics, fetchNextTopics]);
 
   // Pull-to-refresh handler
   const handleRefreshInsights = useCallback(async () => {
@@ -271,13 +290,12 @@ const CommunityPage = () => {
       
       try {
         // Quick check for new insights since last fetch
-        const { count } = await import("@/integrations/supabase/client").then(m => 
-          m.supabase
-            .from("community_insights")
-            .select("id", { count: "exact", head: true })
-            .eq("is_published", true)
-            .gt("created_at", new Date(lastFetchTime).toISOString())
-        );
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { count } = await supabase
+          .from("community_insights")
+          .select("id", { count: "exact", head: true })
+          .eq("is_published", true)
+          .gt("created_at", new Date(lastFetchTime).toISOString());
         
         if (count && count > 0) {
           setHasNewContent(true);
@@ -454,6 +472,9 @@ const CommunityPage = () => {
             <InstagramFeed
               items={topics || []}
               isLoading={topicsLoading}
+              isFetchingMore={isFetchingNextTopics}
+              hasMore={!!hasNextTopicsPage}
+              onLoadMore={handleLoadMoreTopics}
               type="topic"
               onTopicClick={handleTopicClick}
               getInitials={getInitials}
