@@ -43,8 +43,10 @@ const SmartAnalytics = lazy(() => import("./pages/tools/SmartAnalytics"));
 const ConversationalAI = lazy(() => import("./pages/tools/ConversationalAI"));
 const ChallengePage = lazy(() => import("./pages/ChallengePage"));
 
-// Marketplace - Lazy loaded
-const BrowseMarketplacePage = lazy(() => import("./pages/BrowseMarketplacePage"));
+// Marketplace - Eager loaded for instant navigation (core user journey)
+import BrowseMarketplacePage from "./pages/BrowseMarketplacePage";
+
+// Marketplace - Lazy loaded (secondary pages)
 const SellProductsPage = lazy(() => import("./pages/SellProductsPage"));
 const FreelanceServicesPage = lazy(() => import("./pages/FreelanceServicesPage"));
 const CreateFreelancerProfilePage = lazy(() => import("./pages/CreateFreelancerProfilePage"));

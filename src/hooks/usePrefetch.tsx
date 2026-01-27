@@ -51,12 +51,13 @@ const routeImports: Record<string, () => Promise<any>> = {
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
 
-// Core routes to prefetch on app load
+// Core routes to prefetch on app load (includes marketplace/browse now)
 const coreRoutes = [
   '/dashboard',
   '/learning-paths',
   '/ai-tools',
   '/marketplace',
+  '/marketplace/browse',
   '/community',
   '/referrals',
   '/subscription',
@@ -151,7 +152,7 @@ export const usePrefetch = () => {
     });
   }, [queryClient]);
 
-  // Prefetch marketplace data
+  // Basic marketplace data prefetch
   const prefetchMarketplaceData = useCallback(() => {
     if (prefetchedData.has('marketplace')) return;
     prefetchedData.add('marketplace');
@@ -165,6 +166,85 @@ export const usePrefetch = () => {
           .eq("status", "active")
           .order("created_at", { ascending: false })
           .limit(12);
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
+    });
+  }, [queryClient]);
+
+  // Enhanced marketplace browse data prefetch - fetches all data needed by BrowseMarketplacePage
+  const prefetchMarketplaceBrowseData = useCallback(() => {
+    if (prefetchedData.has('marketplace-browse')) return;
+    prefetchedData.add('marketplace-browse');
+
+    // Prefetch categories
+    queryClient.prefetchQuery({
+      queryKey: ['marketplace-categories'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('marketplace_categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
+        if (error) throw error;
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
+    });
+
+    // Prefetch featured/suggested listings
+    queryClient.prefetchQuery({
+      queryKey: ['marketplace-suggested'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('marketplace_listings')
+          .select(`
+            *,
+            category:marketplace_categories(id, name, icon)
+          `)
+          .eq('status', 'active')
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(10);
+        if (error) throw error;
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
+    });
+
+    // Prefetch top chart listings (sorted by view count as proxy for popularity)
+    queryClient.prefetchQuery({
+      queryKey: ['marketplace-top-charts'],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('marketplace_listings')
+          .select(`
+            *,
+            category:marketplace_categories(id, name, icon)
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(20);
+        if (error) throw error;
+        return data || [];
+      },
+      staleTime: 1000 * 60 * 10,
+    });
+
+    // Prefetch initial listings for browse page
+    queryClient.prefetchQuery({
+      queryKey: ['marketplace-listings', { page: 1, search: '' }],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('marketplace_listings')
+          .select(`
+            *,
+            category:marketplace_categories(id, name, icon)
+          `)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .range(0, 19);
+        if (error) throw error;
         return data || [];
       },
       staleTime: 1000 * 60 * 10,
@@ -198,10 +278,13 @@ export const usePrefetch = () => {
       prefetchReelsData();
     } else if (path === '/community' || path.startsWith('/community/')) {
       prefetchCommunityData();
+    } else if (path === '/marketplace/browse') {
+      // Enhanced prefetch for marketplace browse
+      prefetchMarketplaceBrowseData();
     } else if (path === '/marketplace' || path.startsWith('/marketplace/')) {
       prefetchMarketplaceData();
     }
-  }, [prefetchReelsData, prefetchCommunityData, prefetchMarketplaceData]);
+  }, [prefetchReelsData, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData]);
 
   // Prefetch core routes on mount
   const prefetchCoreRoutes = useCallback(() => {
@@ -213,8 +296,9 @@ export const usePrefetch = () => {
       // Also prefetch core data
       prefetchCommunityData();
       prefetchMarketplaceData();
+      prefetchMarketplaceBrowseData();
     }, 1000);
-  }, [prefetchRoute, prefetchCommunityData, prefetchMarketplaceData]);
+  }, [prefetchRoute, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData]);
 
   const handleMouseEnter = useCallback((path: string) => {
     prefetchRoute(path);
@@ -229,6 +313,7 @@ export const usePrefetch = () => {
     prefetchReelsData,
     prefetchCommunityData,
     prefetchMarketplaceData,
+    prefetchMarketplaceBrowseData,
     prefetchCoreRoutes,
     handleMouseEnter,
     handleTouchStart,

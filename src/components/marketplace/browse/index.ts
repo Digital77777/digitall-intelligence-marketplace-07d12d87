@@ -9,3 +9,4 @@ export { CategoryCarousel } from './CategoryCarousel';
 export { NewAndNoteworthy } from './NewAndNoteworthy';
 export { MarketplaceSkeleton } from './MarketplaceSkeleton';
 export { FloatingFilterButton } from './FloatingFilterButton';
+export { MarketplaceBrowseShell } from './MarketplaceBrowseShell';
