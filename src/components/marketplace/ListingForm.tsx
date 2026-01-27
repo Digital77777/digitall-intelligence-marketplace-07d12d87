@@ -41,8 +41,6 @@ export const ListingForm: React.FC<ListingFormProps> = ({
   });
 
   const [newTag, setNewTag] = useState('');
-  const [imagePreview, setImagePreview] = useState<string[]>(initialData?.images || []);
-  const [videoPreview, setVideoPreview] = useState<string[]>(initialData?.videos || []);
 
   useEffect(() => {
     if (initialData) {
@@ -60,8 +58,6 @@ export const ListingForm: React.FC<ListingFormProps> = ({
         requirements: initialData.requirements || '',
         delivery_time: initialData.delivery_time || 1,
       });
-      setImagePreview(initialData.images || []);
-      setVideoPreview(initialData.videos || []);
     }
   }, [initialData]);
 
@@ -87,50 +83,6 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       e.preventDefault();
       addTag();
     }
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          setImagePreview(prev => [...prev, result]);
-          handleInputChange('images', [...formData.images, result]);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          setVideoPreview(prev => [...prev, result]);
-          handleInputChange('videos', [...formData.videos, result]);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const removeImage = (index: number) => {
-    const updatedImages = formData.images.filter((_, i) => i !== index);
-    const updatedPreviews = imagePreview.filter((_, i) => i !== index);
-    setImagePreview(updatedPreviews);
-    handleInputChange('images', updatedImages);
-  };
-
-  const removeVideo = (index: number) => {
-    const updatedVideos = formData.videos.filter((_, i) => i !== index);
-    const updatedPreviews = videoPreview.filter((_, i) => i !== index);
-    setVideoPreview(updatedPreviews);
-    handleInputChange('videos', updatedVideos);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
