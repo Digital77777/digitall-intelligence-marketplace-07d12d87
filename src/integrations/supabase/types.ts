@@ -873,6 +873,38 @@ export type Database = {
           },
         ]
       }
+      listing_price_history: {
+        Row: {
+          currency: string | null
+          id: string
+          listing_id: string
+          price: number
+          recorded_at: string
+        }
+        Insert: {
+          currency?: string | null
+          id?: string
+          listing_id: string
+          price: number
+          recorded_at?: string
+        }
+        Update: {
+          currency?: string | null
+          id?: string
+          listing_id?: string
+          price?: number
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_price_history_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_categories: {
         Row: {
           created_at: string

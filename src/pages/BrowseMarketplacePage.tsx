@@ -33,7 +33,7 @@ export default function BrowseMarketplacePage() {
     fetchListings 
   } = useMarketplace();
   const { user } = useAuth();
-  const { isFavorited, toggleFavorite, isPending } = useOptimisticFavorites();
+  const { isFavorited, toggleFavorite, isPending, favoriteIds } = useOptimisticFavorites();
   const [page, setPage] = useState(1);
   const observer = useRef<IntersectionObserver>();
 
@@ -101,6 +101,7 @@ export default function BrowseMarketplacePage() {
             onChange={setSearchQuery}
             placeholder="Search products, services, jobs..."
             trendingSearches={['AI Tools', 'Templates', 'Web Design', 'Automation']}
+            wishlistCount={favoriteIds.size}
           />
 
           {/* Animated Tabs */}
