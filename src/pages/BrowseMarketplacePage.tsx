@@ -4,6 +4,7 @@ import { ListingDetailsModal } from '@/components/marketplace/ListingDetailsModa
 import { useAuth } from '@/hooks/useAuth';
 import { TierGate } from '@/components/tier/TierGate';
 import { useOptimisticFavorites } from '@/hooks/useOptimisticFavorites';
+import { SEOHead } from '@/components/SEOHead';
 import {
   MarketplaceHero,
   SearchBar,
@@ -84,6 +85,12 @@ export default function BrowseMarketplacePage() {
 
   return (
     <TierGate feature="marketplace_buy">
+      <SEOHead
+        title="Marketplace - Browse AI Products & Services"
+        description="Discover premium AI tools, templates, and services. Find automation solutions, expert freelancers, and innovative digital products in our curated marketplace."
+        keywords={['AI marketplace', 'AI tools', 'digital products', 'freelance services', 'automation', 'templates', 'machine learning']}
+        canonicalUrl="/marketplace/browse"
+      />
       <div className="min-h-screen bg-background">
         {/* Main Content */}
         <div className="container mx-auto px-4 py-6 space-y-8">
