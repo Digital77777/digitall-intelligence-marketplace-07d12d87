@@ -62,6 +62,7 @@ const AIDevelopmentPage = lazy(() => import("./pages/AIDevelopmentPage"));
 const StartProjectPage = lazy(() => import("./pages/StartProjectPage"));
 const StartSellingPage = lazy(() => import("./pages/StartSellingPage"));
 const CreatorSuitePage = lazy(() => import("./pages/CreatorSuitePage"));
+const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 
 // Community - Lazy loaded
 const TopicDetailPage = lazy(() => import("./pages/community/TopicDetailPage"));
@@ -218,6 +219,7 @@ const routeGroups: AppRoute[] = [
   { path: "/marketplace/start-project", component: StartProjectPage, protected: true },
   { path: "/start-selling", component: StartSellingPage, protected: true },
   { path: "/creator-suite", component: CreatorSuitePage, protected: true },
+  { path: "/marketplace/wishlist", component: WishlistPage, protected: true },
 
   // Community
   { path: "/community", component: CommunityPage, protected: true },
