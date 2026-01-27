@@ -1,62 +1,47 @@
-import React, { useState, useEffect, useCallback, memo, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, ChevronRight, Home, TrendingUp, BookOpen, User } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useMarketplace, MarketplaceListing } from '@/hooks/useMarketplace';
 import { ListingDetailsModal } from '@/components/marketplace/ListingDetailsModal';
 import { useAuth } from '@/hooks/useAuth';
 import { TierGate } from '@/components/tier/TierGate';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { ToolCard } from '@/components/marketplace/ToolCard';
-import { TopChartCard } from '@/components/marketplace/TopChartCard';
-import { CategoryCard } from '@/components/marketplace/CategoryCard';
 import { useOptimisticFavorites } from '@/hooks/useOptimisticFavorites';
-
-// Memoized category section component
-const CategorySection = memo(({ 
-  categoryName, 
-  categoryListings, 
-  onViewDetails 
-}: { 
-  categoryName: string; 
-  categoryListings: MarketplaceListing[]; 
-  onViewDetails: (listing: MarketplaceListing) => void;
-}) => (
-  <div>
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-xl font-bold">{categoryName}</h2>
-      <ChevronRight className="h-5 w-5 text-muted-foreground" />
-    </div>
-    <ScrollArea className="w-full whitespace-nowrap">
-      <div className="flex space-x-4 pb-4">
-        {categoryListings.slice(0, 10).map((listing, idx) => (
-          <ToolCard
-            key={listing.id}
-            listing={listing}
-            colorIndex={idx}
-          />
-        ))}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
-  </div>
-));
-
-CategorySection.displayName = 'CategorySection';
+import {
+  MarketplaceHero,
+  SearchBar,
+  AnimatedTabs,
+  TopChartsList,
+  CategoryGrid,
+  CategoryCarousel,
+  NewAndNoteworthy,
+  MarketplaceSkeleton,
+  FloatingFilterButton,
+} from '@/components/marketplace/browse';
+import { cn } from '@/lib/utils';
 
 export default function BrowseMarketplacePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('for-you');
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const { listings, categories, suggestedListings, topChartListings, categoryListings, loading, hasMore, fetchListings } = useMarketplace();
+  const { 
+    listings, 
+    categories, 
+    suggestedListings, 
+    topChartListings, 
+    categoryListings, 
+    loading, 
+    hasMore, 
+    fetchListings 
+  } = useMarketplace();
   const { user } = useAuth();
   const { isFavorited, toggleFavorite, isPending } = useOptimisticFavorites();
   const [page, setPage] = useState(1);
   const observer = useRef<IntersectionObserver>();
 
-  const lastListingElementRef = useCallback(node => {
+  // Get featured listings for hero
+  const featuredListings = listings.filter(l => l.is_featured).slice(0, 5);
+  const heroListings = featuredListings.length > 0 ? featuredListings : suggestedListings.slice(0, 5);
+
+  const lastListingElementRef = useCallback((node: HTMLDivElement | null) => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
@@ -86,209 +71,205 @@ export default function BrowseMarketplacePage() {
     }
   }, [page, fetchListings, searchQuery, selectedTab]);
 
-
   const handleViewDetails = useCallback((listing: MarketplaceListing) => {
     setSelectedListing(listing);
     setIsDetailsModalOpen(true);
   }, []);
 
+  const handleFavorite = useCallback((listingId: string) => {
+    toggleFavorite(listingId);
+  }, [toggleFavorite]);
+
+  const isInitialLoading = loading && page === 1;
 
   return (
     <TierGate feature="marketplace_buy">
-      <div className="min-h-screen bg-background pb-20">
-        {/* Top Navigation Tabs */}
-        <div className="sticky top-0 z-10 bg-background border-b">
-          <div className="container mx-auto px-4">
-            <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-              <TabsList className="w-full justify-start h-12 bg-transparent border-0 rounded-none">
-                <TabsTrigger value="for-you" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  For you
-                </TabsTrigger>
-                <TabsTrigger value="top-charts" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  Top charts
-                </TabsTrigger>
-                <TabsTrigger value="categories" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
-                  Categories
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="container mx-auto px-4 py-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input
-              placeholder="Search for tools"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-12 rounded-full bg-muted/50"
+      <div className="min-h-screen bg-background">
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-6 space-y-8">
+          {/* Hero Section */}
+          {selectedTab === 'for-you' && (
+            <MarketplaceHero 
+              featuredListings={heroListings} 
+              isLoading={isInitialLoading} 
             />
-          </div>
-        </div>
+          )}
 
-        {/* Tab Content */}
-        <div className="container mx-auto px-4">
-          {loading && page === 1 ? (
-            <div className="space-y-6">
-              {selectedTab === 'for-you' && (
-                <>
-                  {/* Suggested Section Skeleton */}
-                  <div>
-                    <div className="h-6 bg-muted rounded w-40 mb-4 animate-pulse" />
-                    <div className="flex space-x-4">
-                      {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="w-[160px] h-[200px] bg-muted rounded-lg animate-pulse flex-shrink-0" />
-                      ))}
-                    </div>
-                  </div>
-                  {/* Category Sections Skeleton */}
-                  {[1, 2, 3].map(section => (
-                    <div key={section}>
-                      <div className="h-6 bg-muted rounded w-32 mb-4 animate-pulse" />
-                      <div className="flex space-x-4">
-                        {[1, 2, 3, 4].map(i => (
-                          <div key={i} className="w-[160px] h-[200px] bg-muted rounded-lg animate-pulse flex-shrink-0" />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )}
-              {selectedTab === 'top-charts' && (
-                <div className="space-y-2">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className="h-24 bg-muted rounded-lg animate-pulse" />
-                  ))}
-                </div>
-              )}
-              {selectedTab === 'categories' && (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                    <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />
-                  ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              {selectedTab === 'for-you' && (
-            <div className="space-y-6">
-              {/* Suggested for you */}
-              {suggestedListings.length > 0 && (
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold">Suggested for you</h2>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <ScrollArea className="w-full whitespace-nowrap">
-                    <div className="flex space-x-4 pb-4">
-                      {suggestedListings.map((listing, idx) => (
-                        <ToolCard
-                          key={listing.id}
-                          listing={listing}
-                          colorIndex={idx}
-                        />
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </div>
-              )}
+          {/* Search Bar */}
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search products, services, jobs..."
+            trendingSearches={['AI Tools', 'Templates', 'Web Design', 'Automation']}
+          />
 
-              {/* Category Sections */}
-              {Object.entries(categoryListings).map(([categoryName, listingsResult], index) => {
-                const isLastCategory = index === Object.entries(categoryListings).length - 1;
-                return (
-                  <div key={categoryName} ref={isLastCategory ? lastListingElementRef : null}>
-                    <CategorySection
-                      categoryName={categoryName}
-                      categoryListings={listingsResult}
-                      onViewDetails={handleViewDetails}
+          {/* Animated Tabs */}
+          <AnimatedTabs
+            activeTab={selectedTab}
+            onTabChange={setSelectedTab}
+          />
+
+          {/* Tab Content */}
+          <div className="min-h-[50vh]">
+            {/* For You Tab */}
+            {selectedTab === 'for-you' && (
+              <div className="space-y-10">
+                {isInitialLoading ? (
+                  <>
+                    <MarketplaceSkeleton variant="carousel" />
+                    <MarketplaceSkeleton variant="grid" />
+                  </>
+                ) : (
+                  <>
+                    {/* New & Noteworthy */}
+                    <NewAndNoteworthy
+                      listings={listings}
+                      onFavorite={handleFavorite}
+                      isFavorited={isFavorited}
+                      isPending={isPending}
                     />
-                  </div>
-                );
-              })}
 
-              {loading && <div className="text-center py-4">Loading more...</div>}
-              {!hasMore && listings.length > 0 && <div className="text-center py-4 text-muted-foreground">No more results</div>}
-
-              {listings.length === 0 && !loading && (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">No tools found</p>
-                </div>
-              )}
-            </div>
-              )}
-            </>
-          )}
-
-          {selectedTab === 'top-charts' && !(loading && page === 1) && (
-            <div className="space-y-2">
-              {topChartListings.map((listing, idx) => {
-                if (topChartListings.length === idx + 1) {
-                  return (
-                    <div ref={lastListingElementRef} key={listing.id}>
-                       <TopChartCard
-                        listing={listing}
-                        rank={idx + 1}
-                        colorIndex={idx}
+                    {/* Suggested for You */}
+                    {suggestedListings.length > 0 && (
+                      <CategoryCarousel
+                        title="Suggested for You"
+                        listings={suggestedListings}
+                        onFavorite={handleFavorite}
+                        isFavorited={isFavorited}
+                        isPending={isPending}
+                        showBadge
+                        badgeText="Personalized"
                       />
-                    </div>
-                  )
-                }
-                return <TopChartCard
-                  key={listing.id}
-                  listing={listing}
-                  rank={idx + 1}
-                  colorIndex={idx}
-                />
-              })}
-              {loading && <div className="text-center py-4">Loading more...</div>}
-              {!hasMore && <div className="text-center py-4 text-muted-foreground">No more results</div>}
-            </div>
-          )}
+                    )}
 
-          {selectedTab === 'categories' && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {categories.map((category, idx) => (
-                <CategoryCard
-                  key={category.id}
-                  category={category}
-                  colorIndex={idx}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+                    {/* Category Sections */}
+                    {Object.entries(categoryListings).map(([categoryName, categoryItems], index) => {
+                      const isLastCategory = index === Object.entries(categoryListings).length - 1;
+                      return (
+                        <div key={categoryName} ref={isLastCategory ? lastListingElementRef : null}>
+                          <CategoryCarousel
+                            title={categoryName}
+                            listings={categoryItems}
+                            onFavorite={handleFavorite}
+                            isFavorited={isFavorited}
+                            isPending={isPending}
+                          />
+                        </div>
+                      );
+                    })}
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-20">
-          <div className="flex justify-around items-center h-16 max-w-screen-xl mx-auto">
-            <Button variant="ghost" className="flex-col h-auto py-2 gap-1">
-              <Home className="h-5 w-5" />
-              <span className="text-xs">Home</span>
-            </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 gap-1">
-              <TrendingUp className="h-5 w-5" />
-              <span className="text-xs">Top</span>
-            </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 gap-1">
-              <Search className="h-5 w-5" />
-              <span className="text-xs">Search</span>
-            </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 gap-1">
-              <BookOpen className="h-5 w-5" />
-              <span className="text-xs">Library</span>
-            </Button>
-            <Button variant="ghost" className="flex-col h-auto py-2 gap-1">
-              <User className="h-5 w-5" />
-              <span className="text-xs">You</span>
-            </Button>
+                    {/* Loading indicator */}
+                    {loading && page > 1 && (
+                      <div className="text-center py-8">
+                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          Loading more...
+                        </div>
+                      </div>
+                    )}
+
+                    {/* End of results */}
+                    {!hasMore && listings.length > 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        You've seen all the listings
+                      </div>
+                    )}
+
+                    {/* Empty state */}
+                    {listings.length === 0 && !loading && (
+                      <div className="text-center py-16">
+                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                          <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">No listings found</h3>
+                        <p className="text-muted-foreground">Try adjusting your search or check back later</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Top Charts Tab */}
+            {selectedTab === 'top-charts' && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold">Top Charts</h2>
+                  <span className="text-sm text-muted-foreground">Most popular listings</span>
+                </div>
+                
+                {isInitialLoading ? (
+                  <MarketplaceSkeleton variant="topCharts" />
+                ) : (
+                  <>
+                    <TopChartsList
+                      listings={topChartListings}
+                      onFavorite={handleFavorite}
+                      isFavorited={isFavorited}
+                      isPending={isPending}
+                    />
+                    
+                    {/* Infinite scroll trigger */}
+                    {topChartListings.length > 0 && (
+                      <div ref={lastListingElementRef} className="h-4" />
+                    )}
+                    
+                    {loading && page > 1 && (
+                      <div className="text-center py-4">
+                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          Loading more...
+                        </div>
+                      </div>
+                    )}
+                    
+                    {!hasMore && topChartListings.length > 0 && (
+                      <div className="text-center py-4 text-muted-foreground">
+                        End of rankings
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Categories Tab */}
+            {selectedTab === 'categories' && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-2xl font-bold">Categories</h2>
+                  <span className="text-sm text-muted-foreground">Browse by category</span>
+                </div>
+                
+                {isInitialLoading ? (
+                  <MarketplaceSkeleton variant="categories" />
+                ) : (
+                  <CategoryGrid
+                    categories={categories}
+                    listingCounts={Object.fromEntries(
+                      Object.entries(categoryListings).map(([name, items]) => {
+                        const category = categories.find(c => c.name === name);
+                        return [category?.id || '', items.length];
+                      })
+                    )}
+                  />
+                )}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* Floating Filter Button (Mobile) */}
+        <FloatingFilterButton
+          onApplyFilters={(filters) => {
+            console.log('Applying filters:', filters);
+            // Filter logic can be implemented here
+          }}
+        />
+
+        {/* Listing Details Modal */}
         <ListingDetailsModal
           listing={selectedListing}
           isOpen={isDetailsModalOpen}
