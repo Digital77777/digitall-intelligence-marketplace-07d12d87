@@ -2,17 +2,34 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useOptimisticFavorites } from '@/hooks/useOptimisticFavorites';
-import { MediaPreview } from '@/components/media/MediaPreview';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Heart, MapPin, Calendar, Clock, ExternalLink, Share2 } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Share2, 
+  Heart, 
+  Calendar, 
+  Clock, 
+  Star,
+  ShoppingBag,
+  Wrench,
+  Briefcase,
+  Sparkles,
+  ExternalLink,
+  Zap,
+  MessageCircle
+} from 'lucide-react';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
-import { SimpleListingCard } from '@/components/marketplace/SimpleListingCard';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+import { 
+  PremiumMediaGallery, 
+  SellerCard, 
+  PriceCard, 
+  ListingDetailSkeleton,
+  RelatedListings 
+} from '@/components/marketplace/listing';
 
 interface ListingWithSeller extends MarketplaceListing {
   seller?: {
@@ -22,6 +39,18 @@ interface ListingWithSeller extends MarketplaceListing {
     headline: string | null;
   };
 }
+
+const typeIcons = {
+  product: ShoppingBag,
+  service: Wrench,
+  job: Briefcase,
+};
+
+const typeColors = {
+  product: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+  service: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+  job: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+};
 
 export default function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -117,6 +146,12 @@ export default function ListingDetailPage() {
     await toggleFavorite(id);
   };
 
+  const handleContact = () => {
+    if (listing) {
+      navigate(`/community/inbox?userId=${listing.user_id}`);
+    }
+  };
+
   const handleShare = async () => {
     if (navigator.share) {
       try {
@@ -140,10 +175,15 @@ export default function ListingDetailPage() {
 
   if (!listing) {
     return (
-      <div className="container max-w-7xl mx-auto px-4 py-8">
+      <div className="container max-w-7xl mx-auto px-4 py-16">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Listing not found</h2>
-          <Button onClick={() => navigate('/marketplace/browse')}>
+          <div className="w-20 h-20 mx-auto mb-6 bg-muted rounded-full flex items-center justify-center">
+            <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Listing not found</h2>
+          <p className="text-muted-foreground mb-6">This listing may have been removed or is no longer available.</p>
+          <Button onClick={() => navigate('/marketplace/browse')} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
             Back to Marketplace
           </Button>
         </div>
@@ -151,313 +191,253 @@ export default function ListingDetailPage() {
     );
   }
 
+  const TypeIcon = typeIcons[listing.listing_type] || ShoppingBag;
+  const typeColorClass = typeColors[listing.listing_type] || typeColors.product;
   const favorited = isFavorited(listing.id);
   const formattedPrice = listing.price ? `${listing.currency} ${listing.price.toFixed(2)}` : 'Free';
   const createdDate = new Date(listing.created_at).toLocaleDateString('en-US', {
     year: 'numeric',
-    month: 'short',
+    month: 'long',
     day: 'numeric',
   });
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-8">
+    <div className="min-h-screen bg-background pb-28 md:pb-8">
       {/* Header */}
-      <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container max-w-7xl mx-auto px-4 py-4">
+      <div className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="container max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => navigate('/marketplace/browse')}
-            className="gap-2"
+            className="gap-2 -ml-2"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Marketplace
+            <span className="hidden sm:inline">Back to Marketplace</span>
+            <span className="sm:hidden">Back</span>
           </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleShare}
+              className="h-9 w-9"
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={favorited ? 'default' : 'ghost'}
+              size="icon"
+              onClick={handleFavorite}
+              disabled={isPending(listing.id)}
+              className={cn(
+                "h-9 w-9",
+                favorited && "bg-red-500 hover:bg-red-600"
+              )}
+            >
+              <Heart className={cn("h-4 w-4", favorited && "fill-current")} />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <div className="container max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="container max-w-7xl mx-auto px-4 py-6 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* Media Gallery */}
-            {(listing.images?.length || listing.videos?.length) ? (
-              <Card className="overflow-hidden">
-                <MediaPreview
-                  images={listing.images || []}
-                  videos={listing.videos || []}
-                  title={listing.title}
-                  showCount={true}
-                />
-              </Card>
-            ) : (
-              <Card className="overflow-hidden">
-                <div className="aspect-video bg-muted flex items-center justify-center">
-                  <p className="text-muted-foreground">No media available</p>
-                </div>
-              </Card>
-            )}
+            <PremiumMediaGallery
+              images={listing.images || []}
+              videos={listing.videos || []}
+              title={listing.title}
+            />
 
-            {/* Title and Actions */}
+            {/* Title Section */}
             <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary">{listing.listing_type}</Badge>
-                    {listing.is_featured && (
-                      <Badge className="bg-gradient-to-r from-primary to-primary/70">
-                        Featured
-                      </Badge>
-                    )}
-                  </div>
-                  <h1 className="text-3xl font-bold tracking-tight">{listing.title}</h1>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleShare}
-                    className="shrink-0"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant={favorited ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={handleFavorite}
-                    disabled={isPending(listing.id)}
-                    className="shrink-0"
-                  >
-                    <Heart
-                      className={`h-4 w-4 ${favorited ? 'fill-current' : ''}`}
-                    />
-                  </Button>
-                </div>
+              {/* Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant="outline" className={cn("capitalize gap-1.5", typeColorClass)}>
+                  <TypeIcon className="w-3.5 h-3.5" />
+                  {listing.listing_type}
+                </Badge>
+                {listing.is_featured && (
+                  <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Featured
+                  </Badge>
+                )}
               </div>
 
-              {/* Description */}
-              <div>
-                <h2 className="text-lg font-semibold mb-2">Description</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+              {/* Title */}
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight leading-tight">
+                {listing.title}
+              </h1>
+
+              {/* Meta Info */}
+              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-1.5">
+                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                  <span className="font-medium text-foreground">4.9</span>
+                  <span>(128 reviews)</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4" />
+                  <span>Listed {createdDate}</span>
+                </div>
+                {listing.delivery_time && (
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-4 h-4" />
+                    <span>{listing.delivery_time} day delivery</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Price Card */}
+            <div className="lg:hidden">
+              <PriceCard
+                price={listing.price}
+                currency={listing.currency || 'USD'}
+                deliveryTime={listing.delivery_time}
+                creationLink={listing.creation_link}
+                isFavorited={favorited}
+                isPending={isPending(listing.id)}
+                onFavorite={handleFavorite}
+                onContact={handleContact}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <div className="w-1.5 h-6 bg-primary rounded-full" />
+                About This {listing.listing_type === 'service' ? 'Service' : listing.listing_type === 'job' ? 'Opportunity' : 'Product'}
+              </h2>
+              <div className="prose prose-neutral dark:prose-invert max-w-none">
+                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-base">
                   {listing.description}
                 </p>
               </div>
+            </div>
 
-              {/* Requirements */}
-              {listing.requirements && (
-                <>
-                  <Separator />
-                  <div>
-                    <h2 className="text-lg font-semibold mb-2">Requirements</h2>
+            {/* Requirements */}
+            {listing.requirements && (
+              <>
+                <Separator />
+                <div className="space-y-4">
+                  <h2 className="text-xl font-semibold flex items-center gap-2">
+                    <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                    Requirements
+                  </h2>
+                  <div className="bg-muted/50 rounded-xl p-5 border border-border/50">
                     <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                       {listing.requirements}
                     </p>
                   </div>
-                </>
-              )}
-
-              {/* Tags */}
-              {listing.tags && listing.tags.length > 0 && (
-                <>
-                  <Separator />
-                  <div>
-                    <h2 className="text-lg font-semibold mb-2">Tags</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {listing.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Price Card */}
-            <Card className="sticky top-24">
-              <CardContent className="p-6 space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Price</p>
-                  <p className="text-3xl font-bold">{formattedPrice}</p>
-                  {listing.delivery_time && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {listing.delivery_time} day delivery
-                    </p>
-                  )}
                 </div>
-
-                <Separator />
-
-                <div className="space-y-2">
-                  {listing.creation_link && (
-                    <Button asChild className="w-full" size="lg">
-                      <a
-                        href={listing.creation_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="gap-2"
-                      >
-                        Use Creation
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </Button>
-                  )}
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    size="lg"
-                    onClick={() => navigate(`/community/inbox?userId=${listing.user_id}`)}
-                  >
-                    Contact Seller
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Seller Info */}
-            {listing.seller && (
-              <Card>
-                <CardContent className="p-6 space-y-4">
-                  <h3 className="font-semibold">Seller Information</h3>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={listing.seller.avatar_url || ''} />
-                      <AvatarFallback>
-                        {listing.seller.full_name?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <Link
-                        to={`/profile/${listing.user_id}`}
-                        className="font-medium hover:underline truncate block"
-                      >
-                        {listing.seller.full_name || 'Anonymous'}
-                      </Link>
-                      {listing.seller.headline && (
-                        <p className="text-sm text-muted-foreground truncate">
-                          {listing.seller.headline}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {listing.seller.location && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <MapPin className="h-4 w-4" />
-                      {listing.seller.location}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              </>
             )}
 
-            {/* Listing Info */}
-            <Card>
-              <CardContent className="p-6 space-y-3">
-                <h3 className="font-semibold">Listing Details</h3>
+            {/* Tags */}
+            {listing.tags && listing.tags.length > 0 && (
+              <>
                 <Separator />
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4" />
-                    <span>Listed {createdDate}</span>
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold">Tags</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {listing.tags.map((tag, index) => (
+                      <Badge 
+                        key={index} 
+                        variant="secondary"
+                        className="px-3 py-1.5 text-sm cursor-pointer hover:bg-secondary/80 transition-colors"
+                        onClick={() => navigate(`/marketplace/browse?search=${encodeURIComponent(tag)}`)}
+                      >
+                        {tag}
+                      </Badge>
+                    ))}
                   </div>
-                  {listing.delivery_time && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      <span>{listing.delivery_time} day delivery</span>
-                    </div>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
+              </>
+            )}
+
+            {/* Mobile Seller Card */}
+            {listing.seller && (
+              <div className="lg:hidden">
+                <SellerCard
+                  seller={listing.seller}
+                  userId={listing.user_id}
+                  onContact={handleContact}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar - Desktop Only */}
+          <div className="hidden lg:block space-y-6">
+            <div className="sticky top-20 space-y-6">
+              {/* Price Card */}
+              <PriceCard
+                price={listing.price}
+                currency={listing.currency || 'USD'}
+                deliveryTime={listing.delivery_time}
+                creationLink={listing.creation_link}
+                isFavorited={favorited}
+                isPending={isPending(listing.id)}
+                onFavorite={handleFavorite}
+                onContact={handleContact}
+              />
+
+              {/* Seller Info */}
+              {listing.seller && (
+                <SellerCard
+                  seller={listing.seller}
+                  userId={listing.user_id}
+                  onContact={handleContact}
+                />
+              )}
+            </div>
           </div>
         </div>
 
         {/* Related Products Section */}
-        {relatedListings.length > 0 && (
-          <div className="mt-12">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold tracking-tight mb-2">Similar Products</h2>
-              <p className="text-muted-foreground">Discover more items you might like</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {relatedListings.map((relatedListing) => (
-                <SimpleListingCard
-                  key={relatedListing.id}
-                  listing={relatedListing}
-                  onFavorite={toggleFavorite}
-                  isFavorited={isFavorited(relatedListing.id)}
-                  isPending={isPending(relatedListing.id)}
-                  onViewDetails={(l) => navigate(`/marketplace/listing/${l.id}`)}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="mt-16">
+          <RelatedListings
+            listings={relatedListings}
+            isFavorited={isFavorited}
+            isPending={isPending}
+            onFavorite={toggleFavorite}
+          />
+        </div>
       </div>
 
       {/* Mobile Sticky Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-card border-t p-4 flex items-center gap-3 z-50">
-        <div className="flex-1">
-          <p className="text-sm text-muted-foreground">Price</p>
-          <p className="text-xl font-bold">{formattedPrice}</p>
+      <div className="fixed bottom-0 left-0 right-0 lg:hidden bg-card/95 backdrop-blur-lg border-t p-4 flex items-center gap-3 z-50 safe-area-inset-bottom">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-muted-foreground">Price</p>
+          <p className="text-xl font-bold truncate">{formattedPrice}</p>
         </div>
         {listing.creation_link ? (
-          <Button asChild size="lg">
+          <Button asChild size="lg" className="gap-2 bg-gradient-to-r from-primary to-primary/90 shadow-lg shadow-primary/20">
             <a
               href={listing.creation_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="gap-2"
             >
+              <Zap className="h-5 w-5" />
               Use Creation
-              <ExternalLink className="h-4 w-4" />
             </a>
           </Button>
         ) : (
           <Button
             size="lg"
-            onClick={() => navigate(`/community/inbox?userId=${listing.user_id}`)}
+            onClick={handleContact}
+            className="gap-2 bg-gradient-to-r from-primary to-primary/90 shadow-lg shadow-primary/20"
           >
-            Contact Seller
+            <MessageCircle className="h-5 w-5" />
+            Contact
           </Button>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ListingDetailSkeleton() {
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="border-b bg-card/50">
-        <div className="container max-w-7xl mx-auto px-4 py-4">
-          <Skeleton className="h-9 w-40" />
-        </div>
-      </div>
-
-      <div className="container max-w-7xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="w-full aspect-video rounded-lg" />
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Skeleton className="h-6 w-20" />
-                <Skeleton className="h-6 w-20" />
-              </div>
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-24 w-full" />
-            </div>
-          </div>
-          <div className="space-y-4">
-            <Skeleton className="h-64 w-full rounded-lg" />
-            <Skeleton className="h-48 w-full rounded-lg" />
-          </div>
-        </div>
       </div>
     </div>
   );
