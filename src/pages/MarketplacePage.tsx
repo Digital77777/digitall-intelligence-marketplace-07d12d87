@@ -8,6 +8,10 @@ import { useTier } from "@/contexts/TierContext";
 import { SEOHead } from "@/components/SEOHead";
 import { PrefetchLink } from "@/components/PrefetchLink";
 import { usePrefetch } from "@/hooks/usePrefetch";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
 const MarketplacePage = () => {
   const navigate = useNavigate();
   const {
@@ -18,6 +22,92 @@ const MarketplacePage = () => {
     canAccessFeature
   } = useTier();
   const canSell = canAccessFeature('marketplace_sell');
+
+  // Fetch featured listings from the database
+  const { data: featuredListings = [], isLoading: isLoadingFeatured } = useQuery({
+    queryKey: ['featured-listings'],
+    queryFn: async () => {
+      // First try to get featured listings
+      const { data: featured, error: featuredError } = await supabase
+        .from('marketplace_listings')
+        .select(`
+          id,
+          title,
+          description,
+          price,
+          currency,
+          listing_type,
+          images,
+          tags,
+          user_id,
+          is_featured,
+          created_at
+        `)
+        .eq('status', 'active')
+        .eq('is_featured', true)
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (featuredError) throw featuredError;
+
+      // If we have featured listings, use them
+      if (featured && featured.length > 0) {
+        // Fetch seller profiles for these listings
+        const userIds = [...new Set(featured.map(l => l.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+
+        return featured.map(listing => ({
+          ...listing,
+          seller_name: profileMap.get(listing.user_id) || 'Unknown Seller'
+        }));
+      }
+
+      // Fallback to most recent active listings if no featured ones
+      const { data: recent, error: recentError } = await supabase
+        .from('marketplace_listings')
+        .select(`
+          id,
+          title,
+          description,
+          price,
+          currency,
+          listing_type,
+          images,
+          tags,
+          user_id,
+          is_featured,
+          created_at
+        `)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(6);
+
+      if (recentError) throw recentError;
+
+      if (recent && recent.length > 0) {
+        const userIds = [...new Set(recent.map(l => l.user_id))];
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+
+        const profileMap = new Map(profiles?.map(p => [p.user_id, p.full_name]) || []);
+
+        return recent.map(listing => ({
+          ...listing,
+          seller_name: profileMap.get(listing.user_id) || 'Unknown Seller'
+        }));
+      }
+
+      return [];
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   const marketplaceCategories = [{
     id: 1,
     title: "Sell Your Creations",
@@ -51,33 +141,22 @@ const MarketplacePage = () => {
     category: "Development",
     gradient: "from-orange-500 to-red-500"
   }];
-  const featuredListings = [{
-    id: 1,
-    title: "GPT-4 Prompt Templates Pack",
-    seller: "AI_Expert_Pro",
-    price: "$29",
-    rating: 4.9,
-    sales: "1.2k",
-    type: "product",
-    category: "Templates"
-  }, {
-    id: 2,
-    title: "Machine Learning Consulting",
-    seller: "DataScience_Guru",
-    price: "$150/hr",
-    rating: 4.8,
-    reviews: "89",
-    type: "service",
-    category: "Consulting"
-  }, {
-    id: 3,
-    title: "Senior AI Engineer - Remote",
-    company: "TechInnovate Co.",
-    salary: "$120k-180k",
-    location: "Remote",
-    type: "job",
-    category: "Full-time"
-  }];
+  // Helper function to format price
+  const formatPrice = (price: number | null, currency: string | null, listingType: string) => {
+    if (price === null) return listingType === 'job' ? 'Negotiable' : 'Free';
+    const currencySymbol = currency === 'USD' ? '$' : currency === 'ZAR' ? 'R' : '$';
+    if (listingType === 'service') return `${currencySymbol}${price}/hr`;
+    if (listingType === 'job') return `${currencySymbol}${price.toLocaleString()}`;
+    return `${currencySymbol}${price}`;
+  };
+
+  // Helper to get category from tags
+  const getCategory = (tags: string[] | null, listingType: string) => {
+    if (tags && tags.length > 0) return tags[0];
+    if (listingType === 'job') return 'Job';
+    if (listingType === 'service') return 'Service';
+    return 'Product';
+  };
   const stats = [{
     label: "Active Sellers",
     value: "8,500+",
@@ -208,46 +287,80 @@ const MarketplacePage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredListings.map(listing => <Card key={listing.id} className="border-border/50 hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <Badge variant="outline" className="text-xs">
-                        {listing.category}
-                      </Badge>
-                      {listing.type === "product" && <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">{listing.rating}</span>
-                        </div>}
-                      {listing.type === "service" && <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">{listing.rating}</span>
-                        </div>}
-                      {listing.type === "job" && <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{listing.location}</span>
-                        </div>}
-                    </div>
-                    
-                    <h3 className="font-semibold mb-2">{listing.title}</h3>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-muted-foreground">
-                        {listing.type === "job" ? listing.company : `by ${listing.seller || listing.company}`}
-                      </span>
-                      <span className="font-bold text-primary">
-                        {listing.price || listing.salary}
-                      </span>
-                    </div>
-                    
-                    {(listing.sales || listing.reviews) && <p className="text-xs text-muted-foreground mb-4">
-                        {listing.sales ? `${listing.sales} sales` : `${listing.reviews} reviews`}
-                      </p>}
-                    
-                    <Button size="sm" variant="outline" className="w-full">
-                      {listing.type === "job" ? "Apply Now" : "View Details"}
+              {isLoadingFeatured ? (
+                // Loading skeletons
+                Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index} className="border-border/50">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <Skeleton className="h-5 w-20" />
+                        <Skeleton className="h-5 w-12" />
+                      </div>
+                      <Skeleton className="h-6 w-3/4 mb-2" />
+                      <div className="flex items-center justify-between mb-4">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-5 w-16" />
+                      </div>
+                      <Skeleton className="h-9 w-full" />
+                    </CardContent>
+                  </Card>
+                ))
+              ) : featuredListings.length > 0 ? (
+                featuredListings.slice(0, 6).map(listing => (
+                  <Card key={listing.id} className="border-border/50 hover:shadow-lg transition-all duration-300">
+                    <CardContent className="p-6">
+                      {/* Listing image */}
+                      {listing.images && listing.images.length > 0 && (
+                        <div className="mb-4 rounded-lg overflow-hidden h-32 bg-muted">
+                          <img 
+                            src={listing.images[0]} 
+                            alt={listing.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="flex items-start justify-between mb-4">
+                        <Badge variant="outline" className="text-xs">
+                          {getCategory(listing.tags, listing.listing_type)}
+                        </Badge>
+                        {listing.is_featured && (
+                          <div className="flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                            <span className="text-xs text-muted-foreground">Featured</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <h3 className="font-semibold mb-2 line-clamp-2">{listing.title}</h3>
+                      
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm text-muted-foreground truncate max-w-[120px]">
+                          by {listing.seller_name}
+                        </span>
+                        <span className="font-bold text-primary">
+                          {formatPrice(listing.price, listing.currency, listing.listing_type)}
+                        </span>
+                      </div>
+                      
+                      <PrefetchLink to={`/marketplace/listing/${listing.id}`}>
+                        <Button size="sm" variant="outline" className="w-full">
+                          {listing.listing_type === "job" ? "View Job" : "View Details"}
+                        </Button>
+                      </PrefetchLink>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-3 text-center py-12">
+                  <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No listings available yet. Be the first to create one!</p>
+                  <PrefetchLink to="/marketplace/sell-products">
+                    <Button className="mt-4" variant="outline">
+                      Create Listing
                     </Button>
-                  </CardContent>
-                </Card>)}
+                  </PrefetchLink>
+                </div>
+              )}
             </div>
           </div>
         </section>
