@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import Navigation from '@/components/Navigation';
-import MobileFooter from '@/components/MobileFooter';
 import { SEOHead } from '@/components/SEOHead';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -225,8 +223,7 @@ const ClientDashboardPage = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Navigation />
+      <div className="min-h-screen bg-background">
         <main className="container mx-auto px-4 py-8">
           <div className="space-y-6">
             <div className="space-y-2">
@@ -261,19 +258,17 @@ const ClientDashboardPage = () => {
             </Card>
           </div>
         </main>
-        <MobileFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
+    <div className="min-h-screen bg-background">
       <SEOHead
         title="Client Dashboard - Track Your Projects"
         description="Track your sent proposals, manage hired freelancers, and monitor project progress."
         keywords={["client dashboard", "freelancer proposals", "project tracking"]}
       />
-      <Navigation />
       <main className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -638,7 +633,6 @@ const ClientDashboardPage = () => {
           </TabsContent>
         </Tabs>
       </main>
-      <MobileFooter />
     </div>
   );
 };
