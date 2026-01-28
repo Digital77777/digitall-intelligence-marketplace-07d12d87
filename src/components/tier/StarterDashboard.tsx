@@ -6,10 +6,12 @@ import { TierHero } from './shared/TierHero';
 import { FeatureCard } from './shared/FeatureCard';
 import { BenefitsList } from './shared/BenefitsList';
 import { QuickStats } from './shared/QuickStats';
+import { useTier } from '@/contexts/TierContext';
 import { supabase } from '@/integrations/supabase/client';
 
 export const StarterDashboard = () => {
   const navigate = useNavigate();
+  const { maxToolsAccess, maxListings } = useTier();
   const [memberCount, setMemberCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -56,18 +58,20 @@ export const StarterDashboard = () => {
     };
   }, []);
 
+  // Dynamic benefits based on tier limits from database
   const benefits = [
-    "Access to 3 essential AI learning tools",
+    `Access to ${maxToolsAccess} essential AI learning tools`,
     "Foundation-level courses and tutorials",
     "Browse and purchase from marketplace",
+    `${maxListings} marketplace listing${maxListings !== 1 ? 's' : ''}`,
     "Community discussion forums",
     "Basic learning path recommendations",
-    "Progress tracking dashboard",
     "Email support within 48 hours"
   ];
 
+  // Dynamic stats pulled from tier context
   const stats = [
-    { value: "3", label: "AI Tools", icon: <Brain className="h-6 w-6 text-primary" /> },
+    { value: String(maxToolsAccess), label: "AI Tools", icon: <Brain className="h-6 w-6 text-primary" /> },
     { value: "10+", label: "Free Courses", icon: <GraduationCap className="h-6 w-6 text-primary" /> },
     { value: memberCount !== null ? memberCount.toLocaleString() : "...", label: "Community Members", icon: <Users className="h-6 w-6 text-primary" /> }
   ];
@@ -103,7 +107,7 @@ export const StarterDashboard = () => {
           <FeatureCard
             icon={<Brain className="h-10 w-10 text-primary" />}
             title="Basic AI Tools"
-            description="Get hands-on with 3 powerful AI tools"
+            description={`Get hands-on with ${maxToolsAccess} powerful AI tools`}
             buttonText="Try Tools"
             onClick={() => navigate('/ai-tools')}
             variant="highlighted"

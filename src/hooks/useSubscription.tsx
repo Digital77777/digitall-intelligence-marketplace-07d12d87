@@ -107,8 +107,22 @@ export const useSubscription = () => {
 
   const assignStarterTier = async () => {
     try {
-      const starterTier = tiers.find(t => t.name === 'starter');
-      if (!starterTier) return;
+      // Fetch starter tier directly if not in state yet (race condition fix)
+      let starterTier = tiers.find(t => t.name === 'starter');
+      
+      if (!starterTier) {
+        const { data: tierData } = await supabase
+          .from('subscription_tiers')
+          .select('*')
+          .eq('name', 'starter')
+          .single();
+        
+        if (!tierData) {
+          console.error('Starter tier not found in database');
+          return;
+        }
+        starterTier = tierData as SubscriptionTier;
+      }
 
       const { data, error } = await supabase
         .from('user_subscriptions')
@@ -123,7 +137,14 @@ export const useSubscription = () => {
         `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Handle duplicate key error gracefully (user already has subscription)
+        if (error.code === '23505') {
+          await fetchSubscriptionData();
+          return;
+        }
+        throw error;
+      }
       
       setSubscription({
         ...data,
