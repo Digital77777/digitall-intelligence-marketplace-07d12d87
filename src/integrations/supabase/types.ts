@@ -492,6 +492,86 @@ export type Database = {
           },
         ]
       }
+      course_enrollments: {
+        Row: {
+          completed_at: string | null
+          course_id: string
+          created_at: string
+          current_module: number
+          enrolled_at: string
+          id: string
+          progress_percent: number
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_id: string
+          created_at?: string
+          current_module?: number
+          enrolled_at?: string
+          id?: string
+          progress_percent?: number
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_id?: string
+          created_at?: string
+          current_module?: number
+          enrolled_at?: string
+          id?: string
+          progress_percent?: number
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      course_module_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          enrollment_id: string
+          id: string
+          module_id: number
+          started_at: string
+          time_spent_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          module_id: number
+          started_at?: string
+          time_spent_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          module_id?: number
+          started_at?: string
+          time_spent_minutes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_module_progress_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "course_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       error_log: {
         Row: {
           error_context: Json | null
