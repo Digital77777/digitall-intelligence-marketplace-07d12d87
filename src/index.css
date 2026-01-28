@@ -223,6 +223,26 @@ All colors MUST be HSL.
   animation: shimmer 1.5s infinite;
 }
 
+/* Touch feedback for mobile calendar */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Staggered skeleton animation */
+@keyframes skeleton-stagger {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton-stagger > * {
+  animation: skeleton-stagger 1.5s ease-in-out infinite;
+}
+.skeleton-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.skeleton-stagger > *:nth-child(3) { animation-delay: 0.2s; }
+.skeleton-stagger > *:nth-child(4) { animation-delay: 0.3s; }
+.skeleton-stagger > *:nth-child(5) { animation-delay: 0.4s; }
+.skeleton-stagger > *:nth-child(6) { animation-delay: 0.5s; }
+
 /* Hide scrollbar utility for reels */
 .scrollbar-hide {
   -ms-overflow-style: none;

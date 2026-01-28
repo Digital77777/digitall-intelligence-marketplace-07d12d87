@@ -275,78 +275,91 @@ const EditEventPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {/* Section: Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-primary" />
-                  Basic Information
-                </h3>
-                <Separator />
+              <Card className="bg-card/50 border-dashed">
+                <CardContent className="p-4 sm:p-6 space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    Basic Information
+                  </h3>
                 
-                {/* Cover Image Upload */}
-                <div className="space-y-2">
-                  <Label>Cover Image</Label>
-                  <div className="border-2 border-dashed border-border rounded-lg p-4">
-                    {formData.coverImage ? (
-                      <div className="relative">
-                        <img 
-                          src={formData.coverImage} 
-                          alt="Event cover" 
-                          className="w-full h-48 object-cover rounded-lg"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2"
-                          onClick={() => handleChange("coverImage", "")}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <label className="flex flex-col items-center justify-center h-32 cursor-pointer">
-                        <Image className="w-8 h-8 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">
-                          {isUploadingImage ? "Uploading..." : "Click to upload cover image"}
-                        </span>
-                        <span className="text-xs text-muted-foreground mt-1">Max 5MB, JPG/PNG</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                          disabled={isUploadingImage}
-                        />
-                      </label>
-                    )}
+                  {/* Cover Image Upload */}
+                  <div className="space-y-2">
+                    <Label>Cover Image</Label>
+                    <div className="border-2 border-dashed border-border rounded-xl p-4 transition-colors hover:border-primary/50">
+                      {formData.coverImage ? (
+                        <div className="relative aspect-[2/1] overflow-hidden rounded-lg">
+                          <img 
+                            src={formData.coverImage} 
+                            alt="Event cover" 
+                            className="w-full h-full object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-2 right-2 h-8 w-8"
+                            onClick={() => handleChange("coverImage", "")}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-32 cursor-pointer">
+                          <Image className="w-8 h-8 text-muted-foreground mb-2" />
+                          <span className="text-sm text-muted-foreground">
+                            {isUploadingImage ? "Uploading..." : "Click to upload cover image"}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">Max 5MB, JPG/PNG • Recommended 2:1 ratio</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageUpload}
+                            disabled={isUploadingImage}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="title">Event Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="e.g., AI Ethics Workshop"
-                    value={formData.title}
-                    onChange={(e) => handleChange("title", e.target.value)}
-                    maxLength={150}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Event Title *</Label>
+                    <Input
+                      id="title"
+                      placeholder="e.g., AI Ethics Workshop"
+                      value={formData.title}
+                      onChange={(e) => handleChange("title", e.target.value)}
+                      maxLength={150}
+                      className="h-11"
+                    />
+                    <div className="flex justify-end">
+                      <span className="text-xs text-muted-foreground">{formData.title.length}/150</span>
+                    </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Describe what attendees will learn or experience..."
-                    value={formData.description}
-                    onChange={(e) => handleChange("description", e.target.value)}
-                    rows={5}
-                    maxLength={2000}
-                  />
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description *</Label>
+                    <div className="relative">
+                      <Textarea
+                        id="description"
+                        placeholder="Describe what attendees will learn or experience..."
+                        value={formData.description}
+                        onChange={(e) => handleChange("description", e.target.value)}
+                        rows={5}
+                        maxLength={2000}
+                        className="resize-none pb-6"
+                      />
+                      <span className="absolute bottom-2 right-3 text-xs text-muted-foreground">
+                        {formData.description.length}/2000
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Section: Host Information */}
               <div className="space-y-4">

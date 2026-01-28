@@ -212,53 +212,91 @@ const BrowseEventsPage = () => {
                 ))}
               </datalist>
             </div>
-            {/* View Mode Toggle */}
+            {/* View Mode Toggle - Icon only on mobile, with labels on desktop */}
             <ToggleGroup 
               type="single" 
               value={viewMode} 
               onValueChange={(value) => value && setViewMode(value as "list" | "month" | "week")}
               className="bg-card border border-border/50 rounded-xl p-1"
             >
-              <ToggleGroupItem value="list" aria-label="List view" className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <ToggleGroupItem 
+                value="list" 
+                aria-label="List view" 
+                className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground min-h-[40px] px-3 gap-1.5"
+              >
                 <LayoutGrid className="h-4 w-4" />
+                <span className="hidden md:inline text-xs">List</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="month" aria-label="Month view" className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <ToggleGroupItem 
+                value="month" 
+                aria-label="Month view" 
+                className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground min-h-[40px] px-3 gap-1.5"
+              >
                 <Calendar className="h-4 w-4" />
+                <span className="hidden md:inline text-xs">Month</span>
               </ToggleGroupItem>
-              <ToggleGroupItem value="week" aria-label="Week view" className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+              <ToggleGroupItem 
+                value="week" 
+                aria-label="Week view" 
+                className="rounded-lg data-[state=on]:bg-primary data-[state=on]:text-primary-foreground min-h-[40px] px-3 gap-1.5"
+              >
                 <CalendarDays className="h-4 w-4" />
+                <span className="hidden md:inline text-xs">Week</span>
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
         </div>
       </div>
 
-      {/* Category Filter Bar */}
+      {/* Category Filter Bar with scroll indicators */}
       <div className="border-b border-border bg-card/50 sticky top-0 z-10">
         <div className="container mx-auto px-4">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="flex gap-2 py-3">
-              {EVENT_CATEGORIES.map((category) => {
-                const Icon = category.icon;
-                const isActive = selectedCategory === category.id;
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
-                      isActive 
-                        ? 'bg-primary text-primary-foreground shadow-md' 
-                        : 'bg-muted/50 hover:bg-muted text-foreground'
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {category.label}
-                  </button>
-                );
-              })}
-            </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          <div className="relative">
+            {/* Left fade indicator */}
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card/80 to-transparent z-10 pointer-events-none" />
+            
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex gap-2 py-3 px-1">
+                {EVENT_CATEGORIES.map((category) => {
+                  const Icon = category.icon;
+                  const isActive = selectedCategory === category.id;
+                  // Count events for this category
+                  const categoryCount = category.id === 'all' 
+                    ? events.length 
+                    : events.filter(e => e.event_type === category.id).length;
+                  
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap min-h-[44px] touch-manipulation ${
+                        isActive 
+                          ? 'bg-primary text-primary-foreground shadow-md scale-[1.02]' 
+                          : 'bg-muted/50 hover:bg-muted text-foreground hover:scale-[1.02]'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{category.label}</span>
+                      <span className="sm:hidden">{category.label.split(' ')[0]}</span>
+                      {categoryCount > 0 && (
+                        <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                          isActive 
+                            ? 'bg-primary-foreground/20 text-primary-foreground' 
+                            : 'bg-background/80 text-muted-foreground'
+                        }`}>
+                          {categoryCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
+            
+            {/* Right fade indicator */}
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card/80 to-transparent z-10 pointer-events-none" />
+          </div>
         </div>
       </div>
 

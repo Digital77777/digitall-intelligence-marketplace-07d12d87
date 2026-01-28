@@ -15,12 +15,13 @@ import {
   subWeeks,
   isToday
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Calendar, Video, Users, Building2, MapPin, Globe, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Video, Users, Building2, MapPin, Globe, Clock, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import type { CommunityEvent } from "@/types/community";
 
 interface EventCalendarProps {
@@ -47,6 +48,7 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isLegendOpen, setIsLegendOpen] = useState(true);
 
   // Get events for a specific date
   const getEventsForDate = (date: Date) => {
@@ -107,21 +109,21 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
   return (
     <div className="space-y-4">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={goToPrevious}>
+          <Button variant="outline" size="icon" onClick={goToPrevious} className="h-9 w-9">
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon" onClick={goToNext}>
+          <Button variant="outline" size="icon" onClick={goToNext} className="h-9 w-9">
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <h2 className="text-xl font-semibold ml-2">
+          <h2 className="text-lg sm:text-xl font-semibold ml-2">
             {viewMode === "month"
               ? format(currentDate, "MMMM yyyy")
               : `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 0 }), "MMM d, yyyy")}`}
           </h2>
         </div>
-        <Button variant="outline" size="sm" onClick={goToToday}>
+        <Button variant="outline" size="sm" onClick={goToToday} className="h-9">
           Today
         </Button>
       </div>
@@ -129,16 +131,17 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Calendar Grid */}
         <div className="lg:col-span-2">
-          <Card>
-            <CardContent className="p-4">
+          <Card className="overflow-hidden">
+            <CardContent className="p-2 sm:p-4">
               {/* Week day headers */}
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {weekDays.map((day) => (
                   <div
                     key={day}
-                    className="text-center text-sm font-medium text-muted-foreground py-2"
+                    className="text-center text-xs sm:text-sm font-medium text-muted-foreground py-2"
                   >
-                    {day}
+                    <span className="hidden sm:inline">{day}</span>
+                    <span className="sm:hidden">{day.slice(0, 1)}</span>
                   </div>
                 ))}
               </div>
@@ -161,18 +164,24 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
                       key={day.toISOString()}
                       onClick={() => setSelectedDate(day)}
                       className={cn(
-                        "relative p-2 rounded-lg transition-all text-left min-h-[80px] md:min-h-[100px]",
-                        viewMode === "week" && "min-h-[150px]",
+                        "relative p-1.5 sm:p-2 rounded-xl transition-all duration-200 text-left touch-manipulation active:scale-95",
+                        "min-h-[60px] sm:min-h-[80px] md:min-h-[100px]",
+                        viewMode === "week" && "min-h-[120px] sm:min-h-[150px]",
                         isCurrentMonth
                           ? "bg-card hover:bg-accent/50"
                           : "bg-muted/30 text-muted-foreground",
-                        isSelected && "ring-2 ring-primary bg-accent/50",
-                        isDayToday && "border-2 border-primary"
+                        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-accent/50",
+                        isDayToday && !isSelected && "bg-primary/5 border-2 border-primary"
                       )}
                     >
+                      {/* Today indicator with pulse */}
+                      {isDayToday && (
+                        <div className="absolute inset-0 rounded-xl ring-2 ring-primary/50 animate-pulse pointer-events-none" />
+                      )}
+                      
                       <span
                         className={cn(
-                          "text-sm font-medium",
+                          "text-xs sm:text-sm font-medium relative z-10",
                           isDayToday && "text-primary font-bold"
                         )}
                       >
@@ -181,7 +190,7 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
 
                       {/* Event indicators */}
                       <div className="mt-1 space-y-0.5 overflow-hidden">
-                        {dayEvents.slice(0, viewMode === "week" ? 5 : 3).map((event) => (
+                        {dayEvents.slice(0, viewMode === "week" ? 5 : 2).map((event) => (
                           <div
                             key={event.id}
                             onClick={(e) => {
@@ -189,7 +198,7 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
                               onEventClick(event);
                             }}
                             className={cn(
-                              "text-[10px] md:text-xs px-1.5 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity",
+                              "text-[9px] sm:text-[10px] md:text-xs px-1 sm:px-1.5 py-0.5 rounded truncate text-white cursor-pointer hover:opacity-80 transition-opacity",
                               EVENT_TYPE_COLORS[event.event_type] || "bg-primary"
                             )}
                             title={event.title}
@@ -197,9 +206,9 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
                             {event.title}
                           </div>
                         ))}
-                        {dayEvents.length > (viewMode === "week" ? 5 : 3) && (
-                          <div className="text-[10px] text-muted-foreground pl-1">
-                            +{dayEvents.length - (viewMode === "week" ? 5 : 3)} more
+                        {dayEvents.length > (viewMode === "week" ? 5 : 2) && (
+                          <div className="text-[9px] sm:text-[10px] text-muted-foreground pl-1">
+                            +{dayEvents.length - (viewMode === "week" ? 5 : 2)} more
                           </div>
                         )}
                       </div>
@@ -230,10 +239,16 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
                 </p>
               ) : selectedDateEvents.length === 0 ? (
                 <div className="text-center py-8">
-                  <Calendar className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">
+                  <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="h-8 w-8 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-3">
                     No events on this date
                   </p>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <CalendarPlus className="h-4 w-4" />
+                    Host Event
+                  </Button>
                 </div>
               ) : (
                 <ScrollArea className="h-[400px] pr-3">
@@ -241,7 +256,7 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
                     {selectedDateEvents.map((event) => (
                       <Card
                         key={event.id}
-                        className="cursor-pointer hover:shadow-md transition-shadow"
+                        className="cursor-pointer hover:shadow-md hover:border-primary/20 transition-all duration-200 group"
                         onClick={() => onEventClick(event)}
                       >
                         <CardContent className="p-3">
@@ -272,7 +287,7 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
                                   </Badge>
                                 )}
                               </div>
-                              <h4 className="font-medium text-sm line-clamp-2">
+                              <h4 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
                                 {event.title}
                               </h4>
                               <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
@@ -304,20 +319,32 @@ export const EventCalendar: React.FC<EventCalendarProps> = ({
         </div>
       </div>
 
-      {/* Legend */}
-      <Card>
-        <CardContent className="p-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-sm font-medium text-muted-foreground">Event Types:</span>
-            {Object.entries(EVENT_TYPE_COLORS).map(([type, color]) => (
-              <div key={type} className="flex items-center gap-1.5">
-                <div className={cn("w-3 h-3 rounded", color)} />
-                <span className="text-xs capitalize">{type}</span>
+      {/* Legend - Collapsible on mobile */}
+      <Collapsible open={isLegendOpen} onOpenChange={setIsLegendOpen}>
+        <Card>
+          <CardContent className="p-3">
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center justify-between w-full text-left sm:cursor-default">
+                <span className="text-sm font-medium text-muted-foreground">Event Types</span>
+                <ChevronRight className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform sm:hidden",
+                  isLegendOpen && "rotate-90"
+                )} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="sm:block">
+              <div className="flex flex-wrap items-center gap-3 mt-2 sm:mt-0">
+                {Object.entries(EVENT_TYPE_COLORS).map(([type, color]) => (
+                  <div key={type} className="flex items-center gap-1.5">
+                    <div className={cn("w-3 h-3 rounded", color)} />
+                    <span className="text-xs capitalize">{type}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+            </CollapsibleContent>
+          </CardContent>
+        </Card>
+      </Collapsible>
     </div>
   );
 };
