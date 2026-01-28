@@ -1,19 +1,17 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Upload, X, Video, Loader2, Scissors, Zap } from "lucide-react";
+import { ArrowLeft, Zap, Loader2, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useBackgroundUpload } from "@/contexts/BackgroundUploadContext";
-import { supabase } from "@/integrations/supabase/client";
 import { SEOHead } from "@/components/SEOHead";
-import { VideoTrimmer } from "@/components/media/VideoTrimmer";
-import { validateVideoDuration, MAX_VIDEO_DURATION_SECONDS, formatDuration } from "@/lib/videoValidation";
+import { QuickVideoUploader } from "@/components/reels";
+import { MAX_VIDEO_DURATION_SECONDS } from "@/lib/videoValidation";
 import { cn } from "@/lib/utils";
 
 const CreateReelPage = () => {
@@ -21,147 +19,28 @@ const CreateReelPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { uploadReel, hasActiveUploads } = useBackgroundUpload();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [showTrimmer, setShowTrimmer] = useState(false);
-  const [isTrimmed, setIsTrimmed] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const [videoDuration, setVideoDuration] = useState<number | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [videoData, setVideoData] = useState<{
+    file: File;
+    trimStart: number;
+    trimEnd: number;
+  } | null>(null);
+  const [isDescriptionOpen, setIsDescriptionOpen] = useState(false);
   const [isStartingUpload, setIsStartingUpload] = useState(false);
 
-  // Cleanup object URLs on unmount
-  useEffect(() => {
-    return () => {
-      if (videoPreview) {
-        URL.revokeObjectURL(videoPreview);
-      }
-    };
+  const handleVideoReady = useCallback((file: File, trimStart: number, trimEnd: number) => {
+    setVideoData({ file, trimStart, trimEnd });
   }, []);
 
-  const handleFileSelect = useCallback(async (file: File) => {
-    // Validate file type
-    const validTypes = ["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"];
-    if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Invalid file type",
-        description: "Please upload MP4, WebM, MOV, or AVI video files.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (100MB max)
-    if (file.size > 100 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Video must be less than 100MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate video duration
-    setIsValidating(true);
-    const durationResult = await validateVideoDuration(file, MAX_VIDEO_DURATION_SECONDS);
-    setIsValidating(false);
-    setVideoDuration(durationResult.duration);
-
-    if (!durationResult.valid) {
-      toast({
-        title: "Video too long",
-        description: durationResult.message || `Video must be ${formatDuration(MAX_VIDEO_DURATION_SECONDS)} or less. You can trim it to fit.`,
-        variant: "destructive",
-      });
-    }
-
-    // Cleanup previous preview
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview);
-    }
-
-    setVideoFile(file);
-    setVideoPreview(URL.createObjectURL(file));
-    setShowTrimmer(true);
-    setIsTrimmed(false);
-  }, [toast, videoPreview]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
-  }, [handleFileSelect]);
-
-  // Drag and drop handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
+  const handleVideoRemove = useCallback(() => {
+    setVideoData(null);
   }, []);
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith('video/')) {
-      handleFileSelect(file);
-    } else {
-      toast({
-        title: "Invalid file",
-        description: "Please drop a video file.",
-        variant: "destructive",
-      });
-    }
-  }, [handleFileSelect, toast]);
-
-  const handleTrimComplete = useCallback((trimmedBlob: Blob) => {
-    // Cleanup old preview
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview);
-    }
-    
-    const trimmedFile = new File([trimmedBlob], videoFile?.name || "trimmed-video.webm", {
-      type: trimmedBlob.type,
-    });
-    
-    setVideoFile(trimmedFile);
-    setVideoPreview(URL.createObjectURL(trimmedBlob));
-    setShowTrimmer(false);
-    setIsTrimmed(true);
-    
-    toast({
-      title: "Video trimmed",
-      description: "Your video has been trimmed successfully.",
-    });
-  }, [toast, videoFile?.name, videoPreview]);
-
-  const handleCancelTrim = useCallback(() => {
-    setShowTrimmer(false);
-  }, []);
-
-  const removeVideo = useCallback(() => {
-    if (videoPreview) {
-      URL.revokeObjectURL(videoPreview);
-    }
-    setVideoFile(null);
-    setVideoPreview(null);
-    setVideoDuration(null);
-    setIsTrimmed(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }, [videoPreview]);
+  const isFormValid = useMemo(() => {
+    return videoData && title.trim().length > 0;
+  }, [videoData, title]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,19 +50,10 @@ const CreateReelPage = () => {
       return;
     }
 
-    if (!videoFile) {
+    if (!videoData || !title.trim()) {
       toast({
-        title: "No video selected",
-        description: "Please select a video to upload.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!title.trim()) {
-      toast({
-        title: "Title required",
-        description: "Please enter a title for your reel.",
+        title: "Missing information",
+        description: "Please add a video and title.",
         variant: "destructive",
       });
       return;
@@ -192,12 +62,12 @@ const CreateReelPage = () => {
     setIsStartingUpload(true);
 
     try {
-      // Generate a thumbnail from the video for the upload indicator
+      // Generate thumbnail
       let thumbnail: string | undefined;
       try {
         const video = document.createElement('video');
-        video.src = videoPreview || '';
-        video.currentTime = 0.5;
+        video.src = URL.createObjectURL(videoData.file);
+        video.currentTime = videoData.trimStart + 0.5;
         await new Promise(resolve => { video.onloadeddata = resolve; video.load(); });
         const canvas = document.createElement('canvas');
         canvas.width = 80;
@@ -205,14 +75,16 @@ const CreateReelPage = () => {
         const ctx = canvas.getContext('2d');
         ctx?.drawImage(video, 0, 0, 80, 80);
         thumbnail = canvas.toDataURL('image/jpeg', 0.5);
+        URL.revokeObjectURL(video.src);
       } catch (e) {
-        // Thumbnail generation failed, continue without it
+        // Continue without thumbnail
       }
 
-      // Start background upload
+      // Start background upload with the original file
+      // Note: For instant upload, we skip re-encoding and upload original
       await uploadReel({
         userId: user.id,
-        videoFile,
+        videoFile: videoData.file,
         title: title.trim(),
         description: description.trim() || undefined,
         thumbnail,
@@ -220,10 +92,9 @@ const CreateReelPage = () => {
 
       toast({
         title: "Upload started!",
-        description: "Your reel is uploading in the background. You can continue browsing.",
+        description: "Your reel is uploading in the background.",
       });
 
-      // Navigate away immediately - upload continues in background
       navigate("/community/reels");
     } catch (error: any) {
       console.error("Upload start error:", error);
@@ -239,15 +110,17 @@ const CreateReelPage = () => {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground mb-4">Please log in to create a reel</p>
-            <Button onClick={() => navigate("/auth")}>
-              Log In
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+            <Sparkles className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-xl font-semibold">Sign in to create reels</h2>
+          <p className="text-muted-foreground">Share your moments with the community</p>
+          <Button onClick={() => navigate("/auth")} size="lg">
+            Sign In
+          </Button>
+        </div>
       </div>
     );
   }
@@ -260,207 +133,129 @@ const CreateReelPage = () => {
       />
       
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 max-w-2xl">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
-            className="mb-6"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Button>
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b">
+          <div className="flex items-center justify-between px-4 h-14">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="h-9 w-9"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <h1 className="font-semibold">New Reel</h1>
+            <div className="w-9" /> {/* Spacer for centering */}
+          </div>
+        </header>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Video className="w-5 h-5" />
-                Create a Reel
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Share short videos up to {MAX_VIDEO_DURATION_SECONDS} seconds with the community
+        <form onSubmit={handleSubmit} className="pb-24">
+          <div className="px-4 py-6 space-y-6 max-w-lg mx-auto">
+            {/* Video Uploader */}
+            <QuickVideoUploader
+              onVideoReady={handleVideoReady}
+              onVideoRemove={handleVideoRemove}
+              disabled={isStartingUpload}
+            />
+
+            {/* Title Input */}
+            <div className="space-y-2">
+              <Label htmlFor="title" className="text-sm font-medium">
+                Title <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Give your reel a catchy title"
+                maxLength={100}
+                disabled={isStartingUpload}
+                className="h-12 text-base"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {title.length}/100
               </p>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Video Upload */}
-                <div className="space-y-2">
-                  <Label>Video *</Label>
-                  {!videoPreview ? (
-                    <div
-                      className={cn(
-                        "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
-                        isDragging 
-                          ? "border-primary bg-primary/5 scale-[1.02]" 
-                          : "border-muted-foreground/25 hover:border-primary/50",
-                        isValidating && "pointer-events-none opacity-70"
-                      )}
-                      onClick={() => !isValidating && fileInputRef.current?.click()}
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
-                      aria-label="Upload video"
-                    >
-                      {isValidating ? (
-                        <>
-                          <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
-                          <p className="text-sm text-muted-foreground">
-                            Validating video...
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {isDragging ? "Drop your video here" : "Click to upload or drag and drop"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            MP4, WebM, MOV, AVI (max 100MB, up to {MAX_VIDEO_DURATION_SECONDS}s)
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  ) : showTrimmer ? (
-                    <VideoTrimmer
-                      videoFile={videoFile!}
-                      videoUrl={videoPreview}
-                      onTrimComplete={handleTrimComplete}
-                      onCancel={handleCancelTrim}
-                      maxDuration={MAX_VIDEO_DURATION_SECONDS}
-                    />
+            </div>
+
+            {/* Collapsible Description */}
+            <Collapsible open={isDescriptionOpen} onOpenChange={setIsDescriptionOpen}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full justify-between h-12 px-3"
+                >
+                  <span className="text-sm">
+                    Description <span className="text-muted-foreground">(optional)</span>
+                  </span>
+                  {isDescriptionOpen ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <div className="space-y-3">
-                      <div className="relative rounded-lg overflow-hidden bg-black aspect-[9/16] max-w-xs mx-auto shadow-lg">
-                        <video
-                          src={videoPreview}
-                          className="w-full h-full object-contain"
-                          controls
-                          playsInline
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute top-2 right-2 shadow-md"
-                          onClick={removeVideo}
-                          aria-label="Remove video"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                        {isTrimmed && (
-                          <div className="absolute top-2 left-2 bg-primary/90 text-primary-foreground text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-md">
-                            <Scissors className="w-3 h-3" />
-                            Trimmed
-                          </div>
-                        )}
-                        {/* Duration badge */}
-                        {videoDuration && (
-                          <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
-                            {Math.floor(videoDuration)}s
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2 justify-center">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowTrimmer(true)}
-                        >
-                          <Scissors className="w-4 h-4 mr-2" />
-                          {isTrimmed ? "Trim Again" : "Trim Video"}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            removeVideo();
-                            fileInputRef.current?.click();
-                          }}
-                        >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Replace
-                        </Button>
-                      </div>
-                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime,video/x-msvideo"
-                    className="hidden"
-                    onChange={handleInputChange}
-                    aria-label="Select video file"
-                  />
-                </div>
-
-                {/* Title */}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
                 <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Give your reel a catchy title"
-                    maxLength={100}
-                    disabled={isStartingUpload}
-                  />
-                  <p className="text-xs text-muted-foreground text-right">
-                    {title.length}/100
-                  </p>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description (optional)</Label>
                   <Textarea
                     id="description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Add a description for your reel..."
+                    placeholder="Add more context to your reel..."
                     rows={3}
                     maxLength={500}
                     disabled={isStartingUpload}
+                    className="resize-none"
                   />
                   <p className="text-xs text-muted-foreground text-right">
                     {description.length}/500
                   </p>
                 </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-                {/* Background Upload Info */}
-                {hasActiveUploads && (
-                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                    <p className="text-sm text-primary flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Previous upload in progress...
-                    </p>
-                  </div>
-                )}
+            {/* Active upload indicator */}
+            {hasActiveUploads && (
+              <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                <p className="text-sm text-primary flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Previous upload in progress...
+                </p>
+              </div>
+            )}
+          </div>
+        </form>
 
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-ai text-white"
-                  disabled={isStartingUpload || !videoFile || !title.trim() || isValidating}
-                >
-                  {isStartingUpload ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Starting Upload...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      Publish & Continue Browsing
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+        {/* Sticky Bottom CTA */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t safe-area-pb">
+          <div className="max-w-lg mx-auto">
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={isStartingUpload || !isFormValid}
+              className={cn(
+                "w-full h-14 text-base font-semibold rounded-xl transition-all",
+                "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70",
+                "shadow-lg hover:shadow-xl",
+                !isFormValid && "opacity-50"
+              )}
+            >
+              {isStartingUpload ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Starting Upload...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-5 h-5 mr-2" />
+                  Publish & Continue Browsing
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Upload happens in the background • Max {MAX_VIDEO_DURATION_SECONDS}s
+            </p>
+          </div>
         </div>
       </div>
     </>
