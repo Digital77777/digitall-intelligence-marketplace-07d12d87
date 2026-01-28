@@ -24,7 +24,7 @@ interface QuickAction {
 
 const quickActions: QuickAction[] = [
   { id: "activity", icon: TrendingUp, label: "My Activity", path: "/community/my-activity", requiresAuth: true },
-  { id: "discussion", icon: MessageCircle, label: "Start Discussion", path: "/community/start-topic" },
+  { id: "discussion", icon: MessageCircle, label: "Join Community", path: "/community/join-whatsapp" },
   { id: "event", icon: Calendar, label: "Create Event", path: "/community/host-event" },
   { id: "insight", icon: Lightbulb, label: "Share Insight", path: "/community/share-insight" },
   { id: "members", icon: Users, label: "Find Members", path: "/community/find-members" },

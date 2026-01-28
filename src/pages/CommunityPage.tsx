@@ -174,7 +174,7 @@ const CommunityPage = () => {
 
   // Handler functions for button interactions - wrapped in useCallback for performance
   const handleStartTopic = useCallback(() => {
-    navigate("/community/start-topic");
+    navigate("/community/join-whatsapp");
   }, [navigate]);
   const handleBrowseEvents = useCallback(() => {
     navigate("/community/browse-events");
