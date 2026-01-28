@@ -83,23 +83,56 @@ export const QuickVideoUploader = ({
     setIsLoading(true);
     setError(null);
 
+    // Cleanup previous video URL first
+    if (videoUrl) {
+      URL.revokeObjectURL(videoUrl);
+      setVideoUrl(null);
+    }
+
     try {
-      const videoDuration = await getVideoDuration(file);
-      
-      // Cleanup previous
-      if (videoUrl) URL.revokeObjectURL(videoUrl);
-      
+      // Create the URL immediately for faster preview
       const url = URL.createObjectURL(file);
+      
+      // Try to get duration with timeout fallback
+      let videoDuration: number;
+      try {
+        videoDuration = await getVideoDuration(file);
+      } catch (err) {
+        // Fallback: Create a video element and try to get duration directly
+        videoDuration = await new Promise<number>((resolve) => {
+          const tempVideo = document.createElement('video');
+          tempVideo.muted = true;
+          tempVideo.playsInline = true;
+          
+          const fallbackTimeout = setTimeout(() => {
+            // Ultimate fallback - assume max duration and let user trim
+            resolve(MAX_VIDEO_DURATION_SECONDS);
+          }, 5000);
+          
+          tempVideo.onloadeddata = () => {
+            clearTimeout(fallbackTimeout);
+            if (tempVideo.duration && isFinite(tempVideo.duration)) {
+              resolve(tempVideo.duration);
+            } else {
+              resolve(MAX_VIDEO_DURATION_SECONDS);
+            }
+          };
+          
+          tempVideo.src = url;
+          tempVideo.load();
+        });
+      }
+      
       setVideoFile(file);
       setVideoUrl(url);
       setDuration(videoDuration);
       setTrimStart(0);
       setTrimEnd(Math.min(videoDuration, MAX_VIDEO_DURATION_SECONDS));
       setCurrentTime(0);
-    } catch (err) {
-      setError("Could not load video. Try a different file.");
-    } finally {
       setIsLoading(false);
+    } catch (err) {
+      setIsLoading(false);
+      setError("Could not load video. Try a different file.");
     }
   }, [videoUrl]);
 
