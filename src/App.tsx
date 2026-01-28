@@ -79,6 +79,7 @@ const WhatsAppCommunityPage = lazy(() => import("./pages/community/WhatsAppCommu
 const ReelsPage = lazy(() => import("./pages/community/ReelsPage"));
 const CreateReelPage = lazy(() => import("./pages/community/CreateReelPage"));
 const FollowersPage = lazy(() => import("./pages/community/FollowersPage"));
+const MyNetworkPage = lazy(() => import("./pages/community/MyNetworkPage"));
 
 // Career & Professional - Lazy loaded
 const CareerCertificationPage = lazy(() => import("./pages/CareerCertificationPage"));
@@ -240,6 +241,7 @@ const routeGroups: AppRoute[] = [
   { path: "/community/reels", component: ReelsPage, protected: true },
   { path: "/community/create-reel", component: CreateReelPage, protected: true },
   { path: "/community/followers", component: FollowersPage, protected: true },
+  { path: "/community/my-network", component: MyNetworkPage, protected: true },
 
   // Career & Professional
   { path: "/career-certification", component: CareerCertificationPage, protected: true },
