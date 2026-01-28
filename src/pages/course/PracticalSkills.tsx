@@ -18,14 +18,45 @@ import {
   Download,
   Video,
   Wrench,
-  Zap
+  Zap,
+  Award,
+  Globe,
+  Smartphone,
+  MessageCircle,
+  Shield,
+  Sparkles,
+  Lock,
+  Calendar,
+  Laptop
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
+import { useCourseEnrollment, useCourseEnrollmentCount } from '@/hooks/useCourseEnrollment';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { CourseFAQ } from '@/components/course/CourseFAQ';
+import { RelatedPaths } from '@/components/course/RelatedPaths';
+
+const COURSE_ID = 'practical-skills';
 
 const PracticalSkills = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user } = useAuth();
+  const { 
+    enrollment, 
+    isEnrolled, 
+    isLoading, 
+    isEnrolling, 
+    enroll,
+    moduleProgress 
+  } = useCourseEnrollment(COURSE_ID);
+  const { data: enrollmentCount } = useCourseEnrollmentCount(COURSE_ID);
 
   const courseModules = [
     {
@@ -34,7 +65,6 @@ const PracticalSkills = () => {
       description: "Learn to write effective prompts that get you better AI results every time",
       duration: "3 weeks",
       lessons: 10,
-      completed: false,
       topics: [
         "Anatomy of a Great Prompt",
         "Prompt Frameworks & Templates",
@@ -54,7 +84,6 @@ const PracticalSkills = () => {
       description: "Hands-on training with the most powerful AI tools for productivity and creativity",
       duration: "4 weeks",
       lessons: 12,
-      completed: false,
       topics: [
         "ChatGPT Advanced Techniques",
         "Claude for Research & Analysis",
@@ -76,7 +105,6 @@ const PracticalSkills = () => {
       description: "Build AI applications without coding using visual platforms and drag-drop tools",
       duration: "4 weeks",
       lessons: 14,
-      completed: false,
       topics: [
         "Introduction to No-Code AI",
         "Zapier AI Automation",
@@ -100,7 +128,6 @@ const PracticalSkills = () => {
       description: "Work with data effectively for AI projects - collection, cleaning, and analysis",
       duration: "3 weeks",
       lessons: 8,
-      completed: false,
       topics: [
         "Data Types & Sources",
         "Web Scraping Basics",
@@ -125,364 +152,510 @@ const PracticalSkills = () => {
     "Generate income through AI consulting and freelancing"
   ];
 
-  const handleStartCourse = () => {
-    toast({
-      title: "Course started!",
-      description: "Welcome to From Zero to Builder. Let's build something amazing!"
-    });
+  const prerequisites = [
+    { icon: Laptop, text: "Basic computer skills - ability to browse the web and use common apps" },
+    { icon: Globe, text: "Stable internet connection for accessing online tools and platforms" },
+    { icon: Clock, text: "5-8 hours per week dedicated learning time" },
+    { icon: Target, text: "A project idea or goal you want to build with AI (we'll help you define it)" }
+  ];
+
+  const whatsIncluded = [
+    { icon: Video, text: "44 video lessons with step-by-step tutorials" },
+    { icon: Wrench, text: "Hands-on projects for each module" },
+    { icon: Download, text: "Downloadable templates and prompt libraries" },
+    { icon: Award, text: "Certificate of completion" },
+    { icon: MessageCircle, text: "Community forum access" },
+    { icon: Smartphone, text: "Mobile-friendly learning experience" }
+  ];
+
+  const handleEnroll = () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    enroll();
   };
 
-  const handleEnrollNow = () => {
-    toast({
-      title: "Enrollment successful!",
-      description: "You're now enrolled in From Zero to Builder"
-    });
+  const handleContinueLearning = () => {
+    // Navigate to current module
+    console.log('Continue to module:', enrollment?.current_module);
+  };
+
+  const totalLessons = courseModules.reduce((acc, m) => acc + m.lessons, 0);
+  const displayEnrollmentCount = (enrollmentCount || 0) + 2847; // Base count + real enrollments
+
+  const isModuleCompleted = (moduleId: number) => {
+    return moduleProgress.some(p => p.module_id === moduleId && p.completed_at);
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/10 via-background to-accent/10 pt-20 pb-16">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
+      <Navigation />
+      
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 pt-24 pb-12 md:pt-28 md:pb-16">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
+            {/* Left Content */}
             <div className="lg:col-span-2 space-y-6">
+              {/* Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="secondary" className="text-xs">Beginner Level</Badge>
+                <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Free Course
+                </Badge>
+                <Badge className="bg-gradient-ai text-white text-xs">Most Popular</Badge>
+              </div>
+
+              {/* Title */}
               <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary">Beginner Level</Badge>
-                  <Badge variant="outline">Free Course</Badge>
-                  <Badge className="bg-gradient-ai text-white">Most Popular</Badge>
-                </div>
-                <h1 className="text-4xl md:text-5xl font-bold">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold leading-tight">
                   <span className="bg-gradient-ai bg-clip-text text-transparent">
                     From Zero to Builder
                   </span>
                 </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed">
+                <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-2xl">
                   Master practical AI skills that matter: prompt engineering, AI tools mastery, no-code building, 
                   and data handling. Go from complete beginner to building AI solutions in 10-14 weeks.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 py-4">
+                <div className="text-center p-3 rounded-lg bg-card/50 border">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
                     <Clock className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">10-14 weeks</span>
+                    <span className="font-semibold">10-14 weeks</span>
                   </div>
                   <p className="text-xs text-muted-foreground">Duration</p>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
+                <div className="text-center p-3 rounded-lg bg-card/50 border">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
                     <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">44 lessons</span>
+                    <span className="font-semibold">{totalLessons} lessons</span>
                   </div>
                   <p className="text-xs text-muted-foreground">Total Lessons</p>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
+                <div className="text-center p-3 rounded-lg bg-card/50 border">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
                     <Users className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">2,847</span>
+                    <span className="font-semibold">{displayEnrollmentCount.toLocaleString()}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Students</p>
+                  <p className="text-xs text-muted-foreground">Students Enrolled</p>
                 </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                    <span className="text-sm font-medium">4.8</span>
+                <div className="text-center p-3 rounded-lg bg-card/50 border">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                    <span className="font-semibold">4.8</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">Rating</p>
+                  <p className="text-xs text-muted-foreground">Course Rating</p>
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                <Button size="lg" onClick={handleStartCourse}>
-                  <Play className="h-5 w-5 mr-2" />
-                  Start Building Free
-                </Button>
-                <Button size="lg" variant="outline" onClick={handleEnrollNow}>
-                  <Wrench className="h-5 w-5 mr-2" />
-                  Enroll Now
+              {/* Social Proof */}
+              <div className="flex items-center gap-3 p-3 bg-success/10 rounded-lg border border-success/20 w-fit">
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="w-8 h-8 rounded-full bg-gradient-ai border-2 border-background flex items-center justify-center text-white text-xs font-medium">
+                      {String.fromCharCode(64 + i)}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-sm font-medium text-success">
+                  Join {displayEnrollmentCount.toLocaleString()}+ learners building with AI
+                </span>
+              </div>
+
+              {/* CTA Buttons - Desktop */}
+              <div className="hidden md:flex gap-4">
+                {isEnrolled ? (
+                  <Button size="lg" onClick={handleContinueLearning} className="bg-gradient-ai hover:opacity-90">
+                    <Play className="h-5 w-5 mr-2" />
+                    Continue Learning
+                  </Button>
+                ) : (
+                  <Button size="lg" onClick={handleEnroll} disabled={isEnrolling} className="bg-gradient-ai hover:opacity-90">
+                    <Wrench className="h-5 w-5 mr-2" />
+                    {isEnrolling ? 'Enrolling...' : 'Enroll Now - It\'s Free'}
+                  </Button>
+                )}
+                <Button size="lg" variant="outline">
+                  <Video className="h-5 w-5 mr-2" />
+                  Watch Preview
                 </Button>
               </div>
             </div>
 
-            {/* Course Preview Card */}
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Video className="h-5 w-5" />
-                  Course Preview
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-                  <div className="text-center space-y-2">
-                    <Play className="h-12 w-12 text-primary mx-auto" />
-                    <p className="text-sm text-muted-foreground">See What You'll Build</p>
+            {/* Right - Enrollment Card (Desktop) */}
+            <div className="hidden lg:block">
+              <Card className="sticky top-24 shadow-xl border-2">
+                <CardHeader className="pb-4">
+                  <div className="aspect-video bg-gradient-to-br from-muted to-muted/50 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-ai/10" />
+                    <div className="text-center space-y-2 relative z-10">
+                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto backdrop-blur-sm">
+                        <Play className="h-8 w-8 text-primary" />
+                      </div>
+                      <p className="text-sm text-muted-foreground font-medium">See What You'll Build</p>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">What you'll build:</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li className="flex items-center gap-2">
+                  
+                  {isEnrolled && enrollment && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Your Progress</span>
+                        <span className="font-medium">{enrollment.progress_percent}%</span>
+                      </div>
+                      <Progress value={enrollment.progress_percent} className="h-2" />
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {isEnrolled ? (
+                    <Button className="w-full bg-gradient-ai hover:opacity-90" size="lg" onClick={handleContinueLearning}>
+                      Continue Learning
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button className="w-full bg-gradient-ai hover:opacity-90" size="lg" onClick={handleEnroll} disabled={isEnrolling}>
+                      {isEnrolling ? 'Enrolling...' : 'Enroll Now - It\'s Free'}
+                    </Button>
+                  )}
+
+                  <div className="space-y-3 pt-2">
+                    <h4 className="font-semibold text-sm">What you'll build:</h4>
+                    <ul className="space-y-2">
+                      {[
+                        'AI-powered chatbots',
+                        'Automated workflows',
+                        'Data analysis tools',
+                        'Complete web applications'
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="p-3 bg-green-500/10 rounded-lg border border-green-500/20">
+                    <div className="text-xs font-medium text-green-600 dark:text-green-400 mb-1">Earning Potential</div>
+                    <div className="text-lg font-bold">$1,000 - $2,500/month</div>
+                    <div className="text-xs text-muted-foreground">From AI freelancing & consulting</div>
+                  </div>
+
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-primary" />
-                      AI-powered chatbots
-                    </li>
-                    <li className="flex items-center gap-2">
+                      <span>Certificate of completion</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-primary" />
-                      Automated workflows
-                    </li>
-                    <li className="flex items-center gap-2">
+                      <span>Lifetime access</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
                       <CheckCircle className="h-4 w-4 text-primary" />
-                      Data analysis tools
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      Complete web applications
-                    </li>
-                  </ul>
-                </div>
-                <div className="p-3 bg-success/10 rounded-lg">
-                  <div className="text-sm font-medium text-success mb-1">Earning Potential</div>
-                  <div className="text-lg font-bold">$1,000-2,500/month</div>
-                  <div className="text-xs text-muted-foreground">From AI freelancing & consulting</div>
-                </div>
-                <Button className="w-full" onClick={handleEnrollNow}>
-                  Start Building Today
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
+                      <span>Portfolio-ready projects</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Course Content */}
-      <section className="py-16">
-        <div className="container mx-auto px-6">
+      {/* Trust Badges */}
+      <section className="py-6 border-y bg-muted/30">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8">
+            {[
+              { icon: Zap, text: 'Hands-On Projects' },
+              { icon: Clock, text: 'Self-Paced Learning' },
+              { icon: Award, text: 'Certificate Included' },
+              { icon: Shield, text: 'Beginner Friendly' },
+              { icon: Smartphone, text: 'Mobile Access' }
+            ].map((badge, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <badge.icon className="h-4 w-4 text-primary" />
+                <span>{badge.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content Tabs */}
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4 md:px-6">
           <Tabs defaultValue="curriculum" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="outcomes">Outcomes</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
+            <TabsList className="w-full max-w-2xl mx-auto grid grid-cols-3 md:grid-cols-5 mb-8">
+              <TabsTrigger value="curriculum" className="text-xs md:text-sm">Curriculum</TabsTrigger>
+              <TabsTrigger value="outcomes" className="text-xs md:text-sm">Outcomes</TabsTrigger>
+              <TabsTrigger value="prerequisites" className="text-xs md:text-sm">Prerequisites</TabsTrigger>
+              <TabsTrigger value="instructor" className="text-xs md:text-sm hidden md:flex">Instructor</TabsTrigger>
+              <TabsTrigger value="reviews" className="text-xs md:text-sm hidden md:flex">Reviews</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="curriculum" className="space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Hands-On Curriculum</h2>
+            {/* Curriculum Tab */}
+            <TabsContent value="curriculum" className="space-y-8">
+              <div className="text-center max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-3">Hands-On Curriculum</h2>
                 <p className="text-muted-foreground">
-                  44 practical lessons focused on building real AI solutions. Every module includes hands-on projects 
-                  you can add to your portfolio.
+                  {totalLessons} practical lessons focused on building real AI solutions. Every module includes hands-on projects you can add to your portfolio.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-4">
-                {courseModules.map((module, index) => (
-                  <Card key={module.id} className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-ai flex items-center justify-center text-sm font-medium text-white">
-                            {index + 1}
+              <Accordion type="single" collapsible className="w-full max-w-4xl mx-auto space-y-4">
+                {courseModules.map((module, index) => {
+                  const completed = isModuleCompleted(module.id);
+                  return (
+                    <AccordionItem 
+                      key={module.id} 
+                      value={`module-${module.id}`}
+                      className="border rounded-xl px-4 md:px-6 bg-card/50 hover:bg-card/80 transition-colors"
+                    >
+                      <AccordionTrigger className="hover:no-underline py-4 md:py-6">
+                        <div className="flex items-center gap-3 md:gap-4 text-left w-full pr-4">
+                          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                            completed 
+                              ? 'bg-success text-white' 
+                              : 'bg-gradient-ai text-white'
+                          }`}>
+                            {completed ? (
+                              <CheckCircle className="h-5 w-5 md:h-6 md:w-6" />
+                            ) : isEnrolled ? (
+                              <span className="text-sm md:text-base font-bold">{index + 1}</span>
+                            ) : (
+                              <Lock className="h-4 w-4 md:h-5 md:w-5" />
+                            )}
                           </div>
-                          <div>
-                            <CardTitle className="text-lg">{module.title}</CardTitle>
-                            <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-base md:text-lg">{module.title}</h3>
+                            <p className="text-xs md:text-sm text-muted-foreground line-clamp-1">{module.description}</p>
+                          </div>
+                          <div className="hidden md:flex items-center gap-4 text-sm text-muted-foreground flex-shrink-0">
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-4 w-4" />
+                              {module.duration}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <BookOpen className="h-4 w-4" />
+                              {module.lessons} lessons
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right space-y-1">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-6">
+                        <div className="md:hidden flex items-center gap-4 text-sm text-muted-foreground mb-4 pl-14">
+                          <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
                             {module.duration}
                           </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Wrench className="h-4 w-4" />
+                          <div className="flex items-center gap-1">
+                            <BookOpen className="h-4 w-4" />
                             {module.lessons} lessons
                           </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {module.topics.map((topic, topicIndex) => (
-                          <div key={topicIndex} className="flex items-center gap-2 text-sm">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                            {topic}
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="projects" className="space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Real-World Projects</h2>
-                <p className="text-muted-foreground">
-                  Build a portfolio of AI projects that demonstrate your skills to potential employers or clients.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[
-                  {
-                    title: "AI Customer Service Bot",
-                    description: "Build a chatbot that handles customer inquiries using no-code tools",
-                    tools: ["Chatfuel", "Zapier", "Google Sheets"],
-                    difficulty: "Beginner"
-                  },
-                  {
-                    title: "Content Generation Pipeline",
-                    description: "Create an automated system for generating and posting social media content",
-                    tools: ["OpenAI API", "Buffer", "Canva API"],
-                    difficulty: "Intermediate"
-                  },
-                  {
-                    title: "Data Analysis Dashboard",
-                    description: "Build an interactive dashboard that analyzes business data using AI",
-                    tools: ["Bubble", "Airtable", "Chart.js"],
-                    difficulty: "Intermediate"
-                  },
-                  {
-                    title: "AI-Powered E-commerce Store",
-                    description: "Create an online store with AI product recommendations and chat support",
-                    tools: ["Shopify", "Tidio", "Recombee"],
-                    difficulty: "Advanced"
-                  }
-                ].map((project, index) => (
-                  <Card key={index} className="p-6">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between">
-                        <h3 className="font-semibold">{project.title}</h3>
-                        <Badge variant={project.difficulty === 'Beginner' ? 'secondary' : project.difficulty === 'Intermediate' ? 'default' : 'destructive'}>
-                          {project.difficulty}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{project.description}</p>
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-medium">Tools Used:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {project.tools.map((tool, toolIndex) => (
-                            <Badge key={toolIndex} variant="outline" className="text-xs">
-                              {tool}
-                            </Badge>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-0 md:pl-16">
+                          {module.topics.map((topic, topicIndex) => (
+                            <div key={topicIndex} className="flex items-center gap-2 text-sm py-1">
+                              <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0" />
+                              <span>{topic}</span>
+                            </div>
                           ))}
                         </div>
-                      </div>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Zap className="h-4 w-4 mr-2" />
-                        View Project Details
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-              </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
             </TabsContent>
 
-            <TabsContent value="outcomes" className="space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Career Outcomes</h2>
+            {/* Outcomes Tab */}
+            <TabsContent value="outcomes" className="space-y-8">
+              <div className="text-center max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-3">What You'll Achieve</h2>
                 <p className="text-muted-foreground">
-                  This course is designed to get you job-ready or freelance-ready in the AI space.
+                  By the end of this course, you'll have practical skills to build AI solutions and start earning.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
                 {learningOutcomes.map((outcome, index) => (
-                  <Card key={index} className="p-4">
+                  <Card key={index} className="p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-gradient-ai flex items-center justify-center mt-0.5">
-                        <Target className="h-3 w-3 text-white" />
+                      <div className="w-8 h-8 rounded-full bg-gradient-ai flex items-center justify-center flex-shrink-0">
+                        <Target className="h-4 w-4 text-white" />
                       </div>
-                      <p className="text-sm">{outcome}</p>
+                      <p className="text-sm leading-relaxed">{outcome}</p>
                     </div>
                   </Card>
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Career Outcomes */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto pt-8">
                 <Card className="p-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                     <Trophy className="h-6 w-6 text-success" />
                   </div>
                   <h3 className="font-semibold mb-2">Job Placement</h3>
                   <div className="text-2xl font-bold text-success mb-2">78%</div>
-                  <p className="text-sm text-muted-foreground">Find AI-related work within 6 months</p>
+                  <p className="text-xs text-muted-foreground">of graduates find AI-related work within 3 months</p>
                 </Card>
-
                 <Card className="p-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                     <Zap className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="font-semibold mb-2">Freelance Success</h3>
-                  <div className="text-2xl font-bold text-primary mb-2">$2,100</div>
-                  <p className="text-sm text-muted-foreground">Average monthly earnings after 6 months</p>
+                  <div className="text-2xl font-bold text-primary mb-2">$1,500</div>
+                  <p className="text-xs text-muted-foreground">Average monthly earnings for successful freelancers</p>
                 </Card>
-
                 <Card className="p-6 text-center">
                   <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mx-auto mb-4">
-                    <GraduationCap className="h-6 w-6 text-accent" />
+                    <Wrench className="h-6 w-6 text-accent-foreground" />
                   </div>
-                  <h3 className="font-semibold mb-2">Skill Confidence</h3>
-                  <div className="text-2xl font-bold text-accent mb-2">94%</div>
-                  <p className="text-sm text-muted-foreground">Feel confident building AI solutions</p>
+                  <h3 className="font-semibold mb-2">Projects Built</h3>
+                  <div className="text-2xl font-bold mb-2">4+</div>
+                  <p className="text-xs text-muted-foreground">Portfolio projects completed during the course</p>
                 </Card>
               </div>
             </TabsContent>
 
-            <TabsContent value="reviews" className="space-y-6">
-              <div className="space-y-4">
-                <h2 className="text-2xl font-bold">Student Success Stories</h2>
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <div className="text-3xl font-bold">4.8</div>
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      {[1,2,3,4,5].map((star) => (
-                        <Star key={star} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground">2,847 reviews</p>
-                  </div>
-                </div>
+            {/* Prerequisites Tab */}
+            <TabsContent value="prerequisites" className="space-y-8">
+              <div className="text-center max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-3">What You Need to Start</h2>
+                <p className="text-muted-foreground">
+                  This course is designed for complete beginners. No prior AI or coding experience required.
+                </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                {prerequisites.map((prereq, index) => (
+                  <Card key={index} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <prereq.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <p className="text-sm leading-relaxed pt-2">{prereq.text}</p>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              <Card className="max-w-3xl mx-auto p-6 bg-muted/50">
+                <h3 className="font-semibold mb-4 flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  What's Included
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {whatsIncluded.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      <item.icon className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span>{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Instructor Tab */}
+            <TabsContent value="instructor" className="space-y-8">
+              <div className="text-center max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-3">Meet Your Instructor</h2>
+                <p className="text-muted-foreground">
+                  Learn from experienced AI practitioners who've built real-world solutions.
+                </p>
+              </div>
+
+                <Card className="max-w-2xl mx-auto p-6">
+                <div className="flex flex-col md:flex-row gap-6">
+                  <div className="w-24 h-24 rounded-full bg-gradient-ai flex items-center justify-center text-primary-foreground text-2xl font-bold flex-shrink-0 mx-auto md:mx-0">
+                    DI
+                  </div>
+                  <div className="flex-1 text-center md:text-left">
+                    <h3 className="text-xl font-bold mb-1">DIM Team</h3>
+                    <p className="text-primary font-medium mb-3">AI Education Specialists</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Our team of AI practitioners brings years of experience building AI solutions 
+                      for businesses across Africa. We've distilled our knowledge into practical, 
+                      hands-on lessons that focus on real results.
+                    </p>
+                    <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        <span>5,000+ Students</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <BookOpen className="h-4 w-4" />
+                        <span>10+ Courses</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <span>4.8 Rating</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Reviews Tab */}
+            <TabsContent value="reviews" className="space-y-8">
+              <div className="text-center max-w-2xl mx-auto">
+                <h2 className="text-2xl md:text-3xl font-bold mb-3">What Builders Say</h2>
+                <p className="text-muted-foreground">
+                  Hear from students who've transformed their skills with this course.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {[
                   {
-                    name: "Jessica Martinez",
-                    role: "Now AI Consultant",
+                    name: "Tunde O.",
+                    role: "Freelance AI Consultant",
                     rating: 5,
-                    review: "This course changed my career! I went from zero AI knowledge to making $3,000/month as a freelance AI consultant. The no-code section was a game-changer."
+                    text: "This course changed everything for me. I went from knowing nothing about AI to building chatbots for clients in just 8 weeks. Now I earn $2,000/month freelancing!"
                   },
                   {
-                    name: "David Kim",
-                    role: "Product Manager at Tech Startup",
+                    name: "Sarah M.",
+                    role: "Marketing Manager",
                     rating: 5,
-                    review: "The practical approach is amazing. I built 4 real projects during the course and now I'm leading AI initiatives at my company. Highly recommend!"
+                    text: "The prompt engineering section alone was worth it. I've automated half my content creation workflow and saved 15+ hours every week."
                   },
                   {
-                    name: "Rachel Thompson",
-                    role: "AI Automation Specialist",
+                    name: "James K.",
+                    role: "Entrepreneur",
                     rating: 5,
-                    review: "Perfect balance of theory and practice. The prompt engineering module alone saved me hours every week. Now I help other businesses automate with AI."
+                    text: "Built my first AI product during this course - a customer service bot for my e-commerce store. It handles 70% of inquiries automatically now."
                   }
                 ].map((review, index) => (
                   <Card key={index} className="p-6">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-1 mb-3">
+                      {[...Array(review.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4 italic">"{review.text}"</p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-ai flex items-center justify-center text-primary-foreground text-sm font-bold">
+                        {review.name.charAt(0)}
+                      </div>
                       <div>
-                        <h4 className="font-medium">{review.name}</h4>
-                        <p className="text-sm text-primary">{review.role}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          {[1,2,3,4,5].map((star) => (
-                            <Star key={star} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          ))}
-                        </div>
+                        <p className="font-medium text-sm">{review.name}</p>
+                        <p className="text-xs text-muted-foreground">{review.role}</p>
                       </div>
                     </div>
-                    <p className="text-muted-foreground italic">"{review.review}"</p>
                   </Card>
                 ))}
               </div>
@@ -490,6 +663,73 @@ const PracticalSkills = () => {
           </Tabs>
         </div>
       </section>
+
+      {/* FAQ Section */}
+      <section className="py-12 md:py-16 bg-muted/30">
+        <div className="container mx-auto px-4 md:px-6 max-w-4xl">
+          <CourseFAQ />
+        </div>
+      </section>
+
+      {/* Related Paths */}
+      <section className="py-12 md:py-16">
+        <div className="container mx-auto px-4 md:px-6">
+          <RelatedPaths currentPathId={COURSE_ID} />
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-primary/10 via-background to-accent/10">
+        <div className="container mx-auto px-4 md:px-6 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Start Building?</h2>
+          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
+            Join thousands of learners who've transformed their careers with practical AI skills.
+          </p>
+          {isEnrolled ? (
+            <Button size="lg" onClick={handleContinueLearning} className="bg-gradient-ai hover:opacity-90">
+              <Play className="h-5 w-5 mr-2" />
+              Continue Your Journey
+            </Button>
+          ) : (
+            <Button size="lg" onClick={handleEnroll} disabled={isEnrolling} className="bg-gradient-ai hover:opacity-90">
+              <Wrench className="h-5 w-5 mr-2" />
+              {isEnrolling ? 'Enrolling...' : 'Start Building Today - Free'}
+            </Button>
+          )}
+        </div>
+      </section>
+
+      {/* Mobile Sticky Footer */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-lg border-t md:hidden z-50">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm truncate">From Zero to Builder</p>
+            {isEnrolled && enrollment ? (
+              <div className="flex items-center gap-2">
+                <Progress value={enrollment.progress_percent} className="h-1.5 flex-1" />
+                <span className="text-xs text-muted-foreground">{enrollment.progress_percent}%</span>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Free • {totalLessons} lessons</p>
+            )}
+          </div>
+          {isEnrolled ? (
+            <Button onClick={handleContinueLearning} className="bg-gradient-ai hover:opacity-90">
+              Continue
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          ) : (
+            <Button onClick={handleEnroll} disabled={isEnrolling} className="bg-gradient-ai hover:opacity-90">
+              {isEnrolling ? 'Enrolling...' : 'Enroll Free'}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Spacer for mobile sticky footer */}
+      <div className="h-20 md:hidden" />
+
+      <Footer />
     </div>
   );
 };
