@@ -1,236 +1,177 @@
 
 
-# AI Basics for Everyone - Professional Enrollment Interface Redesign
+# Professional Video Upload Redesign for Reels
 
-## Executive Summary
+## Overview
 
-This plan transforms the "AI Basics for Everyone" learning path into a comprehensive, enrollment-ready interface with all the features a user needs to understand, preview, and enroll in the 4-course learning path. The redesign adds database-backed enrollment tracking, course progress, and a professional UI that guides users through the enrollment journey.
-
----
-
-## Current State Analysis
-
-### Existing Structure:
-- **FoundationPath.tsx** (490 lines): Current course page with 4 modules
-- **4 Modules**: Introduction to AI, Mathematics for AI, Python Programming, AI in Industries
-- **Enrollment**: Only shows toast messages (no database persistence)
-- **Progress Tracking**: None implemented
-- **Course Content**: Text-based curriculum with external links
-
-### Issues to Address:
-1. No database tables for course enrollments or progress
-2. Enrollment button only shows a toast, doesn't persist
-3. No course preview videos (placeholder only)
-4. No clear enrollment flow or confirmation
-5. Missing FAQ, prerequisites, and what's included sections
-6. No student testimonials with photos
-7. No course schedule/cohort information
-8. No downloadable resources section
-9. Mobile experience lacks polish
+This plan redesigns the Create Reel page with a focus on **speed, simplicity, and a premium user experience**. The new design eliminates friction in the upload workflow by introducing a streamlined single-screen experience with instant preview, quick trim controls, and background uploading.
 
 ---
 
-## Implementation Plan
+## Current Pain Points
 
-### Phase 1: Database Schema for Course Enrollments
-
-**New Tables Required:**
-
-**Table: `course_enrollments`**
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| user_id | uuid | FK to auth.users |
-| course_id | text | Course identifier (e.g., "foundation-path") |
-| enrolled_at | timestamp | When user enrolled |
-| status | text | "active", "completed", "paused" |
-| progress_percent | integer | 0-100 overall progress |
-| current_module | integer | Current module index |
-| completed_at | timestamp | When completed (nullable) |
-
-**Table: `course_module_progress`**
-| Column | Type | Description |
-|--------|------|-------------|
-| id | uuid | Primary key |
-| enrollment_id | uuid | FK to course_enrollments |
-| module_id | integer | Module number |
-| started_at | timestamp | When module started |
-| completed_at | timestamp | When completed (nullable) |
-| time_spent_minutes | integer | Time spent in module |
-
-**RLS Policies:**
-- Users can only view/update their own enrollments
-- Users can insert their own enrollments
-- Public can read aggregate enrollment counts
+1. **Multi-step flow**: Users must navigate between upload zone, trimmer modal, and form
+2. **Trimmer complexity**: Too many options (6 compression modes) overwhelm users
+3. **Processing time**: Full re-encoding takes too long for quick reel posts
+4. **Visual hierarchy**: The upload card feels basic and lacks visual appeal
+5. **Mobile friction**: Buttons are small, preview isn't optimized for vertical videos
 
 ---
 
-### Phase 2: Redesigned FoundationPath.tsx Component
+## New Design: "Instagram-Style" Single-Screen Editor
 
-**New Layout Structure:**
+### Layout Structure (Mobile-First)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  HERO SECTION                                                       │
-│  ┌───────────────────────────────┬─────────────────────────────────┐│
-│  │ Course Title & Description    │  Sticky Enrollment Card         ││
-│  │ • Badge: Free • 4 Courses     │  ┌───────────────────────────┐  ││
-│  │ • Stats: Duration, Students   │  │ Video Preview (playable)  │  ││
-│  │ • CTA Buttons                 │  │ [Play Icon]               │  ││
-│  │                               │  ├───────────────────────────┤  ││
-│  │                               │  │ Enroll Now (Primary)      │  ││
-│  │                               │  │ Add to Wishlist           │  ││
-│  │                               │  └───────────────────────────┘  ││
-│  └───────────────────────────────┴─────────────────────────────────┘│
-├─────────────────────────────────────────────────────────────────────┤
-│  TRUST BADGES (Mobile: Horizontal Scroll)                           │
-│  [Beginner Friendly] [Self-Paced] [Certificate] [24/7 Access]       │
-├─────────────────────────────────────────────────────────────────────┤
-│  TABBED CONTENT SECTION                                             │
-│  ┌─────────┬─────────┬─────────┬─────────┬─────────┬───────────────┐│
-│  │Overview │Curriculum│Outcomes │Instructor│Reviews │Prerequisites ││
-│  └─────────┴─────────┴─────────┴─────────┴─────────┴───────────────┘│
-│                                                                      │
-│  [Tab Content Area - Accordion modules, outcomes grid, etc.]        │
-├─────────────────────────────────────────────────────────────────────┤
-│  FAQ SECTION                                                         │
-│  • Accordion with common questions                                   │
-├─────────────────────────────────────────────────────────────────────┤
-│  RELATED PATHS                                                       │
-│  • Cards for next recommended learning paths                         │
-├─────────────────────────────────────────────────────────────────────┤
-│  FINAL CTA                                                           │
-│  • Large enrollment button with countdown/urgency                    │
-└─────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│  ← Back                    Preview Mode ⚡  │
+├─────────────────────────────────────────────┤
+│                                             │
+│    ┌───────────────────────────────┐        │
+│    │                               │        │
+│    │      Video Preview            │        │
+│    │      (9:16 aspect ratio)      │        │
+│    │                               │        │
+│    │    [Full-screen playable]     │        │
+│    │                               │        │
+│    │  ┌───────────────────────┐    │        │
+│    │  │ Trim Timeline Bar     │    │        │
+│    │  └───────────────────────┘    │        │
+│    └───────────────────────────────┘        │
+│                                             │
+│    Duration: 45s / 60s max    ✓ Within limit│
+│                                             │
+├─────────────────────────────────────────────┤
+│  Title *                                    │
+│  ┌───────────────────────────────────────┐  │
+│  │ Give your reel a catchy title         │  │
+│  └───────────────────────────────────────┘  │
+│                                       0/100 │
+│                                             │
+│  Description (optional)              ▼      │
+│  [Collapsible for more space]              │
+│                                             │
+├─────────────────────────────────────────────┤
+│                                             │
+│  ┌───────────────────────────────────────┐  │
+│  │   ⚡ Publish & Continue Browsing       │  │
+│  └───────────────────────────────────────┘  │
+│                                             │
+└─────────────────────────────────────────────┘
 ```
 
 ---
 
-### Phase 3: New Component Features
+## Key Features
 
-#### 3.1 Hero Section Enhancements
-- **Gradient background** matching platform design (from-primary/5 via-background)
-- **Animated floating orbs** for visual interest
-- **Course stats grid** (4 columns: Duration, Lessons, Students, Rating)
-- **Social proof badge**: "Join 3,241+ learners"
-- **Mobile-optimized**: Stack layout on small screens
+### 1. Instant Upload Mode (Default)
+- **Skip all processing** - Upload original file directly
+- Background upload starts immediately when user taps publish
+- User can continue browsing while upload happens
+- No compression delay - fastest possible experience
 
-#### 3.2 Sticky Enrollment Card (Desktop)
-- **Video thumbnail with play button** (placeholder for now, ready for video)
-- **Progress indicator** (if already enrolled)
-- **Primary CTA**: "Enroll Now - It's Free" or "Continue Learning"
-- **Secondary actions**: Add to Wishlist, Share
-- **Includes summary**:
-  - 44 lessons total
-  - 8-12 weeks duration
-  - Certificate included
-  - Lifetime access
+### 2. Inline Trim Timeline
+- Replace modal trimmer with compact inline timeline
+- Drag handles directly on the video preview
+- Real-time duration indicator with color feedback
+- Quick 15s/30s/60s preset buttons
 
-#### 3.3 Enhanced Curriculum Tab
-- **Accordion-style modules** with expand/collapse
-- **Each module shows**:
-  - Module number badge
-  - Title & description
-  - Duration & lesson count
-  - Topics list (expandable)
-  - External resource link
-  - Lock icon (if not enrolled) or checkmark (if completed)
-- **Progress bar** per module (for enrolled users)
+### 3. Smart Auto-Trim
+- If video > 60s, auto-suggest trim points
+- Option to keep first 60s or pick a section
+- Visual indicator showing what will be kept
 
-#### 3.4 New "What's Included" Section
-- Certificate of Completion
-- Downloadable resources
-- Hands-on projects
-- Community access
-- Mentor support (if applicable)
-- Mobile access
+### 4. Premium Upload Zone
+- Glassmorphism design with gradient border
+- Animated upload icon with pulse effect
+- Drag-and-drop with visual feedback
+- File format badges (MP4, WebM, MOV)
+- Size and duration limits clearly displayed
 
-#### 3.5 Prerequisites Tab (New)
-- Clear list of what users need before starting
-- Equipment requirements (computer, internet)
-- Prior knowledge (none required for beginners)
-- Time commitment expectations
-
-#### 3.6 FAQ Section (New)
-Expandable accordion with common questions:
-- How long do I have access?
-- Can I get a refund?
-- Is there a certificate?
-- What if I get stuck?
-- Can I download content for offline?
-- Is this course mobile-friendly?
-
-#### 3.7 Related Paths Section (New)
-- Cards showing "From Zero to Builder" and other Tier 1 paths
-- "What's Next?" progression guidance
+### 5. Mobile-Optimized Actions
+- Large touch targets (minimum 48px)
+- Sticky bottom action bar
+- Haptic feedback on interactions (where supported)
+- Swipe gestures for timeline scrubbing
 
 ---
 
-### Phase 4: Enrollment Flow Implementation
+## Technical Implementation
 
-#### 4.1 New Hook: `useCourseEnrollment`
+### Phase 1: New Component - QuickVideoUploader
 
-```typescript
-// src/hooks/useCourseEnrollment.tsx
-export const useCourseEnrollment = (courseId: string) => {
-  const { user } = useAuth();
-  
-  // Check enrollment status
-  const { data: enrollment, isLoading } = useQuery({...});
-  
-  // Enroll in course
-  const enrollMutation = useMutation({...});
-  
-  // Update progress
-  const updateProgressMutation = useMutation({...});
-  
-  return {
-    enrollment,
-    isEnrolled: !!enrollment,
-    isLoading,
-    enroll: enrollMutation.mutate,
-    updateProgress: updateProgressMutation.mutate
-  };
-};
-```
+Create a new streamlined component that combines upload, preview, and trim in one:
 
-#### 4.2 Enrollment Confirmation Modal
-When user clicks "Enroll Now":
-1. Show confirmation modal with:
-   - Course summary
-   - What they'll get
-   - Start immediately or schedule
-2. On confirm: Insert enrollment record
-3. Show success state with "Start Learning" CTA
-4. Redirect to first module
+**File: `src/components/reels/QuickVideoUploader.tsx`**
 
----
+Key features:
+- Single drop zone with modern styling
+- Inline video preview with aspect ratio lock
+- Compact trim timeline (no modal)
+- Real-time duration validation
+- Smart defaults for instant upload
 
-### Phase 5: Mobile Optimizations
+### Phase 2: Inline Trim Timeline Component
 
-#### 5.1 Bottom Sticky Bar
-On mobile, show a sticky bottom bar with:
-- Course name (truncated)
-- Enroll button (primary action)
-- Progress (if enrolled)
+**File: `src/components/reels/InlineTrimTimeline.tsx`**
 
-#### 5.2 Responsive Adjustments
-- Hero: Single column layout
-- Stats: 2x2 grid instead of 4 columns
-- Tabs: Horizontal scroll with indicators
-- Curriculum: Full-width accordion
-- Enrollment card: Above-the-fold on mobile
+Features:
+- Touch-friendly slider with frame thumbnails
+- Start/end handles with time labels
+- Duration progress bar with limit indicator
+- Quick preset buttons (15s, 30s, 60s)
+- Auto-scroll to follow playback
+
+### Phase 3: Updated CreateReelPage
+
+**File: `src/pages/community/CreateReelPage.tsx`** (Major Rewrite)
+
+Changes:
+- Remove card wrapper for full-bleed design
+- Integrate QuickVideoUploader component
+- Streamline form with collapsible description
+- Add preset duration buttons
+- Enhanced mobile layout
+- Remove compression options (default to instant)
+
+### Phase 4: Processing Overlay Enhancement
+
+**File: `src/components/reels/UploadProgressOverlay.tsx`**
+
+Features:
+- Full-screen overlay during upload initialization
+- Animated progress ring (WhatsApp-style)
+- "You can continue browsing" messaging
+- Thumbnail preview in overlay
 
 ---
 
-### Phase 6: Analytics & Tracking
+## Design Specifications
 
-Add tracking for:
-- Page views
-- Enrollment clicks
-- Module starts/completions
-- Time spent per module
-- Drop-off points
+### Color Palette
+- **Upload Zone**: `bg-gradient-to-br from-primary/5 to-primary/10`
+- **Border**: `border-2 border-dashed border-primary/30`
+- **Active Drop**: `border-primary bg-primary/10 scale-[1.02]`
+- **Progress**: Primary gradient ring
+- **Success**: Green with checkmark animation
+
+### Typography
+- **Page Title**: Hidden (cleaner look) or minimal
+- **Label**: `text-sm font-medium`
+- **Helper Text**: `text-xs text-muted-foreground`
+- **Duration**: `text-lg font-bold` with color status
+
+### Spacing
+- **Container**: `px-4 py-6` on mobile
+- **Video Preview**: Full width, 9:16 aspect ratio
+- **Form Gap**: `space-y-4`
+- **Button Height**: `h-14` for primary action
+
+### Animations
+- Upload zone: `hover:scale-[1.01] transition-transform`
+- Drop active: `animate-pulse` on border
+- Progress: Smooth ring animation
+- Success: `animate-bounce` on checkmark
 
 ---
 
@@ -238,76 +179,51 @@ Add tracking for:
 
 | File | Action | Purpose |
 |------|--------|---------|
-| `supabase/migrations/xxxx_course_enrollments.sql` | Create | Database tables |
-| `src/hooks/useCourseEnrollment.tsx` | Create | Enrollment logic |
-| `src/pages/course/FoundationPath.tsx` | Major Rewrite | Complete redesign |
-| `src/components/course/EnrollmentCard.tsx` | Create | Reusable enrollment widget |
-| `src/components/course/CourseHero.tsx` | Create | Hero section component |
-| `src/components/course/CurriculumModule.tsx` | Create | Accordion module component |
-| `src/components/course/CourseFAQ.tsx` | Create | FAQ accordion |
-| `src/components/course/RelatedPaths.tsx` | Create | Related courses section |
-| `src/integrations/supabase/types.ts` | Auto-update | New types |
+| `src/components/reels/QuickVideoUploader.tsx` | Create | New upload component |
+| `src/components/reels/InlineTrimTimeline.tsx` | Create | Compact trim controls |
+| `src/components/reels/UploadProgressOverlay.tsx` | Create | Upload feedback |
+| `src/components/reels/index.ts` | Create | Barrel export |
+| `src/pages/community/CreateReelPage.tsx` | Major Rewrite | New streamlined page |
 
 ---
 
-## Visual Design Specifications
+## User Flow Comparison
 
-### Color Usage
-- **Primary gradient**: `bg-gradient-learning` for headers
-- **Card backgrounds**: `bg-card/50` with `border-dashed` for sections
-- **Badges**: `bg-primary/10 text-primary` for course tags
-- **Progress bars**: Primary color fill
-- **CTAs**: `bg-gradient-ai` for primary enrollment buttons
+### Before (Current)
+1. User lands on page → Sees upload zone
+2. Selects video → **Full-screen trimmer opens**
+3. Adjusts trim handles → Selects compression
+4. Waits for processing → Returns to form
+5. Fills title/description → Clicks publish
+6. Waits for upload → Redirected
 
-### Typography
-- **Hero title**: `text-4xl md:text-5xl font-bold`
-- **Section headers**: `text-2xl font-bold`
-- **Module titles**: `text-lg font-semibold`
-- **Body text**: `text-base text-muted-foreground`
+### After (New Design)
+1. User lands on page → Sees premium upload zone
+2. Selects/drops video → **Inline preview appears immediately**
+3. Quick trim adjustment (optional) → No waiting
+4. Fills title → Clicks publish
+5. **Redirected immediately** → Upload continues in background
 
-### Spacing
-- **Section padding**: `py-12 md:py-16`
-- **Card padding**: `p-6`
-- **Content max-width**: `max-w-7xl mx-auto`
-
-### Animations
-- `animate-fade-in` for hero elements
-- `hover:shadow-lg hover:-translate-y-1` for cards
-- Smooth accordion transitions
+**Time saved: ~30-60 seconds per upload**
 
 ---
 
-## The 4 Courses in AI Basics for Everyone
+## Mobile-First Considerations
 
-The interface will showcase these 4 courses/modules:
-
-1. **Introduction to AI**
-   - 8 lessons, 2 weeks
-   - Foundation concepts
-
-2. **Mathematics for AI**
-   - 12 lessons, 3 weeks
-   - Statistics, probability, linear algebra basics
-
-3. **Python Programming**
-   - 16 lessons, 4 weeks
-   - AI-focused Python skills
-
-4. **AI in Industries**
-   - 8 lessons, 2 weeks
-   - Real-world applications & career paths
-
-**Total: 44 lessons, 8-12 weeks**
+- Video preview takes 60% of screen height
+- Form inputs have large touch targets
+- Sticky bottom CTA button
+- Swipe left/right on timeline for fine-tuning
+- Collapsible description to maximize video space
+- No modals - everything inline
 
 ---
 
 ## Expected Outcomes
 
-1. **Professional Appearance**: Enterprise-grade course page design
-2. **Clear Enrollment Path**: Users understand exactly what they're getting
-3. **Mobile Excellence**: Optimized for phone/tablet enrollment
-4. **Persistent Progress**: Database-backed enrollment and progress tracking
-5. **Ready for Video**: Video placeholders ready for content
-6. **Increased Conversions**: Better trust signals and CTAs
-7. **User Engagement**: FAQ and related paths keep users exploring
+1. **Faster uploads**: Instant mode as default eliminates processing wait
+2. **Cleaner UX**: Single-screen flow reduces cognitive load
+3. **Better mobile**: Optimized for thumb-zone interactions
+4. **Higher completion**: Fewer steps = less abandonment
+5. **Professional look**: Premium styling increases trust
 
