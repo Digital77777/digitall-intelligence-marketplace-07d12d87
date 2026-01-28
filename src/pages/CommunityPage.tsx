@@ -32,17 +32,52 @@ import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
 
 // Event category configuration matching BrowseEventsPage
-const EVENT_CATEGORIES = [
-  { id: 'all', label: 'All Events', icon: Calendar, color: 'bg-primary/10 text-primary' },
-  { id: 'webinar', label: 'Webinars', icon: Video, color: 'bg-blue-500/10 text-blue-600' },
-  { id: 'workshop', label: 'Workshops', icon: Sparkles, color: 'bg-purple-500/10 text-purple-600' },
-  { id: 'meetup', label: 'Meetups', icon: Users, color: 'bg-green-500/10 text-green-600' },
-  { id: 'conference', label: 'Conferences', icon: Building2, color: 'bg-orange-500/10 text-orange-600' },
-  { id: 'hackathon', label: 'Hackathons', icon: Code, color: 'bg-red-500/10 text-red-600' },
-  { id: 'networking', label: 'Networking', icon: Network, color: 'bg-cyan-500/10 text-cyan-600' },
-  { id: 'qa', label: 'Q&A Sessions', icon: MessageCircle, color: 'bg-pink-500/10 text-pink-600' },
-  { id: 'demo', label: 'Demos', icon: Presentation, color: 'bg-amber-500/10 text-amber-600' },
-];
+const EVENT_CATEGORIES = [{
+  id: 'all',
+  label: 'All Events',
+  icon: Calendar,
+  color: 'bg-primary/10 text-primary'
+}, {
+  id: 'webinar',
+  label: 'Webinars',
+  icon: Video,
+  color: 'bg-blue-500/10 text-blue-600'
+}, {
+  id: 'workshop',
+  label: 'Workshops',
+  icon: Sparkles,
+  color: 'bg-purple-500/10 text-purple-600'
+}, {
+  id: 'meetup',
+  label: 'Meetups',
+  icon: Users,
+  color: 'bg-green-500/10 text-green-600'
+}, {
+  id: 'conference',
+  label: 'Conferences',
+  icon: Building2,
+  color: 'bg-orange-500/10 text-orange-600'
+}, {
+  id: 'hackathon',
+  label: 'Hackathons',
+  icon: Code,
+  color: 'bg-red-500/10 text-red-600'
+}, {
+  id: 'networking',
+  label: 'Networking',
+  icon: Network,
+  color: 'bg-cyan-500/10 text-cyan-600'
+}, {
+  id: 'qa',
+  label: 'Q&A Sessions',
+  icon: MessageCircle,
+  color: 'bg-pink-500/10 text-pink-600'
+}, {
+  id: 'demo',
+  label: 'Demos',
+  icon: Presentation,
+  color: 'bg-amber-500/10 text-amber-600'
+}];
 const CommunityPage = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -53,26 +88,34 @@ const CommunityPage = () => {
   const [insightCategory, setInsightCategory] = useState("all");
   const [selectedInsight, setSelectedInsight] = useState<CommunityInsight | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
-  
+
   // Fullscreen video modal state
-  const [fullscreenVideo, setFullscreenVideo] = useState<{ url: string; poster?: string } | null>(null);
-  
+  const [fullscreenVideo, setFullscreenVideo] = useState<{
+    url: string;
+    poster?: string;
+  } | null>(null);
+
   // Track new content availability for scroll-up refresh
   const [hasNewContent, setHasNewContent] = useState(false);
   const [newContentCount, setNewContentCount] = useState(0);
   const [lastFetchTime, setLastFetchTime] = useState<number>(Date.now());
-  
+
   // Feed scroll context for restoring position when returning from Reels
-  const { insightsFeedScroll, setInsightsFeedScroll, returnToFeed, setReturnToFeed } = useFeedScroll();
-  
+  const {
+    insightsFeedScroll,
+    setInsightsFeedScroll,
+    returnToFeed,
+    setReturnToFeed
+  } = useFeedScroll();
+
   // Prefetch reels data when community page loads for instant navigation
-  const { prefetchReelsData } = usePrefetch();
-  
+  const {
+    prefetchReelsData
+  } = usePrefetch();
   useEffect(() => {
     // Prefetch reels data in the background for instant loading
     prefetchReelsData();
   }, [prefetchReelsData]);
-  
   const {
     user
   } = useAuth();
@@ -86,26 +129,25 @@ const CommunityPage = () => {
     toggleInsightLike,
     trackContentView
   } = useCommunity();
-  
+
   // Use infinite query for topics
   const {
     data: topicsData,
     isLoading: topicsLoading,
     isFetchingNextPage: isFetchingNextTopics,
     hasNextPage: hasNextTopicsPage,
-    fetchNextPage: fetchNextTopics,
+    fetchNextPage: fetchNextTopics
   } = useInfiniteTopics(searchQuery);
-  
+
   // Flatten topics pages
   const topics = useMemo(() => {
     return topicsData?.pages.flatMap(page => page.topics) || [];
   }, [topicsData]);
-  
   const {
     data: events,
     isLoading: eventsLoading
   } = useEvents(searchQuery);
-  
+
   // Use infinite query for insights with Facebook-style scrolling
   const {
     data: insightsData,
@@ -113,14 +155,13 @@ const CommunityPage = () => {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch: refetchInsights,
+    refetch: refetchInsights
   } = useInfiniteInsights(searchQuery);
-  
+
   // Flatten all pages of insights into a single array
   const insights = useMemo(() => {
     return insightsData?.pages.flatMap(page => page.insights) || [];
   }, [insightsData]);
-  
   const {
     data: stats
   } = useStats();
@@ -136,11 +177,9 @@ const CommunityPage = () => {
       return false;
     }
   }, []);
-
   const getCategoryConfig = useCallback((eventType: string) => {
     return EVENT_CATEGORIES.find(c => c.id === eventType.toLowerCase()) || EVENT_CATEGORIES[0];
   }, []);
-
   const formatEventDate = useCallback((date: string) => {
     const parsed = parseISO(date);
     if (isToday(parsed)) return 'Today';
@@ -149,16 +188,24 @@ const CommunityPage = () => {
   }, []);
 
   // Separate events into live, featured, and upcoming (matching BrowseEventsPage)
-  const { liveEvents, featuredEvents, upcomingEvents } = useMemo(() => {
-    if (!events) return { liveEvents: [], featuredEvents: [], upcomingEvents: [] };
-    const live = events.filter(event => 
-      isEventLive(event.event_date, event.event_time, event.duration_minutes || 60)
-    );
-    const notLive = events.filter(event => 
-      !isEventLive(event.event_date, event.event_time, event.duration_minutes || 60)
-    );
+  const {
+    liveEvents,
+    featuredEvents,
+    upcomingEvents
+  } = useMemo(() => {
+    if (!events) return {
+      liveEvents: [],
+      featuredEvents: [],
+      upcomingEvents: []
+    };
+    const live = events.filter(event => isEventLive(event.event_date, event.event_time, event.duration_minutes || 60));
+    const notLive = events.filter(event => !isEventLive(event.event_date, event.event_time, event.duration_minutes || 60));
     const featured = notLive.slice(0, 3);
-    return { liveEvents: live, featuredEvents: featured, upcomingEvents: notLive };
+    return {
+      liveEvents: live,
+      featuredEvents: featured,
+      upcomingEvents: notLive
+    };
   }, [events, isEventLive]);
 
   // Restore scroll position when returning from Reels
@@ -256,7 +303,7 @@ const CommunityPage = () => {
       return matchesCategory;
     });
   }, [insights, insightCategory]);
-  
+
   // Load more handler for infinite scroll - insights
   const handleLoadMoreInsights = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -282,21 +329,21 @@ const CommunityPage = () => {
   // Check for new content periodically (every 30 seconds when tab is active)
   useEffect(() => {
     if (activeTab !== "insights") return;
-    
     const checkForNewContent = async () => {
       // Only check if user has been viewing for at least 30 seconds
       const timeSinceLastFetch = Date.now() - lastFetchTime;
       if (timeSinceLastFetch < 30000) return;
-      
       try {
         // Quick check for new insights since last fetch
-        const { supabase } = await import("@/integrations/supabase/client");
-        const { count } = await supabase
-          .from("community_insights")
-          .select("id", { count: "exact", head: true })
-          .eq("is_published", true)
-          .gt("created_at", new Date(lastFetchTime).toISOString());
-        
+        const {
+          supabase
+        } = await import("@/integrations/supabase/client");
+        const {
+          count
+        } = await supabase.from("community_insights").select("id", {
+          count: "exact",
+          head: true
+        }).eq("is_published", true).gt("created_at", new Date(lastFetchTime).toISOString());
         if (count && count > 0) {
           setHasNewContent(true);
           setNewContentCount(count);
@@ -305,12 +352,9 @@ const CommunityPage = () => {
         console.error("Error checking for new content:", error);
       }
     };
-    
     const intervalId = setInterval(checkForNewContent, 30000);
-    
     return () => clearInterval(intervalId);
   }, [activeTab, lastFetchTime]);
-  
   return <div className="min-h-screen bg-background">
       <SEOHead title="AI Community - Connect, Learn & Collaborate" description="Join our AI community to connect with enthusiasts, share insights, participate in live events, and grow together in the world of artificial intelligence." keywords={["AI community", "AI networking", "AI events", "AI discussions", "AI learning", "AI collaboration", "tech community"]} />
       {/* Hero Section */}
@@ -326,7 +370,7 @@ const CommunityPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
               <Button size="lg" className="bg-gradient-ai text-white" onClick={handleStartTopic}>
                 <Plus className="mr-2 h-5 w-5" />
-                Start a Topic
+                ​Private   
               </Button>
               <Button variant="outline" size="lg" onClick={() => navigate('/community/reels')}>
                 <Play className="mr-2 h-5 w-5" />
@@ -469,17 +513,7 @@ const CommunityPage = () => {
               </Button>
             </div>
             
-            <InstagramFeed
-              items={topics || []}
-              isLoading={topicsLoading}
-              isFetchingMore={isFetchingNextTopics}
-              hasMore={!!hasNextTopicsPage}
-              onLoadMore={handleLoadMoreTopics}
-              type="topic"
-              onTopicClick={handleTopicClick}
-              getInitials={getInitials}
-              emptyState={
-                <Card>
+            <InstagramFeed items={topics || []} isLoading={topicsLoading} isFetchingMore={isFetchingNextTopics} hasMore={!!hasNextTopicsPage} onLoadMore={handleLoadMoreTopics} type="topic" onTopicClick={handleTopicClick} getInitials={getInitials} emptyState={<Card>
                   <CardContent className="p-12 text-center">
                     <MessageCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                     <h3 className="text-lg font-semibold mb-2">No discussions found</h3>
@@ -491,9 +525,7 @@ const CommunityPage = () => {
                       Start a Topic
                     </Button>
                   </CardContent>
-                </Card>
-              }
-            />
+                </Card>} />
               </TabsContent>
 
               {/* Events Tab - Matching BrowseEventsPage layout */}
@@ -506,25 +538,18 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              {eventsLoading ? <EventSkeletonGrid count={3} /> : (
-                <div className="space-y-8">
+              {eventsLoading ? <EventSkeletonGrid count={3} /> : <div className="space-y-8">
                   {/* Live Events Banner */}
-                  {liveEvents.length > 0 && (
-                    <div>
+                  {liveEvents.length > 0 && <div>
                       <div className="flex items-center gap-2 mb-4">
                         <div className="h-3 w-3 rounded-full bg-destructive animate-pulse" />
                         <h3 className="text-lg font-semibold">Happening Now</h3>
                       </div>
                       <div className="grid gap-4">
-                        {liveEvents.map((event) => {
-                          const categoryConfig = getCategoryConfig(event.event_type);
-                          const CategoryIcon = categoryConfig.icon;
-                          return (
-                            <Card 
-                              key={event.id}
-                              className="border-destructive/50 bg-gradient-to-r from-destructive/5 to-transparent cursor-pointer hover:shadow-lg transition-all"
-                              onClick={() => setSelectedEvent(event)}
-                            >
+                        {liveEvents.map(event => {
+                      const categoryConfig = getCategoryConfig(event.event_type);
+                      const CategoryIcon = categoryConfig.icon;
+                      return <Card key={event.id} className="border-destructive/50 bg-gradient-to-r from-destructive/5 to-transparent cursor-pointer hover:shadow-lg transition-all" onClick={() => setSelectedEvent(event)}>
                               <CardContent className="p-5">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                   <div className="flex items-center gap-4">
@@ -539,12 +564,10 @@ const CommunityPage = () => {
                                         <Badge variant="secondary" className="capitalize text-xs">
                                           {event.event_type}
                                         </Badge>
-                                        {event.city && (
-                                          <Badge variant="outline" className="text-xs">
+                                        {event.city && <Badge variant="outline" className="text-xs">
                                             <MapPin className="h-3 w-3 mr-1" />
                                             {event.city}
-                                          </Badge>
-                                        )}
+                                          </Badge>}
                                       </div>
                                       <h3 className="font-semibold text-lg">{event.title}</h3>
                                       <p className="text-sm text-muted-foreground flex items-center gap-2">
@@ -553,66 +576,43 @@ const CommunityPage = () => {
                                       </p>
                                     </div>
                                   </div>
-                                  <Button 
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (event.meeting_link) {
-                                        window.open(event.meeting_link, '_blank');
-                                      } else {
-                                        handleJoinEventClick(event.id, false);
-                                      }
-                                    }}
-                                    className="bg-destructive hover:bg-destructive/90 shrink-0"
-                                  >
+                                  <Button onClick={e => {
+                              e.stopPropagation();
+                              if (event.meeting_link) {
+                                window.open(event.meeting_link, '_blank');
+                              } else {
+                                handleJoinEventClick(event.id, false);
+                              }
+                            }} className="bg-destructive hover:bg-destructive/90 shrink-0">
                                     Join Now
                                     <ChevronRight className="ml-1 h-4 w-4" />
                                   </Button>
                                 </div>
                               </CardContent>
-                            </Card>
-                          );
-                        })}
+                            </Card>;
+                    })}
                       </div>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* Featured Events Carousel */}
-                  {featuredEvents.length > 0 && (
-                    <div>
+                  {featuredEvents.length > 0 && <div>
                       <h3 className="text-lg font-semibold mb-4">Featured Events</h3>
                       <ScrollArea className="w-full whitespace-nowrap pb-4">
                         <div className="flex gap-4">
-                          {featuredEvents.map((event) => {
-                            const categoryConfig = getCategoryConfig(event.event_type);
-                            const CategoryIcon = categoryConfig.icon;
-                            return (
-                              <Card 
-                                key={event.id}
-                                className="w-[320px] shrink-0 cursor-pointer hover:shadow-lg transition-all group overflow-hidden"
-                                onClick={() => setSelectedEvent(event)}
-                              >
+                          {featuredEvents.map(event => {
+                        const categoryConfig = getCategoryConfig(event.event_type);
+                        const CategoryIcon = categoryConfig.icon;
+                        return <Card key={event.id} className="w-[320px] shrink-0 cursor-pointer hover:shadow-lg transition-all group overflow-hidden" onClick={() => setSelectedEvent(event)}>
                                 {/* Event Cover - Full display */}
                                 <div className="h-32 bg-gradient-to-br from-primary/20 via-primary/10 to-accent/20 relative">
-                                  {event.cover_image ? (
-                                    <div className="w-full h-full bg-black flex items-center justify-center">
-                                      <img 
-                                        src={event.cover_image} 
-                                        alt={event.title}
-                                        className="w-full h-full object-contain"
-                                      />
-                                    </div>
-                                  ) : (
-                                    <div className={`absolute inset-0 flex items-center justify-center ${categoryConfig.color}`}>
+                                  {event.cover_image ? <div className="w-full h-full bg-black flex items-center justify-center">
+                                      <img src={event.cover_image} alt={event.title} className="w-full h-full object-contain" />
+                                    </div> : <div className={`absolute inset-0 flex items-center justify-center ${categoryConfig.color}`}>
                                       <CategoryIcon className="h-12 w-12 opacity-50" />
-                                    </div>
-                                  )}
+                                    </div>}
                                   <div className="absolute top-3 left-3 flex gap-2">
                                     <Badge className="bg-background/90 text-foreground text-xs">
-                                      {event.is_online ? (
-                                        <><Globe className="h-3 w-3 mr-1" />Online</>
-                                      ) : (
-                                        <><MapPin className="h-3 w-3 mr-1" />{event.city || 'In-Person'}</>
-                                      )}
+                                      {event.is_online ? <><Globe className="h-3 w-3 mr-1" />Online</> : <><MapPin className="h-3 w-3 mr-1" />{event.city || 'In-Person'}</>}
                                     </Badge>
                                   </div>
                                 </div>
@@ -637,28 +637,18 @@ const CommunityPage = () => {
                                     </span>
                                   </div>
                                 </CardContent>
-                              </Card>
-                            );
-                          })}
+                              </Card>;
+                      })}
                         </div>
                         <ScrollBar orientation="horizontal" />
                       </ScrollArea>
-                    </div>
-                  )}
+                    </div>}
 
                   {/* All Upcoming Events */}
                   <div>
                     <h3 className="text-lg font-semibold mb-4">All Upcoming Events</h3>
                     <div className="grid gap-3 sm:gap-4">
-                      {upcomingEvents.length > 0 ? upcomingEvents.map(event => (
-                        <EventCard 
-                          key={event.id} 
-                          event={event} 
-                          onJoinEvent={handleJoinEventClick} 
-                          onViewDetails={event => setSelectedEvent(event)} 
-                        />
-                      )) : (
-                        <Card className="shadow-sm">
+                      {upcomingEvents.length > 0 ? upcomingEvents.map(event => <EventCard key={event.id} event={event} onJoinEvent={handleJoinEventClick} onViewDetails={event => setSelectedEvent(event)} />) : <Card className="shadow-sm">
                           <CardContent className="p-8 sm:p-12 text-center">
                             <div className="flex flex-col items-center">
                               <div className="p-3 bg-primary/10 rounded-full mb-4">
@@ -674,12 +664,10 @@ const CommunityPage = () => {
                               </Button>
                             </div>
                           </CardContent>
-                        </Card>
-                      )}
+                        </Card>}
                     </div>
                   </div>
-                </div>
-              )}
+                </div>}
               </TabsContent>
 
               {/* Insights Tab */}
@@ -692,20 +680,7 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              <InstagramFeed
-                items={filteredInsights}
-                isLoading={insightsLoading}
-                isFetchingMore={isFetchingNextPage}
-                hasMore={!!hasNextPage}
-                onLoadMore={handleLoadMoreInsights}
-                type="insight"
-                onLikeClick={handleLikeInsight}
-                onViewClick={handleInsightView}
-                onVideoTap={handleVideoTap}
-                getInitials={getInitials}
-                hideScrollToTop
-                emptyState={
-                  <Card className="mx-0 sm:mx-0">
+              <InstagramFeed items={filteredInsights} isLoading={insightsLoading} isFetchingMore={isFetchingNextPage} hasMore={!!hasNextPage} onLoadMore={handleLoadMoreInsights} type="insight" onLikeClick={handleLikeInsight} onViewClick={handleInsightView} onVideoTap={handleVideoTap} getInitials={getInitials} hideScrollToTop emptyState={<Card className="mx-0 sm:mx-0">
                     <CardContent className="p-8 sm:p-12 text-center">
                       <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
@@ -715,9 +690,7 @@ const CommunityPage = () => {
                         Share an Insight
                       </Button>
                     </CardContent>
-                  </Card>
-                }
-              />
+                  </Card>} />
               </TabsContent>
             </Tabs>
           </div>
@@ -761,12 +734,7 @@ const CommunityPage = () => {
               
               {/* Scroll to Top Button positioned at bottom-right of Stats card */}
               <div className="absolute -bottom-3 -right-3">
-                <ScrollToTopButton 
-                  position="relative"
-                  onRefresh={handleRefreshInsights}
-                  hasNewContent={hasNewContent}
-                  newContentCount={newContentCount}
-                />
+                <ScrollToTopButton position="relative" onRefresh={handleRefreshInsights} hasNewContent={hasNewContent} newContentCount={newContentCount} />
               </div>
             </Card>
 
@@ -780,12 +748,7 @@ const CommunityPage = () => {
       {selectedEvent && <EventDetailModal event={selectedEvent} isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} onJoinEvent={handleJoinEventClick} />}
 
       {/* Fullscreen Video Modal */}
-      <FullscreenVideoModal
-        videoUrl={fullscreenVideo?.url || ''}
-        posterUrl={fullscreenVideo?.poster}
-        isOpen={!!fullscreenVideo}
-        onClose={() => setFullscreenVideo(null)}
-      />
+      <FullscreenVideoModal videoUrl={fullscreenVideo?.url || ''} posterUrl={fullscreenVideo?.poster} isOpen={!!fullscreenVideo} onClose={() => setFullscreenVideo(null)} />
     </div>;
 };
 export default CommunityPage;
