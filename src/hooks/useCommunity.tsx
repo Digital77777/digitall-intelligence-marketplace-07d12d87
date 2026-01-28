@@ -431,6 +431,59 @@ export const useCommunity = () => {
     },
   });
 
+  // Query for events the user has registered for
+  const useMyRegisteredEvents = () => {
+    return useQuery({
+      queryKey: ["my-registered-events"],
+      queryFn: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        // First get all event IDs the user has registered for
+        const { data: registrations, error: regError } = await supabase
+          .from("event_attendees")
+          .select("event_id, joined_at, status")
+          .eq("user_id", user.id)
+          .order("joined_at", { ascending: false });
+
+        if (regError) throw regError;
+        if (!registrations || registrations.length === 0) return [];
+
+        const eventIds = registrations.map(r => r.event_id);
+        const registrationMap = new Map(registrations.map(r => [r.event_id, r]));
+
+        // Fetch the events
+        const { data: events, error: eventsError } = await supabase
+          .from("community_events")
+          .select("*")
+          .in("id", eventIds);
+
+        if (eventsError) throw eventsError;
+        if (!events || events.length === 0) return [];
+
+        // Fetch profiles for event hosts
+        const userIds = [...new Set(events.map(e => e.user_id))];
+        const { data: profiles } = await supabase
+          .from("public_profiles")
+          .select("user_id, full_name, avatar_url")
+          .in("user_id", userIds);
+
+        const profilesMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+        // Combine events with registration info and profiles
+        return events.map(event => ({
+          ...event,
+          profiles: profilesMap.get(event.user_id),
+          is_registered: true,
+          registration: registrationMap.get(event.id),
+        })) as (CommunityEvent & { registration: { joined_at: string; status: string } })[];
+      },
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+    });
+  };
+
   // Insights queries - optimized for fast loading (original query for compatibility)
   const useInsights = (searchQuery?: string) => {
     return useQuery({
@@ -863,6 +916,7 @@ export const useCommunity = () => {
     createReply,
     deleteReply,
     useEvents,
+    useMyRegisteredEvents,
     createEvent,
     updateEvent,
     deleteEvent,
