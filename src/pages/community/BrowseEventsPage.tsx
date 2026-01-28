@@ -4,7 +4,7 @@ import {
   ArrowLeft, Calendar, Users, Clock, MapPin, Edit2, Search, 
   Video, Building2, Sparkles, ChevronRight, Globe, Zap, CalendarPlus,
   Mic, Network, Code, Presentation, MessageCircle, GraduationCap, User,
-  LayoutGrid, CalendarDays
+  LayoutGrid, CalendarDays, Bookmark, CalendarCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,13 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useCommunity } from "@/hooks/useCommunity";
 import { useAuth } from "@/hooks/useAuth";
-import { format, parseISO, isBefore, isAfter, addMinutes, isToday, isTomorrow } from "date-fns";
+import { format, parseISO, isBefore, isAfter, addMinutes, isToday, isTomorrow, isPast } from "date-fns";
 import { EventDetailModal } from "@/components/community/EventDetailModal";
 import { EventCalendar } from "@/components/community/EventCalendar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CommunityEvent } from "@/types/community";
 
 // Event category configuration with icons and colors
@@ -46,10 +47,12 @@ const BrowseEventsPage = () => {
   const [locationFilter, setLocationFilter] = useState("");
   const [selectedEvent, setSelectedEvent] = useState<CommunityEvent | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "month" | "week">("list");
+  const [activeTab, setActiveTab] = useState<"discover" | "my-events">("discover");
   const eventRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
-  const { useEvents, registerForEvent } = useCommunity();
+  const { useEvents, useMyRegisteredEvents, registerForEvent } = useCommunity();
   const { data: events = [], isLoading } = useEvents(searchQuery);
+  const { data: myRegisteredEvents = [], isLoading: isLoadingMyEvents } = useMyRegisteredEvents();
 
   // Scroll to highlighted event
   useEffect(() => {
@@ -176,14 +179,31 @@ const BrowseEventsPage = () => {
                 Join workshops, webinars, and meetups with AI professionals and enthusiasts
               </p>
             </div>
-            <Button 
-              onClick={() => navigate("/community/host-event")} 
-              size="lg"
-              className="bg-primary hover:bg-primary/90 shadow-lg"
-            >
-              <CalendarPlus className="mr-2 h-5 w-5" />
-              Host Event
-            </Button>
+            <div className="flex gap-3">
+              {user && (
+                <Button 
+                  variant={activeTab === "my-events" ? "default" : "outline"}
+                  onClick={() => setActiveTab(activeTab === "my-events" ? "discover" : "my-events")}
+                  className="shadow-sm"
+                >
+                  <CalendarCheck className="mr-2 h-5 w-5" />
+                  My Events
+                  {myRegisteredEvents.length > 0 && (
+                    <Badge variant="secondary" className="ml-2 bg-primary-foreground/20">
+                      {myRegisteredEvents.length}
+                    </Badge>
+                  )}
+                </Button>
+              )}
+              <Button 
+                onClick={() => navigate("/community/host-event")} 
+                size="lg"
+                className="bg-primary hover:bg-primary/90 shadow-lg"
+              >
+                <CalendarPlus className="mr-2 h-5 w-5" />
+                Host Event
+              </Button>
+            </div>
           </div>
 
           {/* Search & Location Filter */}
@@ -300,6 +320,188 @@ const BrowseEventsPage = () => {
         </div>
       </div>
 
+      {/* My Events Tab Content */}
+      {activeTab === "my-events" && user && (
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold mb-2">My Registered Events</h2>
+            <p className="text-muted-foreground">Events you've signed up for</p>
+          </div>
+
+          {isLoadingMyEvents ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="h-32 w-full" />
+                  <CardContent className="p-4 space-y-3">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-5 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : myRegisteredEvents.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <CalendarCheck className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-lg mb-1">No registered events yet</h3>
+                <p className="text-muted-foreground text-sm max-w-sm mb-6">
+                  Browse upcoming events and register to see them here!
+                </p>
+                <Button onClick={() => setActiveTab("discover")}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Discover Events
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* Separate upcoming and past events */}
+              {(() => {
+                const upcoming = myRegisteredEvents.filter(e => !isPast(parseISO(e.event_date)));
+                const past = myRegisteredEvents.filter(e => isPast(parseISO(e.event_date)));
+                
+                return (
+                  <>
+                    {/* Upcoming Events */}
+                    {upcoming.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                          <CalendarCheck className="h-5 w-5 text-primary" />
+                          Upcoming ({upcoming.length})
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                          {upcoming.map((event) => {
+                            const categoryConfig = getCategoryConfig(event.event_type);
+                            return (
+                              <Card 
+                                key={event.id}
+                                className="overflow-hidden cursor-pointer hover:shadow-lg transition-all group border-primary/20"
+                                onClick={() => setSelectedEvent(event)}
+                              >
+                                <div className="h-28 relative">
+                                  {event.cover_image ? (
+                                    <img 
+                                      src={event.cover_image} 
+                                      alt={event.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className={`absolute inset-0 ${categoryConfig.color} flex items-center justify-center`}>
+                                      <categoryConfig.icon className="h-10 w-10 opacity-30" />
+                                    </div>
+                                  )}
+                                  <div className="absolute top-3 left-3">
+                                    <div className="bg-background/95 backdrop-blur-sm rounded-lg px-2.5 py-1.5 text-center shadow-sm">
+                                      <div className="text-xs font-bold text-primary uppercase">
+                                        {format(parseISO(event.event_date), 'MMM')}
+                                      </div>
+                                      <div className="text-lg font-bold leading-none">
+                                        {format(parseISO(event.event_date), 'd')}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground text-xs">
+                                    ✓ Registered
+                                  </Badge>
+                                </div>
+                                <CardContent className="p-4">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="secondary" className={`text-xs capitalize ${categoryConfig.color}`}>
+                                      {event.event_type}
+                                    </Badge>
+                                    {event.is_online ? (
+                                      <Badge variant="outline" className="text-xs">
+                                        <Globe className="h-3 w-3 mr-1" />
+                                        Online
+                                      </Badge>
+                                    ) : event.city && (
+                                      <Badge variant="outline" className="text-xs">
+                                        <MapPin className="h-3 w-3 mr-1" />
+                                        {event.city}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  <h3 className="font-semibold line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                                    {event.title}
+                                  </h3>
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                      <Clock className="h-3.5 w-3.5" />
+                                      {event.event_time}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Users className="h-3.5 w-3.5" />
+                                      {event.attendees_count} going
+                                    </span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Past Events */}
+                    {past.length > 0 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-muted-foreground">
+                          <Clock className="h-5 w-5" />
+                          Past Events ({past.length})
+                        </h3>
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 opacity-75">
+                          {past.map((event) => {
+                            const categoryConfig = getCategoryConfig(event.event_type);
+                            return (
+                              <Card 
+                                key={event.id}
+                                className="overflow-hidden cursor-pointer hover:shadow-md transition-all group"
+                                onClick={() => setSelectedEvent(event)}
+                              >
+                                <div className="h-24 relative grayscale">
+                                  {event.cover_image ? (
+                                    <img 
+                                      src={event.cover_image} 
+                                      alt={event.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className={`absolute inset-0 ${categoryConfig.color} flex items-center justify-center`}>
+                                      <categoryConfig.icon className="h-8 w-8 opacity-30" />
+                                    </div>
+                                  )}
+                                  <Badge className="absolute top-3 right-3 bg-muted text-muted-foreground text-xs">
+                                    Attended
+                                  </Badge>
+                                </div>
+                                <CardContent className="p-4">
+                                  <h3 className="font-medium line-clamp-1 mb-1">
+                                    {event.title}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(parseISO(event.event_date), 'MMM d, yyyy')}
+                                  </p>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Discover Tab Content */}
+      {activeTab === "discover" && (
       <div className="container mx-auto px-4 py-8">
         {/* Calendar View */}
         {(viewMode === "month" || viewMode === "week") && (
@@ -684,6 +886,7 @@ const BrowseEventsPage = () => {
           </>
         )}
       </div>
+      )}
 
       {selectedEvent && (
         <EventDetailModal
