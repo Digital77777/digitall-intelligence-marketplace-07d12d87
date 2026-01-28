@@ -38,16 +38,16 @@ export const EventCard = memo(({ event, onJoinEvent, onViewDetails }: EventCardP
       className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 overflow-hidden cursor-pointer" 
       onClick={handleCardClick}
     >
-      {/* Cover Image - Full display with gradient fallback */}
-      {event.cover_image ? (
-        <div className="w-full bg-gradient-to-b from-muted/30 to-muted/60 overflow-hidden">
+      {/* Cover Image - Full display showing all corners */}
+      {event.cover_image && (
+        <div className="w-full bg-gradient-to-b from-muted/20 via-muted/40 to-muted/20 p-3 sm:p-4">
           <img 
             src={event.cover_image} 
             alt={event.title}
-            className="w-full max-h-[300px] object-contain transform group-hover:scale-[1.02] transition-transform duration-300"
+            className="w-full h-auto max-h-[200px] sm:max-h-[280px] object-contain rounded-lg transform group-hover:scale-[1.01] transition-transform duration-300"
           />
         </div>
-      ) : null}
+      )}
       
       <CardContent className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3 sm:mb-4">
