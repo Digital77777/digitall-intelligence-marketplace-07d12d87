@@ -6,16 +6,17 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, MessageCircle, Lightbulb, Calendar, UserPlus, Clock, Check, UserCheck, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, MapPin, Link as LinkIcon, Linkedin, Github, Twitter, MessageCircle, Lightbulb, Calendar, Users } from "lucide-react";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SEOHead } from "@/components/SEOHead";
 import { InsightDetailModal } from "@/components/community/InsightDetailModal";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useConnectionStatus, useSendConnectionRequest } from "@/hooks/useConnections";
+import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest } from "@/hooks/useConnections";
 import { useFollowStatus, useFollowersCount, useFollowingCount, useFollowUser, useUnfollowUser } from "@/hooks/useFollows";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
+import { SocialActions } from "@/components/community/SocialActionButton";
 
 const PublicProfilePage = () => {
   const { userId } = useParams();
@@ -26,6 +27,7 @@ const PublicProfilePage = () => {
   // Connection hooks
   const { data: connectionStatus, isLoading: connectionLoading } = useConnectionStatus(userId || "");
   const sendConnectionRequest = useSendConnectionRequest();
+  const acceptConnection = useAcceptConnectionRequest();
   
   // Follow hooks
   const { data: followStatus } = useFollowStatus(userId || "");
@@ -227,51 +229,30 @@ const PublicProfilePage = () => {
 
                   {/* Action Buttons - Only show if viewing another user's profile */}
                   {user && user.id !== userId && (
-                    <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center md:justify-start">
-                      {/* Follow Button */}
-                      {isFollowing ? (
-                        <Button
-                          onClick={() => unfollowUser.mutate(userId!)}
-                          disabled={unfollowUser.isPending}
-                          variant="outline"
-                          className="w-full sm:w-auto bg-primary/10 text-primary border-primary/20"
-                        >
-                          <UserCheck className="w-4 h-4 mr-2" />
-                          Following
-                        </Button>
-                      ) : (
-                        <Button
-                          onClick={() => followUser.mutate(userId!)}
-                          disabled={followUser.isPending}
-                          className="bg-gradient-ai text-white w-full sm:w-auto"
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Follow
-                        </Button>
-                      )}
-
-                      {/* Connect Button */}
-                      {!connectionStatus ? (
-                        <Button
-                          onClick={() => sendConnectionRequest.mutate(userId!)}
-                          disabled={sendConnectionRequest.isPending}
-                          variant="outline"
-                          className="w-full sm:w-auto"
-                        >
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          {sendConnectionRequest.isPending ? "Sending..." : "Connect"}
-                        </Button>
-                      ) : connectionStatus.status === "pending" ? (
-                        <Button variant="outline" disabled className="w-full sm:w-auto bg-amber-50 text-amber-700 border-amber-200">
-                          <Clock className="w-4 h-4 mr-2" />
-                          {connectionStatus.requester_id === user.id ? "Request Sent" : "Pending"}
-                        </Button>
-                      ) : connectionStatus.status === "accepted" ? (
-                        <Button variant="outline" disabled className="w-full sm:w-auto bg-green-50 text-green-700 border-green-200">
-                          <Check className="w-4 h-4 mr-2" />
-                          Connected
-                        </Button>
-                      ) : null}
+                    <div className="pt-2 flex flex-col sm:flex-row gap-2 justify-center md:justify-start items-center">
+                      <SocialActions
+                        userId={userId!}
+                        isFollowing={isFollowing}
+                        connectionStatus={
+                          !connectionStatus 
+                            ? "none" 
+                            : connectionStatus.status === "accepted" 
+                              ? "accepted" 
+                              : connectionStatus.status === "pending"
+                                ? connectionStatus.requester_id === user.id 
+                                  ? "pending" 
+                                  : "pending_received"
+                                : "none"
+                        }
+                        onFollow={() => followUser.mutate(userId!)}
+                        onUnfollow={() => unfollowUser.mutate(userId!)}
+                        onConnect={() => sendConnectionRequest.mutate(userId!)}
+                        onAcceptConnection={connectionStatus?.id ? () => acceptConnection.mutate(connectionStatus.id) : undefined}
+                        isFollowPending={followUser.isPending || unfollowUser.isPending}
+                        isConnectPending={sendConnectionRequest.isPending || acceptConnection.isPending}
+                        layout="stacked"
+                        size="default"
+                      />
                       
                       {/* Message Button */}
                       <Button
