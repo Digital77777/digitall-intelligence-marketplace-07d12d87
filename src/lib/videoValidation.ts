@@ -13,17 +13,45 @@ export const getVideoDuration = (file: File): Promise<number> => {
     const video = document.createElement('video');
     video.preload = 'metadata';
     
-    video.onloadedmetadata = () => {
-      URL.revokeObjectURL(video.src);
-      resolve(video.duration);
+    // Timeout to prevent infinite loading on problematic videos
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error('Video loading timed out'));
+    }, 10000); // 10 second timeout
+    
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      video.onloadedmetadata = null;
+      video.onloadeddata = null;
+      video.onerror = null;
+      video.oncanplay = null;
+      if (video.src) {
+        URL.revokeObjectURL(video.src);
+      }
     };
     
+    const handleSuccess = () => {
+      if (video.duration && isFinite(video.duration) && video.duration > 0) {
+        cleanup();
+        resolve(video.duration);
+      }
+    };
+    
+    // Try multiple events since onloadedmetadata doesn't always fire on mobile
+    video.onloadedmetadata = handleSuccess;
+    video.onloadeddata = handleSuccess;
+    video.oncanplay = handleSuccess;
+    
     video.onerror = () => {
-      URL.revokeObjectURL(video.src);
+      cleanup();
       reject(new Error('Failed to load video metadata'));
     };
     
-    video.src = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    video.src = objectUrl;
+    
+    // Force load on some browsers
+    video.load();
   });
 };
 
