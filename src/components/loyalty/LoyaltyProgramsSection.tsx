@@ -27,7 +27,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Earn points for completing lessons, building projects, joining events, and inviting friends. Every learning activity counts toward your growth.',
       badge: 'Active',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/learning-paths')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/coming-soon?program=learn-to-earn&category=learning')}>
           Start Learning
         </Button>
       )
@@ -38,7 +38,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Progress through Bronze → Silver → Gold → Diamond tiers. Unlock advanced tools, perks, and recognition as you level up your skills.',
       badge: 'Bronze',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/coming-soon?program=skill-tiers&category=learning')}>
           View Progress
         </Button>
       )
@@ -49,7 +49,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Maintain 7-day, 14-day, and 30-day learning or building streaks. Consistency unlocks special rewards and badges.',
       badge: 'New',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/coming-soon?program=streaks&category=learning')}>
           Track Streak
         </Button>
       )
@@ -60,7 +60,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Earn certificates to unlock mentorship access, fee discounts, and exclusive certificate-holder badges.',
       badge: 'Premium',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/career-certification')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/coming-soon?program=certification-bonuses&category=learning')}>
           View Certifications
         </Button>
       )
@@ -74,7 +74,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Upload templates, tools, or projects to earn bonuses, badges, marketplace boosts, and community recognition.',
       badge: 'Popular',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/marketplace/create-listing')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/coming-soon?program=creator-rewards&category=creator')}>
           Start Creating
         </Button>
       )
@@ -85,7 +85,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Consistent creators get earning boosts: 5% → 10% → 15% each month. The more you create, the more you earn.',
       badge: 'Trending',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/marketplace')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/coming-soon?program=marketplace-boost&category=creator')}>
           View Marketplace
         </Button>
       )
@@ -99,7 +99,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Earn points and perks for every friend who signs up and activates their account. Grow the community, grow your rewards.',
       badge: 'Active',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/referral')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/referral-rewards')}>
           Share Link
         </Button>
       )
@@ -110,7 +110,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Get rewarded for answering questions, helping others, and contributing meaningfully to the community.',
       badge: 'Featured',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/community')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/community-hero')}>
           Join Community
         </Button>
       )
@@ -121,7 +121,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Complete gamified tasks like "Upload first project," "Invite 3 friends," or "Complete 3 lessons" to unlock special rewards.',
       badge: 'New',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/dashboard')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/quests')}>
           View Quests
         </Button>
       )
@@ -132,7 +132,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Become an ambassador and earn rewards, badges, bonuses, and exclusive opportunities for consistent monthly performance.',
       badge: 'Exclusive',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/community')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/programs/ambassador')}>
           Learn More
         </Button>
       )
