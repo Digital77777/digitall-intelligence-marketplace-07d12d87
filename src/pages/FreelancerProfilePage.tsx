@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import Navigation from '@/components/Navigation';
-import MobileFooter from '@/components/MobileFooter';
 import ProposalForm from '@/components/marketplace/ProposalForm';
 import ReviewForm from '@/components/marketplace/ReviewForm';
 import ReviewsList from '@/components/marketplace/ReviewsList';
@@ -146,82 +144,72 @@ const FreelancerProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-20 md:pb-0">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8 max-w-5xl">
-          <div className="h-10 bg-muted rounded w-24 mb-6 animate-pulse" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex gap-6">
-                    <div className="h-32 w-32 bg-muted rounded-full animate-pulse" />
-                    <div className="flex-1 space-y-3">
-                      <div className="h-7 bg-muted rounded w-48 animate-pulse" />
-                      <div className="h-5 bg-muted rounded w-40 animate-pulse" />
-                      <div className="flex gap-4">
-                        <div className="h-4 bg-muted rounded w-24 animate-pulse" />
-                        <div className="h-4 bg-muted rounded w-20 animate-pulse" />
-                      </div>
+      <main className="container mx-auto px-4 py-8 max-w-5xl">
+        <div className="h-10 bg-muted rounded w-24 mb-6 animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex gap-6">
+                  <div className="h-32 w-32 bg-muted rounded-full animate-pulse" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-7 bg-muted rounded w-48 animate-pulse" />
+                    <div className="h-5 bg-muted rounded w-40 animate-pulse" />
+                    <div className="flex gap-4">
+                      <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                      <div className="h-4 bg-muted rounded w-20 animate-pulse" />
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+            {[1, 2, 3].map(i => (
+              <Card key={i}>
+                <CardContent className="pt-6 space-y-3">
+                  <div className="h-6 bg-muted rounded w-24 animate-pulse" />
+                  <div className="h-4 bg-muted rounded w-full animate-pulse" />
+                  <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
                 </CardContent>
               </Card>
-              {[1, 2, 3].map(i => (
-                <Card key={i}>
-                  <CardContent className="pt-6 space-y-3">
-                    <div className="h-6 bg-muted rounded w-24 animate-pulse" />
-                    <div className="h-4 bg-muted rounded w-full animate-pulse" />
-                    <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div>
-              <Card className="sticky top-24">
-                <CardContent className="pt-6 space-y-4">
-                  <div className="h-20 bg-muted rounded animate-pulse" />
-                  <div className="h-32 bg-muted rounded animate-pulse" />
-                  <div className="h-10 bg-muted rounded animate-pulse" />
-                </CardContent>
-              </Card>
-            </div>
+            ))}
           </div>
-        </main>
-        <MobileFooter />
-      </div>
+          <div>
+            <Card className="sticky top-24">
+              <CardContent className="pt-6 space-y-4">
+                <div className="h-20 bg-muted rounded animate-pulse" />
+                <div className="h-32 bg-muted rounded animate-pulse" />
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation />
-        <main className="container mx-auto px-4 py-8">
-          <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">Freelancer profile not found</p>
-              <Button className="mt-4" onClick={() => navigate('/marketplace/browse-freelancers')}>
-                Browse Freelancers
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <MobileFooter />
-      </div>
+      <main className="container mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground">Freelancer profile not found</p>
+            <Button className="mt-4" onClick={() => navigate('/marketplace/browse-freelancers')}>
+              Browse Freelancers
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
     );
   }
 
   const isOwnProfile = user?.id === profile.user_id;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <Navigation />
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
+    <main className="container mx-auto px-4 py-8 max-w-5xl pb-20 md:pb-0">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
@@ -484,10 +472,8 @@ const FreelancerProfilePage = () => {
               </CardContent>
             </Card>
           </div>
-        </div>
-      </main>
-      <MobileFooter />
-    </div>
+      </div>
+    </main>
   );
 };
 
