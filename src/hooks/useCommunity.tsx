@@ -840,10 +840,12 @@ export const useCommunity = () => {
     });
   };
 
-  // Fetch single topic with all replies
+  // Fetch single topic with all replies including nested replies and likes
   const useTopicDetail = (topicId: string) => {
+    const { user } = useAuth();
+    
     return useQuery({
-      queryKey: ['topic-detail', topicId],
+      queryKey: ['topic-detail', topicId, user?.id],
       queryFn: async () => {
         const { data, error } = await supabase
           .from('community_topics')
@@ -852,22 +854,35 @@ export const useCommunity = () => {
             profiles!community_topics_user_id_fkey (user_id, full_name, email, avatar_url),
             topic_replies (
               *,
-              profiles!topic_replies_user_id_fkey (user_id, full_name, email, avatar_url)
+              profiles!topic_replies_user_id_fkey (user_id, full_name, email, avatar_url),
+              topic_reply_likes (id, user_id)
             )
           `)
           .eq('id', topicId)
           .maybeSingle();
 
         if (error) throw error;
-        return data;
+        if (!data) return null;
+
+        // Check which replies the current user has liked
+        const repliesWithLikeStatus = data.topic_replies?.map((reply: any) => ({
+          ...reply,
+          is_liked: user ? reply.topic_reply_likes?.some((like: any) => like.user_id === user.id) : false,
+          likes_count: reply.likes_count || reply.topic_reply_likes?.length || 0,
+        })) || [];
+
+        return {
+          ...data,
+          topic_replies: repliesWithLikeStatus,
+        };
       },
       enabled: !!topicId,
     });
   };
 
-  // Create a reply to a topic
+  // Create a reply to a topic or another reply (nested)
   const createReply = useMutation({
-    mutationFn: async ({ topicId, content }: { topicId: string; content: string }) => {
+    mutationFn: async ({ topicId, content, parentId }: { topicId: string; content: string; parentId?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
@@ -877,6 +892,7 @@ export const useCommunity = () => {
           topic_id: topicId,
           user_id: user.id,
           content,
+          parent_id: parentId || null,
         })
         .select()
         .single();
@@ -887,7 +903,39 @@ export const useCommunity = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['topic-detail'] });
       queryClient.invalidateQueries({ queryKey: ['topics'] });
+      queryClient.invalidateQueries({ queryKey: ['community-topics'] });
+      queryClient.invalidateQueries({ queryKey: ['community-topics-infinite'] });
       queryClient.invalidateQueries({ queryKey: ['my-activity'] });
+    },
+  });
+
+  // Toggle like on a reply
+  const toggleReplyLike = useMutation({
+    mutationFn: async ({ replyId, isLiked }: { replyId: string; isLiked: boolean }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      if (isLiked) {
+        // Unlike
+        const { error } = await supabase
+          .from('topic_reply_likes')
+          .delete()
+          .eq('reply_id', replyId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+      } else {
+        // Like
+        const { error } = await supabase
+          .from('topic_reply_likes')
+          .insert({
+            reply_id: replyId,
+            user_id: user.id,
+          });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['topic-detail'] });
     },
   });
 
@@ -915,6 +963,7 @@ export const useCommunity = () => {
     useTopicDetail,
     createReply,
     deleteReply,
+    toggleReplyLike,
     useEvents,
     useMyRegisteredEvents,
     createEvent,
