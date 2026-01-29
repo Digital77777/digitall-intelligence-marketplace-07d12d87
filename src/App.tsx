@@ -97,6 +97,13 @@ const EditListingPage = lazy(() => import("./pages/EditListingPage"));
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 
+// Programs - Lazy loaded
+const ComingSoonPage = lazy(() => import("./pages/programs/ComingSoonPage"));
+const ReferralRewardsPage = lazy(() => import("./pages/programs/ReferralRewardsPage"));
+const CommunityHeroPage = lazy(() => import("./pages/programs/CommunityHeroPage"));
+const QuestsPage = lazy(() => import("./pages/programs/QuestsPage"));
+const AmbassadorPage = lazy(() => import("./pages/programs/AmbassadorPage"));
+
 // Optimized QueryClient with aggressive caching for instant data access
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -214,6 +221,7 @@ const routeGroups: AppRoute[] = [
   { path: "/marketplace/schedule-consultation", component: ScheduleConsultationPage, protected: true },
   { path: "/marketplace/my-listings", component: MyListingsPage, protected: true },
   { path: "/marketplace/create", component: CreateListingPage, protected: true },
+  { path: "/marketplace/create-listing", component: CreateListingPage, protected: true }, // Alias
   { path: "/seller-dashboard", component: SellerDashboardPage, protected: true },
   { path: "/client-dashboard", component: ClientDashboardPage, protected: true },
   { path: "/marketplace/post-jobs", component: PostJobsPage, protected: true },
@@ -259,6 +267,13 @@ const routeGroups: AppRoute[] = [
   { path: "/profile/:userId", component: PublicProfilePage, protected: true },
   { path: "/edit-listing/:id", component: EditListingPage, protected: true },
   { path: "/feedback", component: FeedbackPage, protected: true },
+
+  // Programs
+  { path: "/programs/coming-soon", component: ComingSoonPage, protected: true },
+  { path: "/programs/referral-rewards", component: ReferralRewardsPage, protected: true },
+  { path: "/programs/community-hero", component: CommunityHeroPage, protected: true },
+  { path: "/programs/quests", component: QuestsPage, protected: true },
+  { path: "/programs/ambassador", component: AmbassadorPage, protected: true },
 ];
 
 const App = () => {

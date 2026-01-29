@@ -178,6 +178,87 @@ export type Database = {
         }
         Relationships: []
       }
+      ambassador_applications: {
+        Row: {
+          application_text: string
+          created_at: string
+          experience: string | null
+          id: string
+          motivation: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          social_links: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          application_text: string
+          created_at?: string
+          experience?: string | null
+          id?: string
+          motivation?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_links?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          application_text?: string
+          created_at?: string
+          experience?: string | null
+          id?: string
+          motivation?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          social_links?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ambassador_stats: {
+        Row: {
+          community_engagement: number | null
+          content_created: number | null
+          created_at: string
+          events_hosted: number | null
+          id: string
+          month: string
+          referrals_count: number | null
+          tier: string | null
+          total_earnings: number | null
+          user_id: string
+        }
+        Insert: {
+          community_engagement?: number | null
+          content_created?: number | null
+          created_at?: string
+          events_hosted?: number | null
+          id?: string
+          month: string
+          referrals_count?: number | null
+          tier?: string | null
+          total_earnings?: number | null
+          user_id: string
+        }
+        Update: {
+          community_engagement?: number | null
+          content_created?: number | null
+          created_at?: string
+          events_hosted?: number | null
+          id?: string
+          month?: string
+          referrals_count?: number | null
+          tier?: string | null
+          total_earnings?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_submissions: {
         Row: {
           challenge_id: number
@@ -318,6 +399,45 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      community_hero_scores: {
+        Row: {
+          created_at: string
+          current_tier: string
+          helpful_replies: number
+          id: string
+          insights_shared: number
+          questions_answered: number
+          topics_created: number
+          total_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_tier?: string
+          helpful_replies?: number
+          id?: string
+          insights_shared?: number
+          questions_answered?: number
+          topics_created?: number
+          total_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_tier?: string
+          helpful_replies?: number
+          id?: string
+          insights_shared?: number
+          questions_answered?: number
+          topics_created?: number
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       community_insights: {
         Row: {
@@ -1249,6 +1369,45 @@ export type Database = {
         }
         Relationships: []
       }
+      quests: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          difficulty: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          points_reward: number
+          requirements: Json | null
+          title: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description: string
+          difficulty?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          points_reward?: number
+          requirements?: Json | null
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          difficulty?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          points_reward?: number
+          requirements?: Json | null
+          title?: string
+        }
+        Relationships: []
+      }
       quote_requests: {
         Row: {
           admin_notes: string | null
@@ -1830,6 +1989,44 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      user_quest_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          progress_value: number | null
+          quest_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          progress_value?: number | null
+          quest_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          progress_value?: number | null
+          quest_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_quest_progress_quest_id_fkey"
+            columns: ["quest_id"]
+            isOneToOne: false
+            referencedRelation: "quests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
