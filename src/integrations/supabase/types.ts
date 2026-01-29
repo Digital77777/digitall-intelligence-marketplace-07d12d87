@@ -1667,6 +1667,8 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          likes_count: number | null
+          parent_id: string | null
           topic_id: string
           updated_at: string
           user_id: string
@@ -1675,6 +1677,8 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          likes_count?: number | null
+          parent_id?: string | null
           topic_id: string
           updated_at?: string
           user_id: string
@@ -1683,11 +1687,20 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          likes_count?: number | null
+          parent_id?: string | null
           topic_id?: string
           updated_at?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "topic_replies_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "topic_replies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "topic_replies_topic_id_fkey"
             columns: ["topic_id"]
@@ -1708,6 +1721,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      topic_reply_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          reply_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reply_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reply_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "topic_reply_likes_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: false
+            referencedRelation: "topic_replies"
+            referencedColumns: ["id"]
           },
         ]
       }
