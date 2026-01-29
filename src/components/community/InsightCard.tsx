@@ -1,5 +1,6 @@
 import React, { memo, useCallback, useState, useEffect } from "react";
-import { Heart, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Eye, MessageCircle } from "lucide-react";
+import { CommentsOverlay } from "@/components/community/CommentsOverlay";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ interface InsightCardProps {
 export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitials, priority = false }: InsightCardProps) => {
   const { isOfficial, badgeLabel } = useIsOfficialAccount(insight.profiles?.user_id);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   
   // Combine cover_image with images array for gallery
   const allImages = [
@@ -69,6 +71,11 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
 
   const handleVideoClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+  }, []);
+
+  const handleCommentClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsCommentsOpen(true);
   }, []);
 
   // Check if this is a text-only insight (no media)
@@ -209,13 +216,22 @@ export const InsightCard = memo(({ insight, onLikeClick, onViewClick, getInitial
                 size="sm"
                 variant="ghost"
                 className="h-9 md:h-7 text-sm md:text-xs px-3 md:px-2"
+                onClick={handleCommentClick}
               >
-                Read
+                <MessageCircle className="w-4 h-4 md:w-3 md:h-3 mr-1" />
+                Comment
               </Button>
             </div>
           </div>
         </div>
       </CardContent>
+      
+      {/* Comments Overlay */}
+      <CommentsOverlay
+        insightId={insight.id}
+        isOpen={isCommentsOpen}
+        onClose={() => setIsCommentsOpen(false)}
+      />
     </Card>
   );
 }, (prevProps, nextProps) => {
