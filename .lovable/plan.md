@@ -1,229 +1,213 @@
 
 
-# Professional Video Upload Redesign for Reels
+# Programs Feature Enhancement Plan
 
 ## Overview
-
-This plan redesigns the Create Reel page with a focus on **speed, simplicity, and a premium user experience**. The new design eliminates friction in the upload workflow by introducing a streamlined single-screen experience with instant preview, quick trim controls, and background uploading.
-
----
-
-## Current Pain Points
-
-1. **Multi-step flow**: Users must navigate between upload zone, trimmer modal, and form
-2. **Trimmer complexity**: Too many options (6 compression modes) overwhelm users
-3. **Processing time**: Full re-encoding takes too long for quick reel posts
-4. **Visual hierarchy**: The upload card feels basic and lacks visual appeal
-5. **Mobile friction**: Buttons are small, preview isn't optimized for vertical videos
+This plan implements three key changes to the Loyalty & Growth Programs feature:
+1. **Coming Soon page** for Learning Rewards (4 buttons) and Creator Rewards (2 buttons)
+2. **Production-ready detailed pages** for all 4 Community Rewards programs
 
 ---
 
-## New Design: "Instagram-Style" Single-Screen Editor
+## Part 1: Coming Soon Page
 
-### Layout Structure (Mobile-First)
+### New Component: `src/pages/programs/ComingSoonPage.tsx`
+A beautiful, engaging "Coming Soon" page with:
+- Animated gradient background with subtle patterns
+- Program-specific title and description passed via URL params
+- "Notify Me" email capture form (optional)
+- Countdown-style progress indicator
+- Back button to return to the programs page
+- Responsive design for mobile and desktop
 
+**Visual Elements:**
+- Lucide `Rocket` or `Sparkles` icon animation
+- Primary gradient text for headings
+- Soft card with glassmorphism effect
+- Social sharing buttons for excitement building
+
+### Route Addition
+Add route `/programs/coming-soon` to `App.tsx`
+
+### Button Updates in `LoyaltyProgramsSection.tsx`
+Update 6 buttons (4 Learning + 2 Creator) to navigate to:
 ```
-┌─────────────────────────────────────────────┐
-│  ← Back                    Preview Mode ⚡  │
-├─────────────────────────────────────────────┤
-│                                             │
-│    ┌───────────────────────────────┐        │
-│    │                               │        │
-│    │      Video Preview            │        │
-│    │      (9:16 aspect ratio)      │        │
-│    │                               │        │
-│    │    [Full-screen playable]     │        │
-│    │                               │        │
-│    │  ┌───────────────────────┐    │        │
-│    │  │ Trim Timeline Bar     │    │        │
-│    │  └───────────────────────┘    │        │
-│    └───────────────────────────────┘        │
-│                                             │
-│    Duration: 45s / 60s max    ✓ Within limit│
-│                                             │
-├─────────────────────────────────────────────┤
-│  Title *                                    │
-│  ┌───────────────────────────────────────┐  │
-│  │ Give your reel a catchy title         │  │
-│  └───────────────────────────────────────┘  │
-│                                       0/100 │
-│                                             │
-│  Description (optional)              ▼      │
-│  [Collapsible for more space]              │
-│                                             │
-├─────────────────────────────────────────────┤
-│                                             │
-│  ┌───────────────────────────────────────┐  │
-│  │   ⚡ Publish & Continue Browsing       │  │
-│  └───────────────────────────────────────┘  │
-│                                             │
-└─────────────────────────────────────────────┘
+/programs/coming-soon?program={programSlug}&category={learning|creator}
 ```
 
 ---
 
-## Key Features
+## Part 2: Community Rewards - Production Ready Pages
 
-### 1. Instant Upload Mode (Default)
-- **Skip all processing** - Upload original file directly
-- Background upload starts immediately when user taps publish
-- User can continue browsing while upload happens
-- No compression delay - fastest possible experience
+### Program 1: Referral Rewards (`/programs/referral-rewards`)
+**Full-featured referral system page with:**
+- Hero section with referral stats (total referrals, completed, points earned)
+- Share referral link component (existing: `ShareReferralLink`)
+- Invite by email form (existing: `InviteByEmail`)
+- Referrals list showing status (existing: `ReferralsList`)
+- Progress tracker toward milestones (existing: `ReferralProgress`)
+- Leaderboard section showing top referrers
+- Rewards breakdown card (what users earn per referral)
 
-### 2. Inline Trim Timeline
-- Replace modal trimmer with compact inline timeline
-- Drag handles directly on the video preview
-- Real-time duration indicator with color feedback
-- Quick 15s/30s/60s preset buttons
+### Program 2: Community Hero Program (`/programs/community-hero`)
+**Recognition system for helpful community members:**
+- Hero section explaining the program
+- User's Hero Score dashboard with breakdown:
+  - Questions answered
+  - Helpful replies given
+  - Topics started
+  - Insights shared
+- Leaderboard of top community heroes (weekly/monthly)
+- Reward tiers section (Bronze Helper -> Silver Guide -> Gold Mentor -> Diamond Hero)
+- Recent activity feed showing user's contributions
+- Claim rewards button for eligible users
 
-### 3. Smart Auto-Trim
-- If video > 60s, auto-suggest trim points
-- Option to keep first 60s or pick a section
-- Visual indicator showing what will be kept
+### Program 3: DIM Quest Missions (`/programs/quests`)
+**Gamified task completion system:**
+- Active quests grid with progress indicators
+- Quest categories: Onboarding, Learning, Community, Creator
+- Sample quests:
+  - "Complete your profile" (onboarding)
+  - "Finish 3 lessons" (learning)
+  - "Invite 3 friends" (community)
+  - "Upload first project" (creator)
+- Completed quests section with badges earned
+- Rewards showcase (what completing quests unlocks)
+- Daily/Weekly mission rotation indicator
 
-### 4. Premium Upload Zone
-- Glassmorphism design with gradient border
-- Animated upload icon with pulse effect
-- Drag-and-drop with visual feedback
-- File format badges (MP4, WebM, MOV)
-- Size and duration limits clearly displayed
-
-### 5. Mobile-Optimized Actions
-- Large touch targets (minimum 48px)
-- Sticky bottom action bar
-- Haptic feedback on interactions (where supported)
-- Swipe gestures for timeline scrubbing
-
----
-
-## Technical Implementation
-
-### Phase 1: New Component - QuickVideoUploader
-
-Create a new streamlined component that combines upload, preview, and trim in one:
-
-**File: `src/components/reels/QuickVideoUploader.tsx`**
-
-Key features:
-- Single drop zone with modern styling
-- Inline video preview with aspect ratio lock
-- Compact trim timeline (no modal)
-- Real-time duration validation
-- Smart defaults for instant upload
-
-### Phase 2: Inline Trim Timeline Component
-
-**File: `src/components/reels/InlineTrimTimeline.tsx`**
-
-Features:
-- Touch-friendly slider with frame thumbnails
-- Start/end handles with time labels
-- Duration progress bar with limit indicator
-- Quick preset buttons (15s, 30s, 60s)
-- Auto-scroll to follow playback
-
-### Phase 3: Updated CreateReelPage
-
-**File: `src/pages/community/CreateReelPage.tsx`** (Major Rewrite)
-
-Changes:
-- Remove card wrapper for full-bleed design
-- Integrate QuickVideoUploader component
-- Streamline form with collapsible description
-- Add preset duration buttons
-- Enhanced mobile layout
-- Remove compression options (default to instant)
-
-### Phase 4: Processing Overlay Enhancement
-
-**File: `src/components/reels/UploadProgressOverlay.tsx`**
-
-Features:
-- Full-screen overlay during upload initialization
-- Animated progress ring (WhatsApp-style)
-- "You can continue browsing" messaging
-- Thumbnail preview in overlay
+### Program 4: Ambassador Loyalty Program (`/programs/ambassador`)
+**Elite program for consistent performers:**
+- Program overview with requirements
+- Application form for new applicants
+- Ambassador dashboard for approved members:
+  - Monthly performance metrics
+  - Earnings and bonuses
+  - Special perks unlocked
+- Ambassador tiers (Bronze -> Silver -> Gold -> Platinum Ambassador)
+- Ambassador spotlight section (featured ambassadors)
+- Exclusive opportunities section
 
 ---
 
-## Design Specifications
+## File Structure
 
-### Color Palette
-- **Upload Zone**: `bg-gradient-to-br from-primary/5 to-primary/10`
-- **Border**: `border-2 border-dashed border-primary/30`
-- **Active Drop**: `border-primary bg-primary/10 scale-[1.02]`
-- **Progress**: Primary gradient ring
-- **Success**: Green with checkmark animation
-
-### Typography
-- **Page Title**: Hidden (cleaner look) or minimal
-- **Label**: `text-sm font-medium`
-- **Helper Text**: `text-xs text-muted-foreground`
-- **Duration**: `text-lg font-bold` with color status
-
-### Spacing
-- **Container**: `px-4 py-6` on mobile
-- **Video Preview**: Full width, 9:16 aspect ratio
-- **Form Gap**: `space-y-4`
-- **Button Height**: `h-14` for primary action
-
-### Animations
-- Upload zone: `hover:scale-[1.01] transition-transform`
-- Drop active: `animate-pulse` on border
-- Progress: Smooth ring animation
-- Success: `animate-bounce` on checkmark
+```
+src/
+├── pages/
+│   └── programs/
+│       ├── ComingSoonPage.tsx        (NEW)
+│       ├── ReferralRewardsPage.tsx   (NEW)
+│       ├── CommunityHeroPage.tsx     (NEW)
+│       ├── QuestsPage.tsx            (NEW)
+│       └── AmbassadorPage.tsx        (NEW)
+├── components/
+│   └── programs/
+│       ├── ProgramHero.tsx           (NEW - shared hero component)
+│       ├── RewardTierCard.tsx        (NEW - tier display)
+│       ├── QuestCard.tsx             (NEW - quest item)
+│       ├── LeaderboardCard.tsx       (NEW - user ranking)
+│       ├── ActivityFeed.tsx          (NEW - recent actions)
+│       └── StatsCard.tsx             (NEW - metrics display)
+├── hooks/
+│   └── useCommunityPrograms.tsx      (NEW - data fetching)
+```
 
 ---
 
-## File Changes Summary
+## Database Schema (New Tables)
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/components/reels/QuickVideoUploader.tsx` | Create | New upload component |
-| `src/components/reels/InlineTrimTimeline.tsx` | Create | Compact trim controls |
-| `src/components/reels/UploadProgressOverlay.tsx` | Create | Upload feedback |
-| `src/components/reels/index.ts` | Create | Barrel export |
-| `src/pages/community/CreateReelPage.tsx` | Major Rewrite | New streamlined page |
+### `community_hero_scores`
+Tracks user contributions for Community Hero Program:
+- `id`, `user_id`, `questions_answered`, `helpful_replies`, `topics_created`, `insights_shared`, `total_score`, `current_tier`, `created_at`, `updated_at`
 
----
+### `quests`
+Stores available quests:
+- `id`, `title`, `description`, `category`, `points_reward`, `icon`, `requirements`, `is_active`, `created_at`
 
-## User Flow Comparison
+### `user_quest_progress`
+Tracks user progress on quests:
+- `id`, `user_id`, `quest_id`, `status` (not_started, in_progress, completed), `completed_at`, `created_at`
 
-### Before (Current)
-1. User lands on page → Sees upload zone
-2. Selects video → **Full-screen trimmer opens**
-3. Adjusts trim handles → Selects compression
-4. Waits for processing → Returns to form
-5. Fills title/description → Clicks publish
-6. Waits for upload → Redirected
+### `ambassador_applications`
+Stores ambassador program applications:
+- `id`, `user_id`, `status` (pending, approved, rejected), `application_text`, `social_links`, `reviewed_by`, `reviewed_at`, `created_at`
 
-### After (New Design)
-1. User lands on page → Sees premium upload zone
-2. Selects/drops video → **Inline preview appears immediately**
-3. Quick trim adjustment (optional) → No waiting
-4. Fills title → Clicks publish
-5. **Redirected immediately** → Upload continues in background
-
-**Time saved: ~30-60 seconds per upload**
+### `ambassador_stats`
+Tracks ambassador performance:
+- `id`, `user_id`, `month`, `referrals_count`, `content_created`, `events_hosted`, `total_earnings`, `tier`, `created_at`
 
 ---
 
-## Mobile-First Considerations
+## Route Updates in App.tsx
 
-- Video preview takes 60% of screen height
-- Form inputs have large touch targets
-- Sticky bottom CTA button
-- Swipe left/right on timeline for fine-tuning
-- Collapsible description to maximize video space
-- No modals - everything inline
+```typescript
+// Programs (NEW)
+{ path: "/programs/coming-soon", component: ComingSoonPage, protected: true },
+{ path: "/programs/referral-rewards", component: ReferralRewardsPage, protected: true },
+{ path: "/programs/community-hero", component: CommunityHeroPage, protected: true },
+{ path: "/programs/quests", component: QuestsPage, protected: true },
+{ path: "/programs/ambassador", component: AmbassadorPage, protected: true },
+```
 
 ---
 
-## Expected Outcomes
+## Button Navigation Updates
 
-1. **Faster uploads**: Instant mode as default eliminates processing wait
-2. **Cleaner UX**: Single-screen flow reduces cognitive load
-3. **Better mobile**: Optimized for thumb-zone interactions
-4. **Higher completion**: Fewer steps = less abandonment
-5. **Professional look**: Premium styling increases trust
+### Learning Rewards Tab (4 buttons -> Coming Soon)
+| Program | Current Navigation | New Navigation |
+|---------|-------------------|----------------|
+| Learn to Earn Points | `/learning-paths` | `/programs/coming-soon?program=learn-to-earn` |
+| Skill Level Tiers | `/dashboard` | `/programs/coming-soon?program=skill-tiers` |
+| Project Completion Streaks | `/dashboard` | `/programs/coming-soon?program=streaks` |
+| Certification Bonuses | `/career-certification` | `/programs/coming-soon?program=certification-bonuses` |
+
+### Creator Rewards Tab (2 buttons -> Coming Soon)
+| Program | Current Navigation | New Navigation |
+|---------|-------------------|----------------|
+| Creator Rewards | `/marketplace/create-listing` | `/programs/coming-soon?program=creator-rewards` |
+| Marketplace Loyalty Boost | `/marketplace` | `/programs/coming-soon?program=marketplace-boost` |
+
+### Community Rewards Tab (4 buttons -> Production Pages)
+| Program | Current Navigation | New Navigation |
+|---------|-------------------|----------------|
+| Referral Rewards | `/referral` | `/programs/referral-rewards` |
+| Community Hero Program | `/community` | `/programs/community-hero` |
+| DIM Quest Missions | `/dashboard` | `/programs/quests` |
+| Ambassador Loyalty Program | `/community` | `/programs/ambassador` |
+
+---
+
+## Technical Implementation Details
+
+### Coming Soon Page Features
+- URL query params for program context
+- Subtle CSS animations (pulse, fade)
+- Email subscription form (stores to existing `newsletter_subscriptions` or new table)
+- Mobile-responsive layout
+- SEO-friendly meta tags
+
+### Community Programs Pages
+- Use existing hooks where applicable (`useReferrals`, `useCommunity`)
+- New hook `useCommunityPrograms` for program-specific data
+- Skeleton loading states for all data-fetching sections
+- Toast notifications for user actions
+- Progress bars for milestone tracking
+- Responsive grid layouts
+
+### Shared Components
+- `ProgramHero`: Reusable header with icon, title, description, gradient
+- `RewardTierCard`: Display tier info with progress to next tier
+- `QuestCard`: Quest display with progress indicator
+- `LeaderboardCard`: User ranking display with avatar
+- `StatsCard`: Metric display with icon and trend
+
+---
+
+## UI/UX Considerations
+- Consistent styling with existing loyalty cards
+- Primary gradient theme across all program pages
+- Clear CTAs and progress indicators
+- Celebratory animations on achievements
+- Accessible color contrasts and keyboard navigation
+- Mobile-first responsive design
 
