@@ -2259,6 +2259,16 @@ export type Database = {
             Returns: undefined
           }
         | { Args: { review_text: string; seller_id: number }; Returns: boolean }
+      rpc_create_connection: {
+        Args: { recipient_uuid: string }
+        Returns: {
+          created_at: string
+          id: string
+          recipient_id: string
+          requester_id: string
+          status: string
+        }[]
+      }
       safe_user_creation: {
         Args: { p_email: string; p_full_name: string }
         Returns: string
