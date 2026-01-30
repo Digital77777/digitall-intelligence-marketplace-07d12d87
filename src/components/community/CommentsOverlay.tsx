@@ -248,30 +248,30 @@ export const CommentsOverlay = ({ insightId, isOpen, onClose }: CommentsOverlayP
                 {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
               </span>
               <span className="text-sm ml-2">{comment.content}</span>
+            </div>
+            {user?.id === comment.user_id && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleDelete(comment.id, parentId)}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            )}
           </div>
-          {user?.id === comment.user_id && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => handleDelete(comment.id, parentId)}
-            >
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-        <div className="flex items-center gap-4 mt-1">
-          <span className="text-xs text-muted-foreground">
-            {formatTime(comment.created_at)}
-          </span>
-          {user && !isReply && (
-            <button 
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
-              onClick={() => handleReply(comment.id, comment.profile?.full_name || "Anonymous")}
-            >
-              Reply
-            </button>
-          )}
+          <div className="flex items-center gap-4 mt-1">
+            <span className="text-xs text-muted-foreground">
+              {formatTime(comment.created_at)}
+            </span>
+            {user && !isReply && (
+              <button 
+                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => handleReply(comment.id, comment.profile?.full_name || "Anonymous")}
+              >
+                Reply
+              </button>
+            )}
           </div>
         </div>
       </div>
