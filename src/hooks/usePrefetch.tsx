@@ -51,7 +51,7 @@ const routeImports: Record<string, () => Promise<any>> = {
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
 
-// Core routes to prefetch on app load (includes marketplace/browse now)
+// Core routes to prefetch on app load (includes marketplace/browse and reels now)
 const coreRoutes = [
   '/dashboard',
   '/learning-paths',
@@ -59,6 +59,7 @@ const coreRoutes = [
   '/marketplace',
   '/marketplace/browse',
   '/community',
+  '/community/reels',
   '/referrals',
   '/subscription',
 ];
@@ -102,39 +103,55 @@ export const usePrefetch = () => {
     });
   }, [queryClient]);
 
-  // Prefetch reels data
+  // Prefetch reels data - uses infinite query keys to match useInfiniteReels hook
   const prefetchReelsData = useCallback(() => {
     if (prefetchedData.has('reels')) return;
     prefetchedData.add('reels');
 
-    queryClient.prefetchQuery({
-      queryKey: ["community-reels"],
-      queryFn: async () => {
+    const REELS_PAGE_SIZE = 10;
+
+    // Prefetch first page of community_reels using infinite query key
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ["community-reels-infinite"],
+      queryFn: async ({ pageParam = 0 }) => {
         const { data, error } = await supabase
           .from("community_reels")
           .select("*")
-          .order("created_at", { ascending: false, nullsFirst: false });
+          .order("created_at", { ascending: false, nullsFirst: false })
+          .range(pageParam * REELS_PAGE_SIZE, (pageParam + 1) * REELS_PAGE_SIZE - 1);
+
         if (error) throw error;
-        return (data || []).map(reel => ({
+        
+        const reels = (data || []).map(reel => ({
           ...reel,
           created_at: reel.created_at || new Date().toISOString(),
           likes_count: reel.likes_count || 0,
           views_count: reel.views_count || 0,
         }));
+
+        return {
+          reels,
+          nextPage: data && data.length === REELS_PAGE_SIZE ? pageParam + 1 : undefined
+        };
       },
+      initialPageParam: 0,
       staleTime: 1000 * 60 * 10,
     });
 
-    queryClient.prefetchQuery({
-      queryKey: ["insight-videos-for-reels"],
-      queryFn: async () => {
+    // Prefetch first page of insight videos using infinite query key
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ["insight-videos-for-reels-infinite"],
+      queryFn: async ({ pageParam = 0 }) => {
         const { data, error } = await supabase
           .from("community_insights")
           .select("id, user_id, title, videos, video_thumbnails, likes_count, views_count, created_at")
           .not("videos", "is", null)
-          .order("created_at", { ascending: false });
+          .order("created_at", { ascending: false })
+          .range(pageParam * REELS_PAGE_SIZE, (pageParam + 1) * REELS_PAGE_SIZE - 1);
+
         if (error) throw error;
-        return (data || []).flatMap((insight) => 
+        
+        const reels = (data || []).flatMap((insight) => 
           (insight.videos || []).map((url: string, i: number) => ({
             id: `insight-video-${insight.id}-${i}`,
             insight_id: insight.id,
@@ -147,7 +164,13 @@ export const usePrefetch = () => {
             views_count: insight.views_count || 0,
           }))
         );
+
+        return {
+          reels,
+          nextPage: data && data.length === REELS_PAGE_SIZE ? pageParam + 1 : undefined
+        };
       },
+      initialPageParam: 0,
       staleTime: 1000 * 60 * 10,
     });
   }, [queryClient]);
@@ -297,8 +320,9 @@ export const usePrefetch = () => {
       prefetchCommunityData();
       prefetchMarketplaceData();
       prefetchMarketplaceBrowseData();
+      prefetchReelsData();
     }, 1000);
-  }, [prefetchRoute, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData]);
+  }, [prefetchRoute, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData, prefetchReelsData]);
 
   const handleMouseEnter = useCallback((path: string) => {
     prefetchRoute(path);

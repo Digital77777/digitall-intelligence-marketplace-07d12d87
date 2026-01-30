@@ -46,6 +46,9 @@ const ChallengePage = lazy(() => import("./pages/ChallengePage"));
 // Marketplace - Eager loaded for instant navigation (core user journey)
 import BrowseMarketplacePage from "./pages/BrowseMarketplacePage";
 
+// Community - Eager loaded for instant navigation (immersive experience)
+import ReelsPage from "./pages/community/ReelsPage";
+
 // Marketplace - Lazy loaded (secondary pages)
 const SellProductsPage = lazy(() => import("./pages/SellProductsPage"));
 const FreelanceServicesPage = lazy(() => import("./pages/FreelanceServicesPage"));
@@ -66,7 +69,7 @@ const StartSellingPage = lazy(() => import("./pages/StartSellingPage"));
 const CreatorSuitePage = lazy(() => import("./pages/CreatorSuitePage"));
 const WishlistPage = lazy(() => import("./pages/WishlistPage"));
 
-// Community - Lazy loaded
+// Community - Lazy loaded (secondary pages)
 const TopicDetailPage = lazy(() => import("./pages/community/TopicDetailPage"));
 const BrowseEventsPage = lazy(() => import("./pages/community/BrowseEventsPage"));
 const FindMembersPage = lazy(() => import("./pages/community/FindMembersPage"));
@@ -76,7 +79,6 @@ const InboxPage = lazy(() => import("./pages/community/InboxPage"));
 const ShareInsightPage = lazy(() => import("./pages/community/ShareInsightPage"));
 const StartTopicPage = lazy(() => import("./pages/community/StartTopicPage"));
 const WhatsAppCommunityPage = lazy(() => import("./pages/community/WhatsAppCommunityPage"));
-const ReelsPage = lazy(() => import("./pages/community/ReelsPage"));
 const CreateReelPage = lazy(() => import("./pages/community/CreateReelPage"));
 const FollowersPage = lazy(() => import("./pages/community/FollowersPage"));
 const MyNetworkPage = lazy(() => import("./pages/community/MyNetworkPage"));
