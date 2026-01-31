@@ -181,12 +181,13 @@ const FoundationPath = () => {
   };
 
   const handleContinueLearning = () => {
-    const currentModule = enrollment?.current_module || 0;
-    navigate(`/course/${COURSE_ID}/module/${currentModule + 1}`);
+    // Navigate to the first lesson of the current module
+    navigate(`/course/foundation-path/lesson/fp-1-1`);
   };
 
   const handleStartModule = (moduleId: number) => {
-    navigate(`/course/${COURSE_ID}/module/${moduleId}`);
+    // Navigate to the first lesson of the selected module
+    navigate(`/course/foundation-path/lesson/fp-${moduleId}-1`);
   };
 
   return (

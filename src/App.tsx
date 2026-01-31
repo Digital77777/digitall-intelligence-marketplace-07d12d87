@@ -35,6 +35,7 @@ const FoundationPath = lazy(() => import("./pages/course/FoundationPath"));
 const PracticalSkills = lazy(() => import("./pages/course/PracticalSkills"));
 const TechnicalDeveloper = lazy(() => import("./pages/course/TechnicalDeveloper"));
 const BusinessCareers = lazy(() => import("./pages/course/BusinessCareers"));
+const LessonPage = lazy(() => import("./pages/course/LessonPage"));
 
 // AI Tools - Lazy loaded
 const AICodeAssistant = lazy(() => import("./pages/tools/AICodeAssistant"));
@@ -202,6 +203,7 @@ const routeGroups: AppRoute[] = [
   { path: "/course/practical-skills", component: PracticalSkills, protected: true },
   { path: "/course/technical-developer", component: TechnicalDeveloper, protected: true },
   { path: "/course/business-careers", component: BusinessCareers, protected: true },
+  { path: "/course/:courseId/lesson/:lessonId", component: LessonPage, protected: true },
 
   // AI Tools
   { path: "/ai-tools", component: AIToolsPage, protected: true },

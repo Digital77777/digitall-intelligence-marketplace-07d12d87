@@ -183,12 +183,13 @@ const PracticalSkills = () => {
   };
 
   const handleContinueLearning = () => {
-    const currentModule = enrollment?.current_module || 0;
-    navigate(`/course/${COURSE_ID}/module/${currentModule + 1}`);
+    // Navigate to the first lesson of the current module
+    navigate(`/course/practical-skills/lesson/ps-1-1`);
   };
 
   const handleStartModule = (moduleId: number) => {
-    navigate(`/course/${COURSE_ID}/module/${moduleId}`);
+    // Navigate to the first lesson of the selected module
+    navigate(`/course/practical-skills/lesson/ps-${moduleId}-1`);
   };
 
   return (
