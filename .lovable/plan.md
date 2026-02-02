@@ -1,432 +1,235 @@
 
 
-# Enhanced Learning Experience Implementation Plan
+# YouTube Video Embed Fallback Implementation Plan
 
 ## Overview
-Transform the two Starter tier courses ("AI Basics for Everyone" and "From Zero to Builder") into a world-class, immersive learning experience with proper video lesson infrastructure, interactive features, and comprehensive progress tracking.
+Add YouTube video embed support to the LessonPlayer component, allowing you to use YouTube videos as content while building your own video library. The player will intelligently detect YouTube URLs and render a responsive YouTube iframe embed, while maintaining all existing functionality for native videos and Cloudinary-hosted content.
 
 ---
 
-## Part 1: Database Schema Enhancement
+## Technical Approach
 
-### New Tables Required
+### Video Source Priority
+The LessonPlayer will handle video sources in this order:
+1. **Cloudinary URLs** - Optimized with automatic compression + CDN
+2. **YouTube URLs** - Embedded via iframe with YouTube's player
+3. **Direct video URLs** - Standard HTML5 video element
+4. **No URL** - Placeholder with "Coming Soon" message
 
-#### `course_lessons` - Individual Lesson Data
-```sql
-CREATE TABLE course_lessons (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  course_id TEXT NOT NULL,
-  module_id INTEGER NOT NULL,
-  lesson_order INTEGER NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  video_url TEXT,
-  video_duration_seconds INTEGER DEFAULT 0,
-  thumbnail_url TEXT,
-  content_type TEXT DEFAULT 'video', -- video, article, quiz, project
-  transcript TEXT,
-  resources JSONB DEFAULT '[]', -- downloadable files
-  is_preview BOOLEAN DEFAULT false,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(course_id, module_id, lesson_order)
-);
-```
+---
 
-#### `lesson_progress` - Per-Lesson Progress Tracking
-```sql
-CREATE TABLE lesson_progress (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  lesson_id UUID REFERENCES course_lessons(id),
-  enrollment_id UUID REFERENCES course_enrollments(id),
-  watch_time_seconds INTEGER DEFAULT 0,
-  completed BOOLEAN DEFAULT false,
-  completed_at TIMESTAMPTZ,
-  last_position_seconds INTEGER DEFAULT 0, -- resume playback
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, lesson_id)
-);
-```
+## Part 1: YouTube URL Detection Utility
 
-#### `lesson_bookmarks` - Timestamp Bookmarks
-```sql
-CREATE TABLE lesson_bookmarks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  lesson_id UUID REFERENCES course_lessons(id),
-  timestamp_seconds INTEGER NOT NULL,
-  title TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+### New File: `src/lib/videoUtils.ts`
 
-#### `lesson_notes` - Personal Notes
-```sql
-CREATE TABLE lesson_notes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  lesson_id UUID REFERENCES course_lessons(id),
-  content TEXT NOT NULL,
-  timestamp_seconds INTEGER,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now()
-);
+Create a utility module to detect and parse video URLs:
+
+```typescript
+// Video source types
+export type VideoSourceType = 'youtube' | 'cloudinary' | 'direct' | 'none';
+
+// Extract YouTube video ID from various URL formats
+// Supports:
+// - https://www.youtube.com/watch?v=VIDEO_ID
+// - https://youtu.be/VIDEO_ID
+// - https://www.youtube.com/embed/VIDEO_ID
+// - https://youtube.com/shorts/VIDEO_ID
+
+export function extractYouTubeId(url: string): string | null;
+export function getVideoSourceType(url: string | undefined): VideoSourceType;
+export function buildYouTubeEmbedUrl(videoId: string, options?: YouTubeEmbedOptions): string;
 ```
 
 ---
 
-## Part 2: New Components Architecture
+## Part 2: YouTube Player Component
 
-### Core Learning Components
+### New File: `src/components/learning/YouTubePlayer.tsx`
 
-#### 1. `LessonPlayer.tsx` - Premium Video Player
-Features:
-- Theater mode and fullscreen
-- Playback speed control (0.5x - 2x)
-- Picture-in-Picture support
-- Resume from last position
-- Auto-save progress every 30 seconds
-- Keyboard shortcuts (Space, Arrow keys, F, M)
-- Transcript sidebar with timestamp sync
-- Chapter navigation from video timestamps
-- Quality selector (if multiple sources)
-- Captions/subtitles support
+A dedicated YouTube embed component with:
+- Responsive 16:9 aspect ratio
+- Privacy-enhanced mode (`youtube-nocookie.com`)
+- Configurable player options via URL parameters
+- Loading state with skeleton
+- Error handling for invalid videos
 
 ```text
-+--------------------------------------------------+
-|  [ Course Name > Module > Lesson ]    [PiP] [FS] |
 +--------------------------------------------------+
 |                                                  |
-|                   VIDEO PLAYER                   |
-|           [ Progress Bar with Chapters ]         |
-|  [<<] [Play/Pause] [>>]  Speed: 1x  [CC] [Vol]  |
+|           YOUTUBE IFRAME EMBED                   |
+|        (privacy-enhanced, responsive)            |
+|                                                  |
++--------------------------------------------------+
+|  [External player controls via YouTube]          |
 +--------------------------------------------------+
 ```
 
-#### 2. `LessonSidebar.tsx` - Navigation & Resources
-Features:
-- Module/lesson tree with completion status
-- Current lesson highlight
-- Quick jump between lessons
-- Resources tab (PDFs, code files, links)
-- Notes tab (personal notes with timestamps)
-- Bookmarks tab
-- Transcript tab with search
-
-#### 3. `LessonProgress.tsx` - Progress Tracker
-Features:
-- Module completion ring
-- Lesson count (3/12 completed)
-- Time spent today/total
-- Streak counter
-- Achievement badges
-
-#### 4. `CourseCompletionCertificate.tsx` - Certificate Generator
-Features:
-- Beautiful PDF certificate
-- Dynamic name and date
-- Course title and instructor
-- Verification QR code
-- Share to LinkedIn button
-- Download as PDF
-
-#### 5. `QuizComponent.tsx` - Module Quizzes
-Features:
-- Multiple choice questions
-- Immediate feedback
-- Retry option
-- Pass/fail threshold
-- Celebration animation on pass
+**Embed URL Parameters:**
+- `rel=0` - Don't show related videos from other channels
+- `modestbranding=1` - Minimal YouTube branding
+- `enablejsapi=1` - Enable JavaScript API for future progress tracking
+- `origin={window.location.origin}` - Security origin
 
 ---
 
-## Part 3: Enhanced Lesson Viewer Page
+## Part 3: LessonPlayer Enhancement
 
-### New Route: `/course/:courseId/lesson/:lessonId`
+### File: `src/components/learning/LessonPlayer.tsx`
 
-#### Page Layout (Desktop)
-```text
-+---------------------------------------------------------------+
-| [< Back to Course]  AI Basics for Everyone    [Your Progress] |
-+---------------------------------------------------------------+
-|                                |                              |
-|                                |  [ Course Content ]          |
-|       VIDEO PLAYER             |  + Module 1: Intro to AI     |
-|       (16:9 aspect)            |    ✓ Lesson 1: What is AI    |
-|                                |    ► Lesson 2: History       |
-|  [<<] [▶] [>>]  1x  [T] [FS]  |    ○ Lesson 3: Types         |
-|--------------------------------|  + Module 2: Mathematics     |
-|  Lesson Title                  |                              |
-|  Description text here...      |  [ Resources ]  [ Notes ]    |
-|                                |  📄 Cheat Sheet.pdf          |
-|  [Mark Complete]   [Next ►]    |  💻 Code Examples.zip        |
-+---------------------------------------------------------------+
+Update the player to conditionally render:
+
+```typescript
+// Detect video source type
+const videoSourceType = getVideoSourceType(videoUrl);
+const youtubeId = videoSourceType === 'youtube' ? extractYouTubeId(videoUrl) : null;
+
+// Render based on source type
+{videoSourceType === 'youtube' && youtubeId ? (
+  <YouTubePlayer
+    videoId={youtubeId}
+    title={title}
+    onReady={() => setIsReady(true)}
+  />
+) : effectiveVideoUrl ? (
+  <video ... />  // Existing native video player
+) : (
+  <Placeholder />  // "Coming Soon" state
+)}
 ```
 
-#### Page Layout (Mobile)
-```text
-+------------------------+
-| [< Back]  Course Title |
-+------------------------+
-|                        |
-|    VIDEO PLAYER        |
-|    (Full width)        |
-|                        |
-+------------------------+
-| Lesson Title           |
-| Description...         |
-+------------------------+
-| [▼ Course Content]     |
-| [▼ Resources]          |
-| [▼ Notes]              |
-+------------------------+
-| [Mark Complete] [Next] |
-+------------------------+
+**Key Changes:**
+- Import video utilities and YouTubePlayer component
+- Add video source type detection before rendering
+- Conditionally render YouTube embed or native player
+- Show simplified controls for YouTube (hide native controls that don't apply)
+- Maintain bookmark and notes functionality for all video types
+
+---
+
+## Part 4: Lesson Data Structure Update
+
+### Files: `src/data/foundationPathLessons.ts` & `src/data/practicalSkillsLessons.ts`
+
+Add optional `videoUrl` field to the Lesson interface:
+
+```typescript
+export interface Lesson {
+  id: string;
+  courseId: string;
+  moduleId: number;
+  lessonOrder: number;
+  title: string;
+  description: string;
+  videoUrl?: string;           // NEW: YouTube URL, Cloudinary URL, or direct URL
+  videoDurationSeconds: number;
+  contentType: 'video' | 'article' | 'quiz' | 'project';
+  isPreview: boolean;
+  resources: { title: string; type: string; url: string }[];
+}
 ```
 
 ---
 
-## Part 4: Course Data Structure
+## Part 5: LessonPage Integration
 
-### AI Basics for Everyone (Foundation Path)
-88 comprehensive lessons across 4 modules:
+### File: `src/pages/course/LessonPage.tsx`
 
-#### Module 1: Introduction to AI (8 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | What is Artificial Intelligence? | 8 min | Video |
-| 2 | The Fascinating History of AI | 10 min | Video |
-| 3 | Types of AI: Narrow vs General vs Super | 12 min | Video |
-| 4 | AI vs Machine Learning vs Deep Learning | 15 min | Video |
-| 5 | Real-World AI Applications Today | 10 min | Video |
-| 6 | Ethical Considerations in AI | 12 min | Video |
-| 7 | The Future of AI Technology | 8 min | Video |
-| 8 | Module Quiz & Hands-on Exercise | 20 min | Quiz + Project |
+Update to pass the video URL from lesson data:
 
-#### Module 2: Mathematics for AI (12 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | Why Math Matters for AI | 5 min | Video |
-| 2 | Statistics Fundamentals | 15 min | Video |
-| 3 | Probability Made Simple | 15 min | Video |
-| 4 | Understanding Data Distributions | 12 min | Video |
-| 5 | Correlation vs Causation | 10 min | Video |
-| 6 | Introduction to Linear Algebra | 15 min | Video |
-| 7 | Vectors and Their Applications | 12 min | Video |
-| 8 | Matrices Basics | 15 min | Video |
-| 9 | Mathematical Thinking for AI | 10 min | Video |
-| 10 | Practical Math Examples | 12 min | Video |
-| 11 | Tools: Calculator vs Understanding | 8 min | Video |
-| 12 | Module Quiz & Practice Problems | 25 min | Quiz + Exercise |
+```typescript
+// Current (line 210)
+videoUrl={undefined}
 
-#### Module 3: Python Programming (16 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | Setting Up Python Environment | 10 min | Video |
-| 2 | Variables and Data Types | 12 min | Video |
-| 3 | Control Flow: If/Else Statements | 15 min | Video |
-| 4 | Loops: For and While | 15 min | Video |
-| 5 | Functions and Methods | 18 min | Video |
-| 6 | Working with Lists | 12 min | Video |
-| 7 | Dictionaries and Sets | 12 min | Video |
-| 8 | File Handling Basics | 10 min | Video |
-| 9 | Introduction to Libraries | 8 min | Video |
-| 10 | Pandas for Data Analysis | 20 min | Video |
-| 11 | NumPy for Numerical Computing | 18 min | Video |
-| 12 | Matplotlib for Visualization | 15 min | Video |
-| 13 | Building Your First AI Script | 20 min | Video |
-| 14 | Error Handling & Debugging | 12 min | Video |
-| 15 | Project: Data Analysis Tool | 30 min | Project |
-| 16 | Module Assessment | 20 min | Quiz |
-
-#### Module 4: AI in Industries (8 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | AI in Healthcare | 12 min | Video |
-| 2 | AI in Finance & Banking | 12 min | Video |
-| 3 | AI in Retail & E-commerce | 10 min | Video |
-| 4 | AI in Manufacturing | 10 min | Video |
-| 5 | AI in Education | 10 min | Video |
-| 6 | AI in Transportation | 10 min | Video |
-| 7 | AI Career Opportunities | 15 min | Video |
-| 8 | Building Your AI Portfolio | 20 min | Project |
+// Updated
+videoUrl={lesson.videoUrl}
+```
 
 ---
 
-### From Zero to Builder (Practical Skills Path)
-88 comprehensive lessons across 4 modules:
+## Part 6: Sample YouTube Content
 
-#### Module 1: Master Prompt Engineering (10 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | Introduction to Prompt Engineering | 8 min | Video |
-| 2 | Anatomy of a Great Prompt | 15 min | Video |
-| 3 | Prompt Frameworks & Templates | 18 min | Video |
-| 4 | Context Setting Techniques | 12 min | Video |
-| 5 | Chain of Thought Prompting | 15 min | Video |
-| 6 | Role-based Prompting Mastery | 12 min | Video |
-| 7 | Advanced Prompt Strategies | 18 min | Video |
-| 8 | Prompt Optimization & Testing | 15 min | Video |
-| 9 | Building Your Prompt Library | 12 min | Project |
-| 10 | Module Assessment | 20 min | Quiz |
+### Example Lesson Data Update
 
-#### Module 2: AI Tools Mastery (12 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | The AI Tools Landscape | 10 min | Video |
-| 2 | ChatGPT Advanced Techniques | 20 min | Video |
-| 3 | Claude for Research & Analysis | 18 min | Video |
-| 4 | Midjourney & AI Art Generation | 25 min | Video |
-| 5 | AI Writing & Content Tools | 15 min | Video |
-| 6 | AI Video & Audio Creation | 20 min | Video |
-| 7 | AI Code Generation Tools | 18 min | Video |
-| 8 | AI Presentation & Design | 15 min | Video |
-| 9 | AI Data Analysis Platforms | 15 min | Video |
-| 10 | Workflow Automation with AI | 18 min | Video |
-| 11 | Building AI Tool Stacks | 15 min | Project |
-| 12 | Module Assessment | 20 min | Quiz |
+Here's how lessons can be configured with YouTube content:
 
-#### Module 3: No-Code AI Building (14 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | Introduction to No-Code AI | 10 min | Video |
-| 2 | Zapier AI Automation | 20 min | Video |
-| 3 | Bubble AI App Development | 25 min | Video |
-| 4 | Airtable AI Workflows | 18 min | Video |
-| 5 | Notion AI Databases | 15 min | Video |
-| 6 | Make (Integromat) AI Scenarios | 20 min | Video |
-| 7 | Building AI Chatbots | 25 min | Video |
-| 8 | Voice AI Applications | 18 min | Video |
-| 9 | AI Form & Survey Builders | 12 min | Video |
-| 10 | AI E-commerce Solutions | 15 min | Video |
-| 11 | Custom AI Dashboards | 20 min | Video |
-| 12 | AI Mobile App Creation | 18 min | Video |
-| 13 | Deployment & Scaling | 15 min | Video |
-| 14 | Capstone: Complete AI App | 45 min | Project |
+```typescript
+{
+  id: 'fp-1-1',
+  title: 'What is Artificial Intelligence?',
+  videoUrl: 'https://www.youtube.com/watch?v=2ePf9rue1Ao', // 3Blue1Brown
+  videoDurationSeconds: 480,
+  // ... rest of lesson data
+}
+```
 
-#### Module 4: Data Handling & Analysis (8 lessons)
-| # | Lesson Title | Duration | Type |
-|---|-------------|----------|------|
-| 1 | Data Types & Sources | 10 min | Video |
-| 2 | Web Scraping Basics | 20 min | Video |
-| 3 | API Data Collection | 18 min | Video |
-| 4 | Data Cleaning Techniques | 15 min | Video |
-| 5 | Excel & Google Sheets AI | 15 min | Video |
-| 6 | Basic Data Visualization | 18 min | Video |
-| 7 | AI-Powered Data Analysis | 20 min | Video |
-| 8 | Final Project: Data Pipeline | 40 min | Project |
+**Curated Educational YouTube Content (Free to Use):**
+
+| Module | Lesson | Suggested YouTube Source |
+|--------|--------|-------------------------|
+| Intro to AI | What is AI? | CrashCourse or 3Blue1Brown |
+| Mathematics | Linear Algebra | 3Blue1Brown Essence of LA |
+| Python | Variables | freeCodeCamp Python tutorials |
+| Prompt Engineering | Basics | AI Jason or similar |
 
 ---
 
-## Part 5: File Structure
+## File Structure Summary
 
 ```
 src/
+├── lib/
+│   └── videoUtils.ts           (NEW - URL detection utilities)
 ├── components/
 │   └── learning/
-│       ├── LessonPlayer.tsx           (Premium video player)
-│       ├── LessonSidebar.tsx          (Navigation + resources)
-│       ├── LessonNotes.tsx            (Note-taking with timestamps)
-│       ├── LessonBookmarks.tsx        (Bookmark management)
-│       ├── LessonTranscript.tsx       (Synced transcript)
-│       ├── LessonResources.tsx        (Downloads + links)
-│       ├── ModuleProgress.tsx         (Progress visualization)
-│       ├── CourseNavigation.tsx       (Lesson tree)
-│       ├── QuizComponent.tsx          (Interactive quizzes)
-│       ├── CertificateGenerator.tsx   (PDF certificate)
-│       ├── PlaybackSpeedControl.tsx   (Speed selector)
-│       ├── KeyboardShortcuts.tsx      (Shortcut guide)
-│       └── index.ts
-├── pages/
-│   └── course/
-│       └── LessonPage.tsx             (Main lesson viewer)
-├── hooks/
-│   ├── useLessonProgress.tsx          (Lesson progress tracking)
-│   ├── useLessonNotes.tsx             (Notes CRUD)
-│   ├── useLessonBookmarks.tsx         (Bookmarks CRUD)
-│   └── useCourseContent.tsx           (Fetch course lessons)
+│       ├── YouTubePlayer.tsx   (NEW - YouTube embed component)
+│       ├── LessonPlayer.tsx    (UPDATED - conditional rendering)
+│       └── index.ts            (UPDATED - export YouTubePlayer)
 ├── data/
-│   ├── foundationPathLessons.ts       (Course 1 lesson data)
-│   └── practicalSkillsLessons.ts      (Course 2 lesson data)
+│   ├── foundationPathLessons.ts   (UPDATED - add videoUrl field)
+│   └── practicalSkillsLessons.ts  (UPDATED - add videoUrl field)
+└── pages/
+    └── course/
+        └── LessonPage.tsx      (UPDATED - pass videoUrl prop)
 ```
 
 ---
 
-## Part 6: Key Features Implementation
+## Technical Details
 
-### 1. Smart Progress Tracking
-- Auto-save video position every 10 seconds
-- Mark lesson complete at 90% watch time
-- Resume playback from last position
-- Time-based progress calculation
+### YouTube URL Formats Supported
+- `https://www.youtube.com/watch?v=VIDEO_ID`
+- `https://www.youtube.com/watch?v=VIDEO_ID&t=123` (with timestamp)
+- `https://youtu.be/VIDEO_ID`
+- `https://www.youtube.com/embed/VIDEO_ID`
+- `https://youtube.com/shorts/VIDEO_ID`
 
-### 2. Learning Analytics
-- Daily/weekly learning time
-- Module completion rates
-- Quiz scores
-- Streak tracking
+### Privacy & Performance
+- Uses `youtube-nocookie.com` for enhanced privacy (no cookies until play)
+- Lazy loading with `loading="lazy"` attribute
+- Responsive sizing with aspect-ratio CSS
 
-### 3. Engagement Features
-- Timestamped notes
-- Video bookmarks
-- Shareable highlights
-- Discussion per lesson (future)
-
-### 4. Accessibility
-- Keyboard navigation
-- Screen reader support
-- Captions/subtitles
-- Adjustable playback speed
-
-### 5. Mobile Optimization
-- Touch-friendly controls
-- Swipe navigation
-- Offline capability (PWA)
-- Landscape video mode
+### UX Considerations
+- YouTube videos use YouTube's built-in controls (speed, fullscreen, etc.)
+- Bookmark and notes features remain available below the player
+- Completed badge still displays when lesson is marked complete
+- Keyboard shortcuts for native controls gracefully disabled for YouTube
 
 ---
 
-## Part 7: Route Updates
-
-```typescript
-// New routes in App.tsx
-{ path: "/course/:courseId/lesson/:lessonId", component: LessonPage, protected: true }
-```
-
----
-
-## Part 8: Technical Considerations
-
-### Video Hosting Strategy
-Since video hosting requires significant infrastructure, the implementation will:
-1. Support external video URLs (YouTube, Vimeo, Cloudinary)
-2. Use placeholder videos initially with sample educational content
-3. Prepare for future self-hosted video with storage bucket
-
-### Performance Optimizations
-- Lazy load lesson content
-- Preload next lesson video
-- Efficient progress saves (debounced)
-- Skeleton loading states
-
-### Storage Requirements
-- `course-lessons` bucket for video uploads (future)
-- `course-resources` bucket for downloadable files
+## Future Enhancements (Not in Scope)
+- YouTube IFrame API integration for precise progress tracking
+- Vimeo embed support
+- Auto-pause on tab switch
+- Picture-in-Picture for YouTube (requires API)
 
 ---
 
 ## Summary
 
-This implementation creates a Netflix-quality learning experience with:
-- 176 total lessons across both courses
-- Premium video player with all modern features
-- Comprehensive progress tracking
-- Personal notes and bookmarks
-- Mobile-first responsive design
-- Certificate generation on completion
-
-The system is designed to scale and can easily accommodate additional courses in the future.
+This implementation provides a seamless way to use YouTube videos as course content:
+- Zero cost for video hosting
+- High-quality, reliable video delivery via YouTube CDN
+- Easy content curation from educational creators
+- Smooth transition path to Cloudinary when original content is ready
+- Full learning platform features (notes, bookmarks, completion) work with all video types
 
