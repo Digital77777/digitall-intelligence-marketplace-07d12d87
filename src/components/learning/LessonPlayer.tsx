@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useLessonProgress } from '@/hooks/useLessonProgress';
 import { useLessonBookmarks, formatTimestamp } from '@/hooks/useLessonBookmarks';
+import { useCloudinaryVideo } from '@/hooks/useCloudinaryVideo';
 import { toast } from 'sonner';
 
 interface LessonPlayerProps {
@@ -65,6 +66,20 @@ export const LessonPlayer = ({
   } = useLessonProgress(lessonId);
   
   const { createBookmark } = useLessonBookmarks(lessonId);
+  
+  // Cloudinary video optimization - automatic CDN + compression
+  const { 
+    optimizedUrl, 
+    hlsUrl, 
+    posterUrl, 
+    isCloudinary 
+  } = useCloudinaryVideo(videoUrl, {
+    quality: 'auto',
+    width: 1920,
+  });
+  
+  // Use optimized URL if available
+  const effectiveVideoUrl = isCloudinary ? optimizedUrl : videoUrl;
 
   // Auto-hide controls
   useEffect(() => {
@@ -270,15 +285,17 @@ export const LessonPlayer = ({
       )}
     >
       {/* Video Element */}
-      {videoUrl ? (
+      {effectiveVideoUrl ? (
         <video
           ref={videoRef}
-          src={videoUrl}
+          src={effectiveVideoUrl}
+          poster={isCloudinary ? posterUrl : undefined}
           className="w-full aspect-video"
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={() => setIsPlaying(false)}
           onClick={togglePlay}
+          preload="metadata"
         />
       ) : (
         // Placeholder when no video URL
