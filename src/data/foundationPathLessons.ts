@@ -8,6 +8,7 @@ export interface Lesson {
   lessonOrder: number;
   title: string;
   description: string;
+  videoUrl?: string; // YouTube URL, Cloudinary URL, or direct video URL
   videoDurationSeconds: number;
   contentType: 'video' | 'article' | 'quiz' | 'project';
   isPreview: boolean;

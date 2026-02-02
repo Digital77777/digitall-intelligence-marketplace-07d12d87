@@ -4,3 +4,4 @@ export { LessonNotes } from './LessonNotes';
 export { LessonBookmarks } from './LessonBookmarks';
 export { ModuleProgress } from './ModuleProgress';
 export { QuizComponent, sampleQuizQuestions } from './QuizComponent';
+export { YouTubePlayer } from './YouTubePlayer';

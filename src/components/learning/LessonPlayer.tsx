@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { useLessonProgress } from '@/hooks/useLessonProgress';
 import { useLessonBookmarks, formatTimestamp } from '@/hooks/useLessonBookmarks';
 import { useCloudinaryVideo } from '@/hooks/useCloudinaryVideo';
+import { getVideoSourceType, extractYouTubeId } from '@/lib/videoUtils';
+import { YouTubePlayer } from './YouTubePlayer';
 import { toast } from 'sonner';
 
 interface LessonPlayerProps {
@@ -67,19 +69,24 @@ export const LessonPlayer = ({
   
   const { createBookmark } = useLessonBookmarks(lessonId);
   
+  // Detect video source type
+  const videoSourceType = getVideoSourceType(videoUrl);
+  const youtubeId = videoSourceType === 'youtube' ? extractYouTubeId(videoUrl!) : null;
+  const isYouTube = videoSourceType === 'youtube' && youtubeId !== null;
+
   // Cloudinary video optimization - automatic CDN + compression
   const { 
     optimizedUrl, 
     hlsUrl, 
     posterUrl, 
     isCloudinary 
-  } = useCloudinaryVideo(videoUrl, {
+  } = useCloudinaryVideo(videoSourceType === 'cloudinary' ? videoUrl : undefined, {
     quality: 'auto',
     width: 1920,
   });
   
-  // Use optimized URL if available
-  const effectiveVideoUrl = isCloudinary ? optimizedUrl : videoUrl;
+  // Use optimized URL if available (skip for YouTube)
+  const effectiveVideoUrl = isYouTube ? undefined : (isCloudinary ? optimizedUrl : videoUrl);
 
   // Auto-hide controls
   useEffect(() => {
@@ -284,8 +291,17 @@ export const LessonPlayer = ({
         isFullscreen && "rounded-none"
       )}
     >
-      {/* Video Element */}
-      {effectiveVideoUrl ? (
+      {/* Video Element - YouTube, Native, or Placeholder */}
+      {isYouTube && youtubeId ? (
+        // YouTube embed
+        <YouTubePlayer
+          videoId={youtubeId}
+          title={title}
+          originalUrl={videoUrl}
+          className="w-full"
+        />
+      ) : effectiveVideoUrl ? (
+        // Native video player (Cloudinary or direct URL)
         <video
           ref={videoRef}
           src={effectiveVideoUrl}
@@ -320,13 +336,14 @@ export const LessonPlayer = ({
         </div>
       )}
 
-      {/* Controls Overlay */}
-      <div 
-        className={cn(
-          "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300",
-          showControls ? "opacity-100" : "opacity-0"
-        )}
-      >
+      {/* Controls Overlay - Only show for native video (YouTube has its own controls) */}
+      {!isYouTube && (
+        <div 
+          className={cn(
+            "absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300",
+            showControls ? "opacity-100" : "opacity-0"
+          )}
+        >
         {/* Progress Bar */}
         <div 
           ref={progressRef}
@@ -489,6 +506,7 @@ export const LessonPlayer = ({
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };

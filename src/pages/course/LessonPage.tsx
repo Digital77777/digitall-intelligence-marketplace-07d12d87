@@ -207,7 +207,7 @@ const LessonPage = () => {
             {/* Video Player */}
             <LessonPlayer
               lessonId={lessonId || ''}
-              videoUrl={undefined} // Video URLs will be added when content is uploaded
+              videoUrl={lesson.videoUrl}
               duration={lesson.videoDurationSeconds}
               title={lesson.title}
               onComplete={handleComplete}
