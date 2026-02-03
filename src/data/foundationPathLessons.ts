@@ -54,6 +54,7 @@ export const foundationPathModules: Module[] = [
         lessonOrder: 2,
         title: 'The Fascinating History of AI',
         description: 'Journey through the evolution of AI from the 1950s Dartmouth Conference to modern deep learning breakthroughs.',
+        videoUrl: 'https://youtu.be/roJFfJThebc',
         videoDurationSeconds: 600,
         contentType: 'video',
         isPreview: false,
