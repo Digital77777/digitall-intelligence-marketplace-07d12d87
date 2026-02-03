@@ -69,6 +69,7 @@ export const foundationPathModules: Module[] = [
         lessonOrder: 3,
         title: 'Types of AI: Narrow vs General vs Super',
         description: 'Learn the differences between ANI, AGI, and ASI, and understand where current AI systems fall on this spectrum.',
+        videoUrl: 'https://youtu.be/n7bngGwDpeU',
         videoDurationSeconds: 720,
         contentType: 'video',
         isPreview: false,
