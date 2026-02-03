@@ -38,6 +38,7 @@ export const foundationPathModules: Module[] = [
         lessonOrder: 1,
         title: 'What is Artificial Intelligence?',
         description: 'Discover what AI really means, how it works at a high level, and why it matters for everyone in today\'s world.',
+        videoUrl: 'https://youtu.be/kWmX3pd1f10',
         videoDurationSeconds: 480,
         contentType: 'video',
         isPreview: true,
