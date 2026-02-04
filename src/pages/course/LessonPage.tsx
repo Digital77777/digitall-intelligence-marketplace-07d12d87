@@ -7,7 +7,8 @@ import {
   LessonPlayer, 
   LessonSidebar, 
   LessonNotes, 
-  LessonBookmarks 
+  LessonBookmarks,
+  ModuleProgressTracker,
 } from '@/components/learning';
 import { 
   foundationPathModules, 
@@ -26,7 +27,8 @@ import {
   getPracticalSkillsPreviousLesson,
 } from '@/data/practicalSkillsLessons';
 import { useCourseEnrollment } from '@/hooks/useCourseEnrollment';
-import { useLessonProgress, useCourseProgress } from '@/hooks/useLessonProgress';
+import { useLessonProgress } from '@/hooks/useLessonProgress';
+import { useRealtimeModuleProgress } from '@/hooks/useRealtimeLessonProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
@@ -68,21 +70,25 @@ const LessonPage = () => {
 
   // Enrollment and progress
   const { isEnrolled, isLoading: enrollmentLoading } = useCourseEnrollment(courseId || '');
-  const { data: allProgress, isLoading: progressLoading } = useCourseProgress(courseId || '');
   const { isCompleted, markComplete } = useLessonProgress(lessonId || '');
-
-  // Get completed lesson IDs from progress data
-  const completedLessons = useMemo(() => {
-    if (!allProgress) return [];
-    return allProgress
-      .filter(p => p.completed)
-      .map(p => p.lesson_id);
-  }, [allProgress]);
+  
+  // Real-time progress tracking
+  const { 
+    completedLessons, 
+    moduleProgress: allModuleProgress, 
+    isSyncing,
+    isLoading: progressLoading 
+  } = useRealtimeModuleProgress(courseId || '', modules);
 
   // Current module
   const currentModule = useMemo(() => {
     return modules.find(m => m.lessons.some(l => l.id === lessonId));
   }, [modules, lessonId]);
+
+  // Get current module progress
+  const currentModuleProgress = useMemo(() => {
+    return allModuleProgress.find(mp => mp.moduleId === currentModule?.id);
+  }, [allModuleProgress, currentModule]);
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -193,6 +199,7 @@ const LessonPage = () => {
                 resources={lesson.resources}
                 notes={<LessonNotes lessonId={lessonId || ''} currentTime={currentTime} />}
                 bookmarks={<LessonBookmarks lessonId={lessonId || ''} />}
+                isSyncing={isSyncing}
               />
             </SheetContent>
           </Sheet>
@@ -249,6 +256,18 @@ const LessonPage = () => {
               </div>
             </div>
 
+            {/* Module Progress Tracker - Mobile */}
+            {currentModule && (
+              <div className="lg:hidden">
+                <ModuleProgressTracker
+                  module={currentModule}
+                  completedLessons={completedLessons}
+                  currentLessonId={lessonId}
+                  isSyncing={isSyncing}
+                />
+              </div>
+            )}
+
             {/* Mobile Notes Section */}
             <div className="lg:hidden space-y-4 pt-6 border-t">
               <h3 className="font-semibold">Your Notes</h3>
@@ -268,6 +287,7 @@ const LessonPage = () => {
             resources={lesson.resources}
             notes={<LessonNotes lessonId={lessonId || ''} currentTime={currentTime} />}
             bookmarks={<LessonBookmarks lessonId={lessonId || ''} />}
+            isSyncing={isSyncing}
           />
         </div>
       </div>

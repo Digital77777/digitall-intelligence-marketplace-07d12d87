@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Module, Lesson, formatDuration } from '@/data/foundationPathLessons';
+import { ModuleProgressTracker } from './ModuleProgressTracker';
 
 interface LessonSidebarProps {
   modules: Module[];
@@ -15,6 +16,7 @@ interface LessonSidebarProps {
   resources?: { title: string; type: string; url: string }[];
   notes?: React.ReactNode;
   bookmarks?: React.ReactNode;
+  isSyncing?: boolean;
 }
 
 const getContentTypeIcon = (type: string) => {
@@ -41,6 +43,7 @@ export const LessonSidebar = ({
   resources = [],
   notes,
   bookmarks,
+  isSyncing = false,
 }: LessonSidebarProps) => {
   const [expandedModules, setExpandedModules] = useState<number[]>([
     // Auto-expand the module containing the current lesson
@@ -66,6 +69,9 @@ export const LessonSidebar = ({
 
   // Flatten all lessons to check accessibility across modules
   const allLessons = modules.flatMap(m => m.lessons);
+
+  // Get current module
+  const currentModule = modules.find(m => m.lessons.some(l => l.id === currentLessonId));
 
   return (
     <div className="h-full flex flex-col bg-card border-l">
@@ -99,6 +105,18 @@ export const LessonSidebar = ({
 
         <ScrollArea className="flex-1">
           <TabsContent value="content" className="m-0 p-0">
+            {/* Current Module Progress */}
+            {currentModule && (
+              <div className="p-4 border-b">
+                <ModuleProgressTracker
+                  module={currentModule}
+                  completedLessons={completedLessons}
+                  currentLessonId={currentLessonId}
+                  isSyncing={isSyncing}
+                />
+              </div>
+            )}
+            
             <div className="p-4 space-y-2">
               {modules.map((module) => {
                 const isExpanded = expandedModules.includes(module.id);
