@@ -43,10 +43,6 @@ const LessonPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
 
-  // Check if this is a quiz/assessment lesson
-  const isAssessmentLesson = lesson?.contentType === 'quiz';
-  const isModule1Assessment = lessonId === 'fp-1-8';
-
   // Determine which course data to use
   const isFoundationPath = courseId === FOUNDATION_PATH_ID;
   const modules = isFoundationPath ? foundationPathModules : practicalSkillsModules;
@@ -96,6 +92,10 @@ const LessonPage = () => {
   const currentModuleProgress = useMemo(() => {
     return allModuleProgress.find(mp => mp.moduleId === currentModule?.id);
   }, [allModuleProgress, currentModule]);
+
+  // Check if this is a quiz/assessment lesson
+  const isAssessmentLesson = lesson?.contentType === 'quiz';
+  const isModule1Assessment = lessonId === 'fp-1-8';
 
   // Redirect if not authenticated
   useEffect(() => {
