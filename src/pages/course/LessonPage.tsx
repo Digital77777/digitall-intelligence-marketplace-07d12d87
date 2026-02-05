@@ -306,19 +306,21 @@ const LessonPage = () => {
         </div>
 
         {/* Desktop Sidebar */}
-        <div className="hidden lg:block w-80 xl:w-96 shrink-0 border-l overflow-hidden">
-          <LessonSidebar
-            modules={modules}
-            currentLessonId={lessonId || ''}
-            completedLessons={completedLessons}
-            isEnrolled={isEnrolled}
-            onSelectLesson={handleSelectLesson}
-            resources={lesson.resources}
-            notes={<LessonNotes lessonId={lessonId || ''} currentTime={currentTime} />}
-            bookmarks={<LessonBookmarks lessonId={lessonId || ''} />}
-            isSyncing={isSyncing}
-          />
-        </div>
+        {!isAssessmentLesson && (
+          <div className="hidden lg:block w-80 xl:w-96 shrink-0 border-l overflow-hidden">
+            <LessonSidebar
+              modules={modules}
+              currentLessonId={lessonId || ''}
+              completedLessons={completedLessons}
+              isEnrolled={isEnrolled}
+              onSelectLesson={handleSelectLesson}
+              resources={lesson.resources}
+              notes={<LessonNotes lessonId={lessonId || ''} currentTime={currentTime} />}
+              bookmarks={<LessonBookmarks lessonId={lessonId || ''} />}
+              isSyncing={isSyncing}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
