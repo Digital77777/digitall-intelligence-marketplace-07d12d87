@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Check, ArrowRight, Menu, X } from 'lucide-react';
+import { ArrowLeft, Check, ArrowRight, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
@@ -9,6 +9,7 @@ import {
   LessonNotes, 
   LessonBookmarks,
   ModuleProgressTracker,
+  ModuleAssessment,
 } from '@/components/learning';
 import { 
   foundationPathModules, 
@@ -32,6 +33,8 @@ import { useRealtimeModuleProgress } from '@/hooks/useRealtimeLessonProgress';
 import { useAuth } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import { module1QuizData } from '@/data/module1QuizData';
+import { module1ExerciseData } from '@/data/module1ExerciseData';
 
 const LessonPage = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
@@ -39,6 +42,10 @@ const LessonPage = () => {
   const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
+
+  // Check if this is a quiz/assessment lesson
+  const isAssessmentLesson = lesson?.contentType === 'quiz';
+  const isModule1Assessment = lessonId === 'fp-1-8';
 
   // Determine which course data to use
   const isFoundationPath = courseId === FOUNDATION_PATH_ID;
