@@ -218,53 +218,73 @@ const LessonPage = () => {
         {/* Video & Content Area */}
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto p-4 lg:p-6 space-y-6">
-            {/* Video Player */}
-            <LessonPlayer
-              lessonId={lessonId || ''}
-              videoUrl={lesson.videoUrl}
-              duration={lesson.videoDurationSeconds}
-              title={lesson.title}
-              onComplete={handleComplete}
-              onNext={nextLesson ? handleNext : undefined}
-              onPrevious={previousLesson ? handlePrevious : undefined}
-              hasNext={!!nextLesson}
-              hasPrevious={!!previousLesson}
-            />
+            {/* Assessment or Video Content */}
+            {isAssessmentLesson && isModule1Assessment ? (
+              <ModuleAssessment
+                quizData={module1QuizData}
+                exerciseData={module1ExerciseData}
+                onComplete={(passed, exerciseScore) => {
+                  if (passed) {
+                    markComplete();
+                    toast.success('Module 1 completed! Great work! 🎉');
+                    if (nextLesson) {
+                      setTimeout(() => handleNext(), 2000);
+                    }
+                  }
+                }}
+                onBack={() => navigate(`/course/${courseId}`)}
+              />
+            ) : (
+              <>
+                {/* Video Player */}
+                <LessonPlayer
+                  lessonId={lessonId || ''}
+                  videoUrl={lesson.videoUrl}
+                  duration={lesson.videoDurationSeconds}
+                  title={lesson.title}
+                  onComplete={handleComplete}
+                  onNext={nextLesson ? handleNext : undefined}
+                  onPrevious={previousLesson ? handlePrevious : undefined}
+                  hasNext={!!nextLesson}
+                  hasPrevious={!!previousLesson}
+                />
 
-            {/* Lesson Info */}
-            <div className="space-y-4">
-              <div>
-                <h1 className="text-2xl font-bold">{lesson.title}</h1>
-                <p className="text-muted-foreground mt-2">{lesson.description}</p>
-              </div>
+                {/* Lesson Info */}
+                <div className="space-y-4">
+                  <div>
+                    <h1 className="text-2xl font-bold">{lesson.title}</h1>
+                    <p className="text-muted-foreground mt-2">{lesson.description}</p>
+                  </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap gap-3 pt-4 border-t">
-                {!isCompleted && (
-                  <Button onClick={() => markComplete()} variant="outline">
-                    <Check className="h-4 w-4 mr-2" />
-                    Mark as Complete
-                  </Button>
-                )}
-                
-                {nextLesson && (
-                  <Button onClick={handleNext}>
-                    Next: {nextLesson.title}
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-3 pt-4 border-t">
+                    {!isCompleted && (
+                      <Button onClick={() => markComplete()} variant="outline">
+                        <Check className="h-4 w-4 mr-2" />
+                        Mark as Complete
+                      </Button>
+                    )}
+                    
+                    {nextLesson && (
+                      <Button onClick={handleNext}>
+                        Next: {nextLesson.title}
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    )}
 
-                {!nextLesson && isCompleted && (
-                  <Button onClick={() => navigate(`/course/${courseId}`)}>
-                    Back to Course
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                )}
-              </div>
-            </div>
+                    {!nextLesson && isCompleted && (
+                      <Button onClick={() => navigate(`/course/${courseId}`)}>
+                        Back to Course
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Module Progress Tracker - Mobile */}
-            {currentModule && (
+            {currentModule && !isAssessmentLesson && (
               <div className="lg:hidden">
                 <ModuleProgressTracker
                   module={currentModule}
@@ -276,10 +296,12 @@ const LessonPage = () => {
             )}
 
             {/* Mobile Notes Section */}
-            <div className="lg:hidden space-y-4 pt-6 border-t">
-              <h3 className="font-semibold">Your Notes</h3>
-              <LessonNotes lessonId={lessonId || ''} currentTime={currentTime} />
-            </div>
+            {!isAssessmentLesson && (
+              <div className="lg:hidden space-y-4 pt-6 border-t">
+                <h3 className="font-semibold">Your Notes</h3>
+                <LessonNotes lessonId={lessonId || ''} currentTime={currentTime} />
+              </div>
+            )}
           </div>
         </div>
 
