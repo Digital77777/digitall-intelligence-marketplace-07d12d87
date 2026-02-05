@@ -5,4 +5,6 @@ export { LessonBookmarks } from './LessonBookmarks';
 export { ModuleProgress } from './ModuleProgress';
 export { ModuleProgressTracker } from './ModuleProgressTracker';
 export { QuizComponent, sampleQuizQuestions } from './QuizComponent';
+export { HandsOnExercise } from './HandsOnExercise';
+export { ModuleAssessment } from './ModuleAssessment';
 export { YouTubePlayer } from './YouTubePlayer';
