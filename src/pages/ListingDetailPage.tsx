@@ -28,8 +28,12 @@ import {
   SellerCard, 
   PriceCard, 
   ListingDetailSkeleton,
-  RelatedListings 
+  RelatedListings,
+  DemoVideoSection,
+  FeatureHighlights,
+  CommissionBanner,
 } from '@/components/marketplace/listing';
+import { marketplaceProducts } from '@/data/marketplaceProducts';
 
 interface ListingWithSeller extends MarketplaceListing {
   seller?: {
@@ -201,6 +205,13 @@ export default function ListingDetailPage() {
     day: 'numeric',
   });
 
+  // Enrich listing with seed data (features, commission, etc.)
+  const enrichedData = marketplaceProducts.find(
+    (p) => p.title.toLowerCase() === listing.title.toLowerCase()
+  );
+  const features = enrichedData?.features || [];
+  const commission = enrichedData?.commission;
+
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
       {/* Header */}
@@ -320,6 +331,42 @@ export default function ListingDetailPage() {
                 </p>
               </div>
             </div>
+
+            {/* Demo Video */}
+            {listing.videos && listing.videos.length > 0 && (
+              <>
+                <Separator />
+                <DemoVideoSection
+                  videos={listing.videos}
+                  title={listing.title}
+                  creationLink={listing.creation_link}
+                />
+              </>
+            )}
+
+            {/* Feature Highlights */}
+            {features.length > 0 && (
+              <>
+                <Separator />
+                <FeatureHighlights
+                  features={features}
+                  tags={listing.tags || []}
+                  title={listing.title}
+                />
+              </>
+            )}
+
+            {/* Commission Banner */}
+            {commission && (
+              <>
+                <Separator />
+                <CommissionBanner
+                  commission={commission}
+                  creationLink={listing.creation_link}
+                  title={listing.title}
+                />
+              </>
+            )}
 
             {/* Requirements */}
             {listing.requirements && (
