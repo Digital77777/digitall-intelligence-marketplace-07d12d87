@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMarketplace, MarketplaceListing } from '@/hooks/useMarketplace';
 import { ListingDetailsModal } from '@/components/marketplace/ListingDetailsModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,8 +20,10 @@ import {
 import { cn } from '@/lib/utils';
 
 export default function BrowseMarketplacePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('for-you');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedListing, setSelectedListing] = useState<MarketplaceListing | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const { 
@@ -53,24 +56,50 @@ export default function BrowseMarketplacePage() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
+  // Read category from URL params on mount
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+      setSelectedTab('for-you');
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     setPage(1);
     if (selectedTab === 'top-charts') {
       fetchListings({ search: searchQuery, page: 1, sortBy: 'rating' }, true);
     } else {
-      fetchListings({ search: searchQuery, page: 1 }, true);
+      fetchListings({ search: searchQuery, page: 1, category: selectedCategory || undefined }, true);
     }
-  }, [searchQuery, selectedTab, fetchListings]);
+  }, [searchQuery, selectedTab, selectedCategory, fetchListings]);
 
   useEffect(() => {
     if (page > 1) {
       if (selectedTab === 'top-charts') {
         fetchListings({ search: searchQuery, page, sortBy: 'rating' });
       } else {
-        fetchListings({ search: searchQuery, page });
+        fetchListings({ search: searchQuery, page, category: selectedCategory || undefined });
       }
     }
-  }, [page, fetchListings, searchQuery, selectedTab]);
+  }, [page, fetchListings, searchQuery, selectedTab, selectedCategory]);
+
+  // Handle category click from Categories tab
+  const handleCategoryClick = useCallback((categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setSelectedTab('for-you');
+    setSearchParams({ category: categoryId });
+  }, [setSearchParams]);
+
+  // Get selected category name for display
+  const selectedCategoryName = selectedCategory 
+    ? categories.find(c => c.id === selectedCategory)?.name 
+    : null;
+
+  const clearCategoryFilter = useCallback(() => {
+    setSelectedCategory(null);
+    setSearchParams({});
+  }, [setSearchParams]);
 
   const handleViewDetails = useCallback((listing: MarketplaceListing) => {
     setSelectedListing(listing);
@@ -122,6 +151,20 @@ export default function BrowseMarketplacePage() {
             {/* For You Tab */}
             {selectedTab === 'for-you' && (
               <div className="space-y-10">
+                {/* Active category filter */}
+                {selectedCategoryName && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Filtered by:</span>
+                    <button
+                      onClick={clearCategoryFilter}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+                    >
+                      {selectedCategoryName}
+                      <span className="text-xs">✕</span>
+                    </button>
+                  </div>
+                )}
+
                 {isInitialLoading ? (
                   <>
                     <MarketplaceSkeleton variant="carousel" />
@@ -262,6 +305,7 @@ export default function BrowseMarketplacePage() {
                         return [category?.id || '', items.length];
                       })
                     )}
+                    onCategoryClick={handleCategoryClick}
                   />
                 )}
               </div>
