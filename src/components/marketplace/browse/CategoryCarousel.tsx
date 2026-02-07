@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo } from 'react'; // rebuild
 import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
