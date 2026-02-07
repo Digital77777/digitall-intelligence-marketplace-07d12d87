@@ -91,32 +91,27 @@ export const NewAndNoteworthy = memo(({
         ))}
       </div>
 
-      {/* Mobile carousel */}
-      <div className="md:hidden">
-        <ScrollArea className="w-full -mx-4 px-4">
-          <div className="flex gap-4 pb-4">
-            {displayListings.map((listing, idx) => (
-              <div 
-                key={listing.id} 
-                className="relative flex-shrink-0 w-[280px] animate-fade-in"
-                style={{ animationDelay: `${idx * 100}ms` }}
-              >
-                <ProductCard
-                  listing={listing}
-                  onFavorite={onFavorite}
-                  isFavorited={isFavorited(listing.id)}
-                  isPending={isPending(listing.id)}
-                />
-                {isShowingRecent && (
-                  <Badge className="absolute top-3 left-3 bg-green-500 text-white border-0 z-10">
-                    NEW
-                  </Badge>
-                )}
-              </div>
-            ))}
+      {/* Mobile: 2-column grid */}
+      <div className="grid grid-cols-2 gap-3 md:hidden">
+        {displayListings.map((listing, idx) => (
+          <div 
+            key={listing.id} 
+            className="relative animate-fade-in"
+            style={{ animationDelay: `${idx * 100}ms` }}
+          >
+            <ProductCard
+              listing={listing}
+              onFavorite={onFavorite}
+              isFavorited={isFavorited(listing.id)}
+              isPending={isPending(listing.id)}
+            />
+            {isShowingRecent && (
+              <Badge className="absolute top-3 left-3 bg-green-500 text-white border-0 z-10">
+                NEW
+              </Badge>
+            )}
           </div>
-          <ScrollBar orientation="horizontal" className="hidden" />
-        </ScrollArea>
+        ))}
       </div>
     </section>
   );
