@@ -56,25 +56,40 @@ export const CategoryCarousel = memo(({
         )}
       </div>
 
-      {/* Carousel */}
-      <ScrollArea className="w-full -mx-4 px-4">
-        <div className="flex gap-4 pb-4">
-          {listings.slice(0, 10).map((listing) => (
-            <div 
-              key={listing.id} 
-              className="flex-shrink-0 w-[280px] md:w-[320px]"
-            >
-              <ProductCard
-                listing={listing}
-                onFavorite={onFavorite}
-                isFavorited={isFavorited(listing.id)}
-                isPending={isPending(listing.id)}
-              />
-            </div>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" className="hidden" />
-      </ScrollArea>
+      {/* Mobile: 2-column grid */}
+      <div className="grid grid-cols-2 gap-3 md:hidden">
+        {listings.slice(0, 10).map((listing) => (
+          <ProductCard
+            key={listing.id}
+            listing={listing}
+            onFavorite={onFavorite}
+            isFavorited={isFavorited(listing.id)}
+            isPending={isPending(listing.id)}
+          />
+        ))}
+      </div>
+
+      {/* Desktop: Horizontal carousel */}
+      <div className="hidden md:block">
+        <ScrollArea className="w-full -mx-4 px-4">
+          <div className="flex gap-4 pb-4">
+            {listings.slice(0, 10).map((listing) => (
+              <div 
+                key={listing.id} 
+                className="flex-shrink-0 w-[320px]"
+              >
+                <ProductCard
+                  listing={listing}
+                  onFavorite={onFavorite}
+                  isFavorited={isFavorited(listing.id)}
+                  isPending={isPending(listing.id)}
+                />
+              </div>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" className="hidden" />
+        </ScrollArea>
+      </div>
     </section>
   );
 });
