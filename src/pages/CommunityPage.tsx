@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play, MapPin, Globe, ChevronRight, Video, Sparkles, Building2, Code, Network, Presentation } from "lucide-react";
 import { QuickActionsRow } from "@/components/community/QuickActionsRow";
@@ -28,6 +28,7 @@ import { formatDistanceToNow, parseISO, isAfter, isBefore, addMinutes, isToday, 
 import { EnhancedImage } from "@/components/media/EnhancedImage";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { ScrollToTopButton } from "@/components/community/ScrollToTopButton";
+import { ContinuationFeed } from "@/components/community/ContinuationFeed";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -94,6 +95,9 @@ const CommunityPage = () => {
     url: string;
     poster?: string;
   } | null>(null);
+
+  // Ref for Community Stats card to trigger continuation feed
+  const statsCardRef = useRef<HTMLDivElement>(null);
 
   // Track new content availability for scroll-up refresh
   const [hasNewContent, setHasNewContent] = useState(false);
@@ -698,7 +702,7 @@ const CommunityPage = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Community Stats */}
-            <Card className="shadow-sm relative">
+            <Card className="shadow-sm relative" ref={statsCardRef}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold">Community Stats</CardTitle>
               </CardHeader>
@@ -737,6 +741,22 @@ const CommunityPage = () => {
                 <ScrollToTopButton position="relative" onRefresh={handleRefreshInsights} hasNewContent={hasNewContent} newContentCount={newContentCount} />
               </div>
             </Card>
+
+            {/* Continuation feed that auto-loads after stats card is visible */}
+            {activeTab === "insights" && filteredInsights.length > 0 && (
+              <ContinuationFeed
+                items={filteredInsights}
+                triggerRef={statsCardRef}
+                delayMs={2000}
+                onLikeClick={handleLikeInsight}
+                onViewClick={handleInsightView}
+                onVideoTap={handleVideoTap}
+                getInitials={getInitials}
+                fetchNextPage={fetchNextPage}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+              />
+            )}
 
           </div>
         </div>
