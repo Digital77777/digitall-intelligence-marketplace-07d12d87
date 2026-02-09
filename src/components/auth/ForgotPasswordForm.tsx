@@ -31,7 +31,8 @@ const ForgotPasswordForm = ({ onBack, onResetPassword }: ForgotPasswordFormProps
       const { error } = await onResetPassword(validated.email);
 
       if (error) {
-        setError(error.message || 'Failed to send reset email');
+        const msg = typeof error === 'string' ? error : (error?.message || JSON.stringify(error));
+        setError(msg || 'Failed to send reset email');
       } else {
         setSuccess(true);
       }
