@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Users, Plus, Calendar, MessageCircle, TrendingUp, Search, Filter, X, Play, MapPin, Globe, ChevronRight, Video, Sparkles, Building2, Code, Network, Presentation } from "lucide-react";
 import { QuickActionsRow } from "@/components/community/QuickActionsRow";
 import { Button } from "@/components/ui/button";
@@ -339,9 +340,6 @@ const CommunityPage = () => {
       if (timeSinceLastFetch < 30000) return;
       try {
         // Quick check for new insights since last fetch
-        const {
-          supabase
-        } = await import("@/integrations/supabase/client");
         const {
           count
         } = await supabase.from("community_insights").select("id", {
