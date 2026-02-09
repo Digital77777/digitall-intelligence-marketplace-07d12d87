@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 /**
  * Generate a thumbnail image from a video file or URL
  * @param videoSource - Video file or URL
@@ -80,7 +82,7 @@ export const uploadVideoThumbnail = async (
   thumbnailDataUrl: string,
   path: string
 ): Promise<string> => {
-  const { supabase } = await import('@/integrations/supabase/client');
+  // supabase is imported at the top of the file
   
   // Convert data URL to blob
   const response = await fetch(thumbnailDataUrl);

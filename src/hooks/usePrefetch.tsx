@@ -2,67 +2,14 @@ import { useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Route-to-component mapping for prefetching
-const routeImports: Record<string, () => Promise<any>> = {
-  '/': () => import('@/pages/Index'),
-  '/dashboard': () => import('@/pages/DashboardPage'),
-  '/learning-paths': () => import('@/pages/LearningPaths'),
-  '/ai-tools': () => import('@/pages/AIToolsPage'),
-  '/marketplace': () => import('@/pages/MarketplacePage'),
-  '/marketplace/schedule-consultation': () => import('@/pages/ScheduleConsultationPage'),
-  '/marketplace/browse': () => import('@/pages/BrowseMarketplacePage'),
-  '/marketplace/browse-freelancers': () => import('@/pages/BrowseFreelancersPage'),
-  '/marketplace/create': () => import('@/pages/CreateListingPage'),
-  '/marketplace/my-listings': () => import('@/pages/MyListingsPage'),
-  '/marketplace/jobs': () => import('@/pages/JobListingsPage'),
-  '/marketplace/sell-products': () => import('@/pages/SellProductsPage'),
-  '/marketplace/freelance-services': () => import('@/pages/FreelanceServicesPage'),
-  '/marketplace/post-jobs': () => import('@/pages/PostJobsPage'),
-  '/marketplace/ai-development': () => import('@/pages/AIDevelopmentPage'),
-  '/community': () => import('@/pages/CommunityPage'),
-  '/community/my-activity': () => import('@/pages/MyActivityPage'),
-  '/community/inbox': () => import('@/pages/community/InboxPage'),
-  '/community/browse-events': () => import('@/pages/community/BrowseEventsPage'),
-  '/community/find-members': () => import('@/pages/community/FindMembersPage'),
-  '/community/reels': () => import('@/pages/community/ReelsPage'),
-  '/community/share-insight': () => import('@/pages/community/ShareInsightPage'),
-  '/community/start-topic': () => import('@/pages/community/StartTopicPage'),
-  '/community/host-event': () => import('@/pages/community/HostEventPage'),
-  '/referrals': () => import('@/pages/ReferralPage'),
-  '/subscription': () => import('@/pages/SubscriptionPage'),
-  '/analytics': () => import('@/pages/AnalyticsPage'),
-  '/support': () => import('@/pages/SupportPage'),
-  '/career-certification': () => import('@/pages/CareerCertificationPage'),
-  '/job-placement': () => import('@/pages/JobPlacementPage'),
-  '/strategy-sessions': () => import('@/pages/StrategySessionsPage'),
-  '/personal-ai-tutor': () => import('@/pages/PersonalAITutorPage'),
-  '/notification-settings': () => import('@/pages/NotificationSettingsPage'),
-  '/seller-dashboard': () => import('@/pages/SellerDashboardPage'),
-  '/client-dashboard': () => import('@/pages/ClientDashboardPage'),
-  '/freelancer-profile': () => import('@/pages/FreelancerProfilePage'),
-  '/browse-freelancers': () => import('@/pages/BrowseFreelancersPage'),
-  '/job-listings': () => import('@/pages/JobListingsPage'),
-  '/create-freelancer-profile': () => import('@/pages/CreateFreelancerProfilePage'),
-  '/create-job-posting': () => import('@/pages/CreateJobPostingPage'),
-  '/feedback': () => import('@/pages/FeedbackPage'),
-};
+// Prefetch route components via dynamic import is removed since core pages
+// are already statically imported by App.tsx — dynamic re-imports would not
+// create separate chunks and only generate Vite warnings.
 
-// Cache to track which routes have been prefetched
-const prefetchedRoutes = new Set<string>();
+// Cache to track which data has been prefetched
 const prefetchedData = new Set<string>();
 
-// Core routes to prefetch on app load (includes marketplace/browse and reels now)
-const coreRoutes = [
-  '/dashboard',
-  '/learning-paths',
-  '/ai-tools',
-  '/marketplace',
-  '/marketplace/browse',
-  '/community',
-  '/community/reels',
-  '/referrals',
-  '/subscription',
-];
+// Data prefetch keys for core routes
 
 export const usePrefetch = () => {
   const queryClient = useQueryClient();
@@ -275,54 +222,28 @@ export const usePrefetch = () => {
   }, [queryClient]);
 
   const prefetchRoute = useCallback((path: string) => {
-    if (prefetchedRoutes.has(path)) return;
-    
-    const importFn = routeImports[path];
-    if (!importFn) return;
-
-    prefetchedRoutes.add(path);
-
-    // Use requestIdleCallback for non-blocking prefetch
-    const prefetch = () => {
-      importFn().catch((error) => {
-        prefetchedRoutes.delete(path);
-        console.warn(`Failed to prefetch route: ${path}`, error);
-      });
-    };
-
-    if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(prefetch, { timeout: 2000 });
-    } else {
-      setTimeout(prefetch, 100);
-    }
-
-    // Prefetch associated data
+    // Prefetch associated data based on route
     if (path === '/community/reels') {
       prefetchReelsData();
     } else if (path === '/community' || path.startsWith('/community/')) {
       prefetchCommunityData();
     } else if (path === '/marketplace/browse') {
-      // Enhanced prefetch for marketplace browse
       prefetchMarketplaceBrowseData();
     } else if (path === '/marketplace' || path.startsWith('/marketplace/')) {
       prefetchMarketplaceData();
     }
   }, [prefetchReelsData, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData]);
 
-  // Prefetch core routes on mount
+  // Prefetch core data on mount
   const prefetchCoreRoutes = useCallback(() => {
     // Delay to not block initial render
     setTimeout(() => {
-      coreRoutes.forEach(route => {
-        prefetchRoute(route);
-      });
-      // Also prefetch core data
       prefetchCommunityData();
       prefetchMarketplaceData();
       prefetchMarketplaceBrowseData();
       prefetchReelsData();
     }, 1000);
-  }, [prefetchRoute, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData, prefetchReelsData]);
+  }, [prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData, prefetchReelsData]);
 
   const handleMouseEnter = useCallback((path: string) => {
     prefetchRoute(path);
