@@ -205,14 +205,7 @@ export const ProductCard = memo(({
           )} />
         </Button>
 
-        {/* Price badge */}
-        {listing.price && (
-          <div className="absolute bottom-3 right-3">
-            <Badge className="bg-black/70 text-white border-0 font-bold text-sm backdrop-blur-sm">
-              ${listing.price.toLocaleString()}
-            </Badge>
-          </div>
-        )}
+        {/* Price hidden from browse - only shown on detail page */}
 
         {/* Featured badge */}
         {listing.is_featured && (
