@@ -107,11 +107,7 @@ export const ProductCard = memo(({
                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                 <span className="text-xs font-medium">4.5</span>
               </div>
-              {listing.price && (
-                <span className="text-xs font-bold text-primary">
-                  ${listing.price}
-                </span>
-              )}
+              {/* Price hidden from browse */}
             </div>
           </div>
         </div>
