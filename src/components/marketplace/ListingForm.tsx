@@ -93,7 +93,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       return;
     }
 
-    if (formData.price <= 0) {
+    if (formData.price < 0) {
       toast.error('Please enter a valid price');
       return;
     }
