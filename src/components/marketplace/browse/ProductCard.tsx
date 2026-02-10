@@ -107,11 +107,7 @@ export const ProductCard = memo(({
                 <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                 <span className="text-xs font-medium">4.5</span>
               </div>
-              {listing.price && (
-                <span className="text-xs font-bold text-primary">
-                  ${listing.price}
-                </span>
-              )}
+              {/* Price hidden from browse */}
             </div>
           </div>
         </div>
@@ -205,14 +201,7 @@ export const ProductCard = memo(({
           )} />
         </Button>
 
-        {/* Price badge */}
-        {listing.price && (
-          <div className="absolute bottom-3 right-3">
-            <Badge className="bg-black/70 text-white border-0 font-bold text-sm backdrop-blur-sm">
-              ${listing.price.toLocaleString()}
-            </Badge>
-          </div>
-        )}
+        {/* Price hidden from browse - only shown on detail page */}
 
         {/* Featured badge */}
         {listing.is_featured && (

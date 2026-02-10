@@ -34,7 +34,7 @@ export const TopChartCard = memo(({ listing, rank, colorIndex }: TopChartCardPro
             <div className="flex items-center gap-2 mt-1">
               <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
               <span className="text-xs">4.5</span>
-              {listing.price && <span className="text-xs">• ${listing.price}</span>}
+              {/* Price hidden from browse */}
             </div>
           </div>
           <Button size="sm" className="bg-blue-600 hover:bg-blue-700">

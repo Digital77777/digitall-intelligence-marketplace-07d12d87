@@ -140,13 +140,8 @@ const TopChartItem = memo(({
         </div>
       </div>
 
-      {/* Price & Actions */}
+      {/* Actions */}
       <div className="flex items-center gap-3 flex-shrink-0">
-        {listing.price && (
-          <span className="font-bold text-lg">
-            ${listing.price.toLocaleString()}
-          </span>
-        )}
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"

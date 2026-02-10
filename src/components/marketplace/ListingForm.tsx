@@ -93,7 +93,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
       return;
     }
 
-    if (formData.price <= 0) {
+    if (formData.price < 0) {
       toast.error('Please enter a valid price');
       return;
     }
@@ -101,7 +101,7 @@ export const ListingForm: React.FC<ListingFormProps> = ({
     onSubmit(formData);
   };
 
-  const isValid = formData.title.trim() && formData.description.trim() && formData.price > 0;
+  const isValid = formData.title.trim() && formData.description.trim() && formData.price >= 0;
 
   return (
     <Card className="max-w-4xl mx-auto">

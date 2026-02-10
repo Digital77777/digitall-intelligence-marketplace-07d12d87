@@ -1361,6 +1361,7 @@ export type Database = {
           is_featured: boolean | null
           listing_type: string
           price: number | null
+          pricing_tiers: Json | null
           requirements: string | null
           status: string
           tags: string[] | null
@@ -1381,6 +1382,7 @@ export type Database = {
           is_featured?: boolean | null
           listing_type: string
           price?: number | null
+          pricing_tiers?: Json | null
           requirements?: string | null
           status?: string
           tags?: string[] | null
@@ -1401,6 +1403,7 @@ export type Database = {
           is_featured?: boolean | null
           listing_type?: string
           price?: number | null
+          pricing_tiers?: Json | null
           requirements?: string | null
           status?: string
           tags?: string[] | null

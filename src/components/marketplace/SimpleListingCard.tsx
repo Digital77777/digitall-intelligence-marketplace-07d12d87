@@ -122,13 +122,7 @@ export const SimpleListingCard: React.FC<SimpleListingCardProps> = ({
           </div>
         )}
         
-        <div className="flex justify-between items-center">
-          {listing.price && (
-            <div className="text-lg font-semibold text-primary">
-              {formatPrice(listing.price, listing.currency)}
-            </div>
-          )}
-        </div>
+        {/* Price hidden from browse - only shown on detail page */}
         
         <Button 
           className="w-full mt-3" 

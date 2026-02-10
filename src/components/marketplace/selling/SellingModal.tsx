@@ -16,6 +16,13 @@ interface SellingModalProps {
   onClose: () => void;
 }
 
+export interface PricingTier {
+  name: string;
+  price: number;
+  period: 'monthly' | 'yearly' | 'one-time' | 'forever';
+  features: string[];
+}
+
 export interface ProductFormData {
   title: string;
   description: string;
@@ -30,6 +37,7 @@ export interface ProductFormData {
   delivery_time?: number;
   productType?: string;
   creationLink?: string;
+  pricing_tiers?: PricingTier[];
 }
 
 const STEPS = [
