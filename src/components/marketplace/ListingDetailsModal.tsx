@@ -135,11 +135,7 @@ export const ListingDetailsModal: React.FC<ListingDetailsModalProps> = ({
                   )}
                 </div>
 
-                {listing.price && (
-                  <div className="text-3xl font-bold text-primary">
-                    {formatPrice(listing.price, listing.currency)}
-                  </div>
-                )}
+                {/* Price shown on detail page only */}
 
                 {listing.delivery_time && (
                   <div className="text-sm text-muted-foreground">
