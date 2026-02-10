@@ -23,12 +23,13 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const { signUp, signIn, user, resetPassword, updatePassword } = useAuth();
+  const { signUp, signIn, user, resetPassword, updatePassword, isPasswordRecovery } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const isRecovery = searchParams.get('type') === 'recovery';
+  const isRecoveryFromUrl = searchParams.get('type') === 'recovery';
+  const isRecovery = isRecoveryFromUrl || isPasswordRecovery;
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated and NOT in recovery mode
   useEffect(() => {
     if (user && !isRecovery) {
       navigate('/');
