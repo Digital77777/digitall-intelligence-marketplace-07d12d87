@@ -434,6 +434,7 @@ export default function ListingDetailPage() {
                 isPending={isPending(listing.id)}
                 onFavorite={handleFavorite}
                 onContact={handleContact}
+                pricingTiers={(listing as any).pricing_tiers}
               />
 
               {/* Seller Info */}
