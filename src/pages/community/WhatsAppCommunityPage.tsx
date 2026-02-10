@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { SEOHead } from "@/components/SEOHead";
 
-const WHATSAPP_LINK = "https://chat.whatsapp.com/LZRTTeAruNrB7aNwqBedfL?mode=gi_t";
+const WHATSAPP_LINK = "https://chat.whatsapp.com/CwA3peVDQ8i5FOJaouHBvU?mode=gi_t";
 const MAX_MEMBERS = 150;
 const CURRENT_MEMBERS = 110; // Update this as members join
 const SPOTS_REMAINING = MAX_MEMBERS - CURRENT_MEMBERS;
