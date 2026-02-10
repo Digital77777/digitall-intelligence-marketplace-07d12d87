@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,16 @@ import {
   Clock,
   Zap,
   Shield,
-  CheckCircle2
+  CheckCircle2,
+  Crown
 } from 'lucide-react';
+
+interface PricingTier {
+  name: string;
+  price: number;
+  period: string;
+  features: string[];
+}
 
 interface PriceCardProps {
   price: number | null;
@@ -22,6 +30,7 @@ interface PriceCardProps {
   isPending: boolean;
   onFavorite: () => void;
   onContact: () => void;
+  pricingTiers?: PricingTier[] | null;
   className?: string;
 }
 
@@ -34,31 +43,97 @@ export const PriceCard: React.FC<PriceCardProps> = ({
   isPending,
   onFavorite,
   onContact,
+  pricingTiers,
   className
 }) => {
-  const formattedPrice = price ? `${currency} ${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Free';
+  const [selectedTier, setSelectedTier] = useState(0);
+  const hasTiers = pricingTiers && pricingTiers.length > 0;
+
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency || 'USD',
+    }).format(amount);
+  };
+
+  const periodLabel = (period: string) => {
+    switch (period) {
+      case 'monthly': return '/mo';
+      case 'yearly': return '/yr';
+      case 'one-time': return 'one-time';
+      case 'forever': return '';
+      default: return '';
+    }
+  };
+
+  const formattedPrice = price ? formatPrice(price) : 'Free';
 
   return (
     <div className={cn(
       "bg-card rounded-2xl border shadow-sm overflow-hidden",
       className
     )}>
-      {/* Price Header */}
-      <div className="p-6 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
-        <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold tracking-tight">{formattedPrice}</span>
-          {price && price > 0 && (
-            <span className="text-muted-foreground">one-time</span>
+      {/* Pricing Tiers */}
+      {hasTiers ? (
+        <>
+          <div className="p-4 border-b bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+            <div className="flex items-center gap-2 mb-3">
+              <Crown className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold">Pricing Plans</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {pricingTiers!.map((tier, idx) => (
+                <Button
+                  key={idx}
+                  variant={selectedTier === idx ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedTier(idx)}
+                  className="text-xs"
+                >
+                  {tier.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="text-4xl font-bold tracking-tight">
+                {pricingTiers![selectedTier].price === 0 ? 'Free' : formatPrice(pricingTiers![selectedTier].price)}
+              </span>
+              {pricingTiers![selectedTier].price > 0 && (
+                <span className="text-muted-foreground text-sm">
+                  {periodLabel(pricingTiers![selectedTier].period)}
+                </span>
+              )}
+            </div>
+            {pricingTiers![selectedTier].features.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {pricingTiers![selectedTier].features.map((feature, fi) => (
+                  <li key={fi} className="flex items-center gap-2 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="p-6 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-bold tracking-tight">{formattedPrice}</span>
+            {price && price > 0 && (
+              <span className="text-muted-foreground">one-time</span>
+            )}
+          </div>
+          {deliveryTime && (
+            <div className="flex items-center gap-2 mt-3 text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span className="text-sm">{deliveryTime} day delivery</span>
+            </div>
           )}
         </div>
-        
-        {deliveryTime && (
-          <div className="flex items-center gap-2 mt-3 text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm">{deliveryTime} day delivery</span>
-          </div>
-        )}
-      </div>
+      )}
 
       <Separator />
 
@@ -66,11 +141,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
       <div className="p-6 space-y-3">
         {creationLink && (
           <Button asChild className="w-full h-12 text-base gap-2 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg shadow-primary/20">
-            <a
-              href={creationLink}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={creationLink} target="_blank" rel="noopener noreferrer">
               <Zap className="w-5 h-5" />
               Use This Creation
               <ExternalLink className="w-4 h-4 ml-1" />
@@ -92,10 +163,7 @@ export const PriceCard: React.FC<PriceCardProps> = ({
 
         <Button
           variant="ghost"
-          className={cn(
-            "w-full gap-2",
-            isFavorited && "text-red-500"
-          )}
+          className={cn("w-full gap-2", isFavorited && "text-red-500")}
           onClick={onFavorite}
           disabled={isPending}
         >
@@ -117,7 +185,6 @@ export const PriceCard: React.FC<PriceCardProps> = ({
             <p className="text-xs text-muted-foreground">Protected by our platform</p>
           </div>
         </div>
-        
         <div className="flex items-start gap-3">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
             <CheckCircle2 className="w-4 h-4 text-primary" />
