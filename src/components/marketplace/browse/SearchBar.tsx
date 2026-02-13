@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { VoiceSearchModal } from '@/components/marketplace/voice/VoiceSearchModal';
 
 interface SearchBarProps {
   value: string;
@@ -28,6 +29,7 @@ export const SearchBar = ({
   const navigate = useNavigate();
   const [isFocused, setIsFocused] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isVoiceSearchOpen, setIsVoiceSearchOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -113,8 +115,9 @@ export const SearchBar = ({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              title="Voice search (coming soon)"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+              title="Voice search"
+              onClick={() => setIsVoiceSearchOpen(true)}
             >
               <Mic className="h-4 w-4" />
             </Button>
@@ -185,6 +188,11 @@ export const SearchBar = ({
           </Badge>
         )}
       </Button>
+      {/* Voice Search Modal */}
+      <VoiceSearchModal
+        isOpen={isVoiceSearchOpen}
+        onClose={() => setIsVoiceSearchOpen(false)}
+      />
     </div>
   );
 };
