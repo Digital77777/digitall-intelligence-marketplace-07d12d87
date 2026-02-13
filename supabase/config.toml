@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.send-support-request]
 verify_jwt = false
+
+[functions.voice-search]
+verify_jwt = false
