@@ -73,7 +73,7 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onCl
       <div className={cn(
         "relative w-full md:max-w-lg bg-background rounded-t-3xl md:rounded-2xl shadow-2xl",
         "max-h-[90vh] overflow-y-auto",
-        "animate-slide-up md:animate-fade-in",
+        "animate-in slide-in-from-bottom-4 md:slide-in-from-bottom-0 md:fade-in",
         "border border-border/50"
       )}>
         {/* Header */}
