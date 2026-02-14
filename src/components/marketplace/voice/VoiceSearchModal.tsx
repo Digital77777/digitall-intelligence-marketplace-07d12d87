@@ -4,7 +4,7 @@ import { X, Mic, MicOff, Loader2, Sparkles, RotateCcw, AlertCircle } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { useVoiceSearch, VoiceSearchState, VoiceRecommendation } from '@/hooks/useVoiceSearch';
+import { useVoiceSearch, type VoiceRecommendation } from '@/hooks/useVoiceSearch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -170,7 +170,7 @@ const ListeningView: React.FC<{
       <Button variant="outline" onClick={onCancel} className="rounded-full">
         Cancel
       </Button>
-      <Button onClick={onStop} className="rounded-full bg-red-500 hover:bg-red-600 text-white">
+      <Button onClick={onStop} className="rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
         <MicOff className="h-4 w-4 mr-2" />
         Stop Listening
       </Button>
@@ -339,8 +339,8 @@ const ErrorView: React.FC<{
   onClose: () => void;
 }> = ({ message, onRetry, onClose }) => (
   <div className="flex flex-col items-center text-center space-y-4 py-6">
-    <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
-      <AlertCircle className="h-8 w-8 text-red-500" />
+    <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+      <AlertCircle className="h-8 w-8 text-destructive" />
     </div>
     <div className="space-y-1">
       <p className="font-semibold">Something went wrong</p>
