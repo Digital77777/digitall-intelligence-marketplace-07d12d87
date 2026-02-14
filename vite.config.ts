@@ -120,13 +120,13 @@ export default defineConfig(({ mode }) => {
       port: 8080,
     },
     plugins,
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
     },
-  },
-  build: {
-    sourcemap: true,
-  },
-};
+    build: {
+      sourcemap: true,
+    },
+  };
 });
