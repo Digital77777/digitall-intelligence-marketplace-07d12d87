@@ -25,6 +25,7 @@ interface UseVoiceSearchReturn {
   stopListening: () => void;
   cancelSearch: () => void;
   retrySearch: () => void;
+  searchByText: (text: string) => void;
   isSupported: boolean;
 }
 
@@ -195,6 +196,16 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     setTimeout(() => startListening(), 200);
   }, [cancelSearch, startListening]);
 
+  // Text-based search fallback (for unsupported browsers or error recovery)
+  const searchByText = useCallback((text: string) => {
+    cleanup();
+    setTranscript(text);
+    setInterimTranscript('');
+    setRecommendations([]);
+    setErrorMessage('');
+    processTranscription(text);
+  }, [cleanup, processTranscription]);
+
   return {
     state,
     transcript,
@@ -205,6 +216,7 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     stopListening,
     cancelSearch,
     retrySearch,
+    searchByText,
     isSupported,
   };
 };
