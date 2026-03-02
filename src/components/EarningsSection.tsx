@@ -75,22 +75,22 @@ const EarningsSection = () => {
   };
 
   return (
-    <section className="py-20 bg-muted/30">
-      <div className="container mx-auto px-6">
-        <div className="text-center space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 bg-gradient-earn px-4 py-2 rounded-full">
+    <section className="py-12 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="text-center space-y-3 mb-10">
+          <div className="inline-flex items-center gap-2 bg-gradient-earn px-3 py-1.5 rounded-full">
             <DollarSign className="h-4 w-4 text-white" />
             <span className="text-sm font-medium text-white">Earn While Learning</span>
           </div>
-          <h2 className="text-4xl font-bold">Turn Your AI Skills Into Income</h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold">Turn Your AI Skills Into Income</h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             Start earning money with your AI knowledge from day one. Our platform connects 
             you with real opportunities to monetize your skills while you study.
           </p>
         </div>
 
         {/* Earning Opportunities */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-3 gap-4 mb-10">
           {earningOpportunities.map((opportunity, index) => (
             <Card key={index} className="hover:shadow-ai transition-all duration-300 hover:-translate-y-1">
               <CardHeader>
@@ -105,7 +105,7 @@ const EarningsSection = () => {
               </CardHeader>
               
               <CardContent className="space-y-4">
-                <div className="text-center p-4 bg-background rounded-lg border-2 border-success/20">
+                <div className="text-center p-3 bg-background rounded-lg border-2 border-success/20">
                   <div className={`text-2xl font-bold ${opportunity.color}`}>
                     {opportunity.earnings}
                   </div>
@@ -135,14 +135,14 @@ const EarningsSection = () => {
         </div>
 
         {/* Success Stories */}
-        <div className="space-y-8">
+        <div className="space-y-5">
           <h3 className="text-2xl font-bold text-center">Student Success Stories</h3>
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-4">
             {successStories.map((story, index) => (
               <Card key={index} className="bg-background border-success/20">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-4">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
                     <div className="w-12 h-12 bg-gradient-earn rounded-full flex items-center justify-center">
                       <Star className="h-6 w-6 text-white" />
                     </div>
@@ -152,7 +152,7 @@ const EarningsSection = () => {
                     </div>
                   </div>
                   
-                  <div className="text-center mb-4">
+                  <div className="text-center mb-3">
                     <div className="text-2xl font-bold text-success">{story.earnings}</div>
                     <div className="text-sm text-muted-foreground">{story.timeframe}</div>
                   </div>
@@ -166,7 +166,7 @@ const EarningsSection = () => {
           </div>
         </div>
 
-        <div className="text-center mt-12">
+        <div className="text-center mt-8">
           <Button variant="earn" size="lg" className="px-8 group" onClick={() => handleEarningClick('/marketplace')}>
             Start Earning Today
             <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />

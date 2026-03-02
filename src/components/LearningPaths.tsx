@@ -276,16 +276,16 @@ const LearningPaths = () => {
   };
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center space-y-3 sm:space-y-4 mb-10 sm:mb-12 md:mb-16">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Learning Paths</h2>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto px-2">
+    <section className="py-10 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="text-center space-y-2 mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold">Learning Paths</h2>
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
             Structured paths from beginner to professional - all paths available to explore
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
           {learningPaths.map((path) => (
             <PathCard 
               key={path.id} 

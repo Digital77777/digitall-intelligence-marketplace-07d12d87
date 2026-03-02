@@ -44,7 +44,7 @@ const Navigation = () => {
     path: "/referrals"
   }];
   return <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border" aria-label="Main navigation">
-      <div className="container mx-auto px-6 py-4">
+      <div className="container mx-auto px-4 py-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Link to="/" aria-label="Home">
