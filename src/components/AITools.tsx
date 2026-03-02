@@ -113,15 +113,15 @@ const AITools = () => {
   };
 
   return (
-    <section className="py-20">
-      <div className="container mx-auto px-6">
-        <div className="text-center space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 bg-accent px-4 py-2 rounded-full">
+    <section className="py-12">
+      <div className="container mx-auto px-4">
+        <div className="text-center space-y-3 mb-10">
+          <div className="inline-flex items-center gap-2 bg-accent px-3 py-1.5 rounded-full">
             <Sparkles className="h-4 w-4 text-accent-foreground" />
             <span className="text-sm font-medium text-accent-foreground">3 Powerful Development Tools</span>
           </div>
-          <h2 className="text-4xl font-bold">Build Anything with AI</h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <h2 className="text-3xl font-bold">Build Anything with AI</h2>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             Access professional development tools to create websites, apps, and AI-powered projects. 
             Build whatever you imagine with these powerful platforms.
           </p>
@@ -137,8 +137,8 @@ const AITools = () => {
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <Button variant="ai" size="lg" className="px-8" onClick={handleToolAccess}>
+        <div className="text-center mt-8">
+          <Button variant="ai" size="lg" className="px-6" onClick={handleToolAccess}>
             Access All AI Tools Free
           </Button>
         </div>

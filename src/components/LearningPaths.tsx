@@ -196,8 +196,8 @@ const learningPaths = [
 
 // Memoized path card component
 const PathCard = memo(({ path, onNavigate }: { path: typeof learningPaths[0]; onNavigate: (id: string) => void }) => (
-  <Card className="transition-all duration-300 hover:shadow-ai hover:-translate-y-1">
-    <CardHeader className="p-4 sm:p-6">
+  <Card className="transition-all duration-300 hover:shadow-ai hover:-translate-y-0.5">
+    <CardHeader className="p-3 sm:p-4">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <Badge variant="secondary" className="text-xs">{path.level}</Badge>
@@ -210,7 +210,7 @@ const PathCard = memo(({ path, onNavigate }: { path: typeof learningPaths[0]; on
       <p className="text-muted-foreground text-sm sm:text-base">{path.description}</p>
     </CardHeader>
     
-    <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+    <CardContent className="space-y-3 p-3 sm:p-4 pt-0">
       <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
         <div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 text-muted-foreground">
@@ -276,16 +276,16 @@ const LearningPaths = () => {
   };
 
   return (
-    <section className="py-12 sm:py-16 md:py-20 bg-muted/30">
-      <div className="container mx-auto px-4 sm:px-6">
-        <div className="text-center space-y-3 sm:space-y-4 mb-10 sm:mb-12 md:mb-16">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold">Learning Paths</h2>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto px-2">
+    <section className="py-10 bg-muted/30">
+      <div className="container mx-auto px-4">
+        <div className="text-center space-y-2 mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold">Learning Paths</h2>
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-3xl mx-auto">
             Structured paths from beginner to professional - all paths available to explore
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
+        <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
           {learningPaths.map((path) => (
             <PathCard 
               key={path.id} 
