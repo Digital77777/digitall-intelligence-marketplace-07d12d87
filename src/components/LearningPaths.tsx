@@ -196,8 +196,8 @@ const learningPaths = [
 
 // Memoized path card component
 const PathCard = memo(({ path, onNavigate }: { path: typeof learningPaths[0]; onNavigate: (id: string) => void }) => (
-  <Card className="transition-all duration-300 hover:shadow-ai hover:-translate-y-1">
-    <CardHeader className="p-4 sm:p-6">
+  <Card className="transition-all duration-300 hover:shadow-ai hover:-translate-y-0.5">
+    <CardHeader className="p-3 sm:p-4">
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <Badge variant="secondary" className="text-xs">{path.level}</Badge>
@@ -210,7 +210,7 @@ const PathCard = memo(({ path, onNavigate }: { path: typeof learningPaths[0]; on
       <p className="text-muted-foreground text-sm sm:text-base">{path.description}</p>
     </CardHeader>
     
-    <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6 pt-0">
+    <CardContent className="space-y-3 p-3 sm:p-4 pt-0">
       <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center">
         <div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1 text-muted-foreground">
