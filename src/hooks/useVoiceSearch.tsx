@@ -36,6 +36,9 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
   const [recommendations, setRecommendations] = useState<VoiceRecommendation[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef('');
+  const interimTranscriptRef = useRef('');
+  const hasErrorRef = useRef(false);
   const { toast } = useToast();
 
   const isSupported = typeof window !== 'undefined' && 
@@ -69,7 +72,7 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
 
       const recs = data?.recommendations || [];
       setRecommendations(recs);
-      setState(recs.length > 0 ? 'results' : 'results');
+      setState('results');
     } catch (err) {
       console.error('Voice search error:', err);
       setErrorMessage(err instanceof Error ? err.message : 'Failed to process your request');
@@ -92,6 +95,9 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     setInterimTranscript('');
     setRecommendations([]);
     setErrorMessage('');
+    transcriptRef.current = '';
+    interimTranscriptRef.current = '';
+    hasErrorRef.current = false;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
@@ -119,38 +125,40 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
       }
 
       if (final) {
+        transcriptRef.current = final;
         setTranscript(final);
+        interimTranscriptRef.current = '';
         setInterimTranscript('');
       } else {
+        interimTranscriptRef.current = interim;
         setInterimTranscript(interim);
       }
     };
 
     recognition.onend = () => {
-      // Get the final transcript from state
-      setTranscript(prev => {
-        const finalText = prev;
-        if (finalText && finalText.trim()) {
-          processTranscription(finalText.trim());
-        } else {
-          // Check interim as fallback
-          setInterimTranscript(interimPrev => {
-            if (interimPrev && interimPrev.trim()) {
-              setTranscript(interimPrev.trim());
-              processTranscription(interimPrev.trim());
-            } else {
-              setErrorMessage('No speech detected. Please try again.');
-              setState('error');
-            }
-            return '';
-          });
-        }
-        return prev;
-      });
+      // Skip processing if onerror already handled this
+      if (hasErrorRef.current) return;
+
+      const finalText = transcriptRef.current.trim();
+      const interimText = interimTranscriptRef.current.trim();
+
+      if (finalText) {
+        setTranscript(finalText);
+        processTranscription(finalText);
+      } else if (interimText) {
+        transcriptRef.current = interimText;
+        setTranscript(interimText);
+        setInterimTranscript('');
+        processTranscription(interimText);
+      } else {
+        setErrorMessage('No speech detected. Please try again.');
+        setState('error');
+      }
     };
 
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
+      hasErrorRef.current = true;
       if (event.error === 'not-allowed') {
         setErrorMessage('Microphone access denied. Please allow microphone access in your browser settings.');
       } else if (event.error === 'no-speech') {
@@ -188,21 +196,25 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     setInterimTranscript('');
     setRecommendations([]);
     setErrorMessage('');
+    transcriptRef.current = '';
+    interimTranscriptRef.current = '';
+    hasErrorRef.current = false;
   }, [cleanup]);
 
   const retrySearch = useCallback(() => {
     cancelSearch();
-    // Small delay before restarting
     setTimeout(() => startListening(), 200);
   }, [cancelSearch, startListening]);
 
-  // Text-based search fallback (for unsupported browsers or error recovery)
   const searchByText = useCallback((text: string) => {
     cleanup();
     setTranscript(text);
     setInterimTranscript('');
     setRecommendations([]);
     setErrorMessage('');
+    transcriptRef.current = text;
+    interimTranscriptRef.current = '';
+    hasErrorRef.current = false;
     processTranscription(text);
   }, [cleanup, processTranscription]);
 
