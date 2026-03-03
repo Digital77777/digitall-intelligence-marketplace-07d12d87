@@ -37,7 +37,7 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onCl
     if (isOpen && state === 'idle' && isSupported) {
       startListening();
     }
-  }, [isOpen]);
+  }, [isOpen, isSupported, startListening]);
 
   useEffect(() => {
     if (!isOpen) return;
