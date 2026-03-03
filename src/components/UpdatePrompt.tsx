@@ -46,17 +46,6 @@ export const UpdatePrompt = () => {
 
       workbox.addEventListener('waiting', () => {
         setShowPrompt(true);
-        toast('New version available!', {
-          description: 'Click "Update" to get the latest features and improvements.',
-          duration: Infinity,
-          action: {
-            label: 'Update',
-            onClick: () => {
-              workbox.messageSkipWaiting();
-              window.location.reload();
-            },
-          },
-        });
       });
 
       workbox.addEventListener('controlling', () => {
