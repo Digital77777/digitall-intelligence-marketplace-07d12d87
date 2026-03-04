@@ -33,11 +33,19 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onCl
     isSupported,
   } = useVoiceSearch();
 
+  const hasAutoStarted = useRef(false);
+
   useEffect(() => {
-    if (isOpen && state === 'idle' && isSupported) {
-      startListening();
+    if (isOpen && state === 'idle' && isSupported && !hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      // Small delay to let modal render first
+      const timer = setTimeout(() => startListening(), 200);
+      return () => clearTimeout(timer);
     }
-  }, [isOpen, isSupported, startListening]);
+    if (!isOpen) {
+      hasAutoStarted.current = false;
+    }
+  }, [isOpen, state, isSupported]);
 
   useEffect(() => {
     if (!isOpen) return;

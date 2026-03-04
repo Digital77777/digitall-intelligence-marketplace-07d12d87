@@ -39,6 +39,7 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
   const transcriptRef = useRef('');
   const interimTranscriptRef = useRef('');
   const hasErrorRef = useRef(false);
+  const isProcessingRef = useRef(false);
   const { toast } = useToast();
 
   const isSupported = typeof window !== 'undefined' && 
@@ -58,13 +59,25 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
   }, [cleanup]);
 
   const processTranscription = useCallback(async (text: string) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     setState('processing');
     try {
       const { data, error } = await supabase.functions.invoke('voice-search', {
         body: { transcription: text },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific HTTP errors from the edge function
+        const errorMsg = error.message || 'Failed to process your request';
+        if (errorMsg.includes('429') || errorMsg.includes('Rate limit')) {
+          throw new Error('Too many requests. Please wait a moment and try again.');
+        }
+        if (errorMsg.includes('402') || errorMsg.includes('Payment')) {
+          throw new Error('AI service temporarily unavailable. Please try again later.');
+        }
+        throw new Error(errorMsg);
+      }
 
       if (data?.error) {
         throw new Error(data.error);
@@ -75,8 +88,10 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
       setState('results');
     } catch (err) {
       console.error('Voice search error:', err);
-      setErrorMessage(err instanceof Error ? err.message : 'Failed to process your request');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to process your request. Please try again.');
       setState('error');
+    } finally {
+      isProcessingRef.current = false;
     }
   }, []);
 
@@ -90,7 +105,9 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
       return;
     }
 
-    cleanup();
+    // Prevent starting if already listening or processing
+    if (recognitionRef.current) return;
+
     setTranscript('');
     setInterimTranscript('');
     setRecommendations([]);
@@ -136,6 +153,8 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     };
 
     recognition.onend = () => {
+      recognitionRef.current = null;
+      
       // Skip processing if onerror already handled this
       if (hasErrorRef.current) return;
 
@@ -151,7 +170,7 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
         setInterimTranscript('');
         processTranscription(interimText);
       } else {
-        setErrorMessage('No speech detected. Please try again.');
+        setErrorMessage('No speech detected. Please try again or type your query below.');
         setState('error');
       }
     };
@@ -159,14 +178,19 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       hasErrorRef.current = true;
+      recognitionRef.current = null;
+      
       if (event.error === 'not-allowed') {
-        setErrorMessage('Microphone access denied. Please allow microphone access in your browser settings.');
+        setErrorMessage('Microphone access denied. Please allow microphone access in your browser settings and try again.');
       } else if (event.error === 'no-speech') {
-        setErrorMessage('No speech detected. Please try again.');
+        setErrorMessage('No speech detected. Please try speaking again or type your query below.');
       } else if (event.error === 'network') {
-        setErrorMessage('Network error. Please check your connection.');
+        setErrorMessage('Network error. Please check your internet connection and try again.');
+      } else if (event.error === 'aborted') {
+        // User cancelled, don't show error
+        return;
       } else {
-        setErrorMessage(`Speech recognition error: ${event.error}`);
+        setErrorMessage(`Voice recognition failed. Please try again or type your query instead.`);
       }
       setState('error');
     };
@@ -176,10 +200,11 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     try {
       recognition.start();
     } catch (err) {
-      setErrorMessage('Failed to start voice recognition.');
+      recognitionRef.current = null;
+      setErrorMessage('Failed to start voice recognition. Please try typing your query instead.');
       setState('error');
     }
-  }, [isSupported, cleanup, processTranscription, toast]);
+  }, [isSupported, processTranscription, toast]);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
@@ -199,11 +224,12 @@ export const useVoiceSearch = (): UseVoiceSearchReturn => {
     transcriptRef.current = '';
     interimTranscriptRef.current = '';
     hasErrorRef.current = false;
+    isProcessingRef.current = false;
   }, [cleanup]);
 
   const retrySearch = useCallback(() => {
     cancelSearch();
-    setTimeout(() => startListening(), 200);
+    setTimeout(() => startListening(), 300);
   }, [cancelSearch, startListening]);
 
   const searchByText = useCallback((text: string) => {
