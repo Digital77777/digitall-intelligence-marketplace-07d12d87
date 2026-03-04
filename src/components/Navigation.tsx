@@ -1,4 +1,4 @@
-import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, CreditCard, LayoutDashboard, ArrowRight, MessageSquare } from "lucide-react";
+import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, CreditCard, LayoutDashboard, ArrowRight, MessageSquare, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
@@ -182,15 +182,14 @@ const Navigation = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     asChild
-                    onMouseEnter={() => handleMouseEnter('/marketplace/my-listings')}
+                    onMouseEnter={() => handleMouseEnter('/update-app')}
                   >
-                    <Link to="/marketplace/my-listings">My Listings</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    asChild
-                    onMouseEnter={() => handleMouseEnter('/marketplace/create')}
-                  >
-                    <Link to="/marketplace/create">Create Listing</Link>
+                    <Link to="/update-app">
+                      <div className="flex items-center">
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Update Latest Version
+                      </div>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     asChild
