@@ -99,6 +99,7 @@ const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const EditListingPage = lazy(() => import("./pages/EditListingPage"));
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
+const UpdateAppPage = lazy(() => import("./pages/UpdateAppPage"));
 
 // Programs - Lazy loaded
 const ComingSoonPage = lazy(() => import("./pages/programs/ComingSoonPage"));
@@ -268,6 +269,7 @@ const routeGroups: AppRoute[] = [
   { path: "/referrals", component: ReferralPage, protected: true },
   { path: "/notification-settings", component: NotificationSettingsPage, protected: true },
   { path: "/install-pwa", component: InstallPWAPage },
+  { path: "/update-app", component: UpdateAppPage, protected: true },
   { path: "/profile/:userId", component: PublicProfilePage, protected: true },
   { path: "/edit-listing/:id", component: EditListingPage, protected: true },
   { path: "/feedback", component: FeedbackPage, protected: true },

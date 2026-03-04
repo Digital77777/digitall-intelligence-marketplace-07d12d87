@@ -57,7 +57,7 @@ const UpdateAppPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {updated ? (
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-green-500/10 text-green-700 dark:text-green-400">
+              <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 text-primary">
                 <CheckCircle className="h-5 w-5 shrink-0" />
                 <p className="text-sm font-medium">Updated successfully! Reloading...</p>
               </div>
