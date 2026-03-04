@@ -1,4 +1,4 @@
-import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, CreditCard, LayoutDashboard, ArrowRight, MessageSquare, RefreshCw } from "lucide-react";
+import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, CreditCard, LayoutDashboard, ArrowRight, MessageSquare, RefreshCw, ShoppingBag, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { usePrefetch } from "@/hooks/usePrefetch";
+import { useTier } from "@/contexts/TierContext";
 const Navigation = () => {
   const {
     user,
@@ -18,6 +19,8 @@ const Navigation = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
   const { handleMouseEnter, handleTouchStart } = usePrefetch();
+  const { canAccessFeature } = useTier();
+  const canSell = canAccessFeature('marketplace_sell');
   const navigationItems = [{
     icon: Home,
     label: "Home",
@@ -180,6 +183,32 @@ const Navigation = () => {
                       </div>
                     </Link>
                   </DropdownMenuItem>
+                  {canSell && (
+                    <>
+                      <DropdownMenuItem 
+                        asChild
+                        onMouseEnter={() => handleMouseEnter('/marketplace/my-listings')}
+                      >
+                        <Link to="/marketplace/my-listings">
+                          <div className="flex items-center">
+                            <ShoppingBag className="mr-2 h-4 w-4" />
+                            My Listings
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        asChild
+                        onMouseEnter={() => handleMouseEnter('/marketplace/create')}
+                      >
+                        <Link to="/marketplace/create">
+                          <div className="flex items-center">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Create Listing
+                          </div>
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem 
                     asChild
                     onMouseEnter={() => handleMouseEnter('/update-app')}
