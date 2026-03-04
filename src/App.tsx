@@ -13,7 +13,7 @@ import Navigation from "./components/Navigation";
 import MobileFooter from "./components/MobileFooter";
 import { DeploymentDiagnostics } from "./components/DeploymentDiagnostics";
 import { SkipToContent } from "./components/SkipToContent";
-import { UpdatePrompt } from "./components/UpdatePrompt";
+// UpdatePrompt removed - replaced by /update-app page
 import { FloatingUploadIndicator } from "./components/upload/FloatingUploadIndicator";
 import { useAutoPrefetch } from "./hooks/usePrefetch";
 
@@ -299,7 +299,7 @@ const App = () => {
                 <BackgroundUploadProvider>
                   <TooltipProvider>
                     <DeploymentDiagnostics />
-                    <UpdatePrompt />
+                    
                     <Toaster position="top-right" />
                     <BrowserRouter>
                       <AppLayout>
