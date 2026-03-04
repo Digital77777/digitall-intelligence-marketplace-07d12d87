@@ -38,31 +38,40 @@ serve(async (req) => {
       throw new Error("Failed to fetch products");
     }
 
-    // 2. Build the product list for the system prompt
-    const productLines = (products || [])
-      .map((p: any) => `- ${p.title}: ${(p.description || "").substring(0, 150)}`)
+    if (!products || products.length === 0) {
+      return new Response(
+        JSON.stringify({ recommendations: [] }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 2. Build the product list for the system prompt with IDs for reliable matching
+    const productLines = products
+      .map((p: any, i: number) => `[${i}] "${p.title}": ${(p.description || "").substring(0, 120)}`)
       .join("\n");
 
     const systemPrompt = `You are the AI assistant for the Digital Intelligence Marketplace.
-Current tools and products available:
+Available products (format: [index] "title": description):
 ${productLines}
 
-User spoken need: "${transcription}"
+User request: "${transcription}"
 
-Return ONLY valid JSON — an array of matching products. Each object:
+Return ONLY valid JSON — an array of matching products. Each object must use the EXACT product title from the list above:
 [
   {
-    "product_name": "exact name from the list above",
+    "product_index": 0,
+    "product_name": "exact title from list",
     "match_score": 85,
-    "explanation": "one short sentence why this solves the exact need",
-    "action": "View [product name] details"
+    "explanation": "one short sentence why this matches",
+    "action": "View details"
   }
 ]
 Rules:
-- Only include products from the list above.
+- product_index must match the [index] from the product list above.
+- product_name must be the EXACT title string from the list (copy it exactly).
 - match_score is 0-100 based on relevance.
 - Return up to 5 best matches, sorted by match_score descending.
-- If nothing matches well (all scores < 30), return an empty array [].
+- If nothing matches well (all scores < 25), return an empty array [].
 - Return ONLY the JSON array, no markdown, no explanation outside the array.`;
 
     // 3. Call Lovable AI Gateway
@@ -85,7 +94,7 @@ Rules:
             { role: "system", content: systemPrompt },
             { role: "user", content: transcription },
           ],
-          temperature: 0.2,
+          temperature: 0.1,
         }),
       }
     );
@@ -128,19 +137,43 @@ Rules:
       recommendations = [];
     }
 
-    // 5. Enrich recommendations with product IDs and images
+    // 5. Enrich recommendations - use index-based matching first, then fuzzy title match
     const enriched = recommendations.map((rec: any) => {
-      const match = (products || []).find(
-        (p: any) => p.title.toLowerCase() === rec.product_name?.toLowerCase()
-      );
+      let match = null;
+      
+      // Try index-based match first (most reliable)
+      if (typeof rec.product_index === 'number' && products[rec.product_index]) {
+        match = products[rec.product_index];
+      }
+      
+      // Fall back to exact title match
+      if (!match) {
+        match = products.find(
+          (p: any) => p.title.toLowerCase() === rec.product_name?.toLowerCase()
+        );
+      }
+      
+      // Fall back to partial/fuzzy title match
+      if (!match && rec.product_name) {
+        const searchName = rec.product_name.toLowerCase();
+        match = products.find(
+          (p: any) => p.title.toLowerCase().includes(searchName) || searchName.includes(p.title.toLowerCase())
+        );
+      }
+
+      if (!match) return null;
+
       return {
-        ...rec,
-        product_id: match?.id || null,
-        images: match?.images || [],
-        listing_type: match?.listing_type || "product",
-        creation_link: match?.creation_link || null,
+        product_name: match.title,
+        match_score: rec.match_score || 50,
+        explanation: rec.explanation || "Relevant match for your search",
+        action: rec.action || `View ${match.title}`,
+        product_id: match.id,
+        images: match.images || [],
+        listing_type: match.listing_type || "product",
+        creation_link: match.creation_link || null,
       };
-    }).filter((r: any) => r.product_id !== null);
+    }).filter(Boolean);
 
     return new Response(JSON.stringify({ recommendations: enriched }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
