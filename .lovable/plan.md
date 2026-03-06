@@ -1,45 +1,32 @@
 
 
-## Plan: Redesign Voice-Driven Product Finder Flow
+# Reassign Marketplace Listings to @DIM_Earn and Grant Edit Access
 
-The current implementation uses a bottom-sheet modal for processing/results, which feels cramped. The user wants:
+## Overview
+Transfer ownership of all 39 seeded marketplace products to the @DIM_Earn account (`fce177b9-604d-4e7c-b904-5f18ccf1ec73`) and ensure this account can edit all marketplace listings.
 
-1. **Blue fullscreen page** stays visible while AI is listening (already works).
-2. **A dedicated full-page results view** showing AI-matched products ranked best-first.
-3. **Clicking a product navigates to** `/marketplace/listing/:id`.
+## What Changes
 
-### Current State
+### 1. Database: Update listing ownership (SQL UPDATE)
+Run an UPDATE statement to change the `user_id` on all marketplace listings currently owned by `04813cca-d8cf-4a63-b1f5-02b40d99d157` to the @DIM_Earn user ID `fce177b9-604d-4e7c-b904-5f18ccf1ec73`.
 
-- `FullscreenListeningView` (blue page) is already shown during `idle`/`listening` states -- this works.
-- `ProcessingView` and `ResultsView` are rendered inside a small bottom-sheet modal -- this is what needs to change.
-- `RecommendationCard` already navigates to listing detail on click.
+```sql
+UPDATE marketplace_listings 
+SET user_id = 'fce177b9-604d-4e7c-b904-5f18ccf1ec73'
+WHERE user_id = '04813cca-d8cf-4a63-b1f5-02b40d99d157';
+```
 
-### Changes
+This automatically grants @DIM_Earn edit/delete access to all those listings through the existing RLS policy: **"Users can manage their own listings"** (`auth.uid() = user_id`).
 
-**File: `src/components/marketplace/voice/VoiceSearchModal.tsx`**
+### 2. Update seed data file
+Update `src/data/marketplaceProducts.ts` to use the correct @DIM_Earn user ID (`fce177b9-604d-4e7c-b904-5f18ccf1ec73`) so any future re-seeding uses the right account.
 
-Replace the bottom-sheet layout (lines 90-148) with fullscreen views for both `processing` and `results` states:
+## Why This Works
+The existing RLS policy on `marketplace_listings` already allows users to manage (SELECT, INSERT, UPDATE, DELETE) their own listings via `auth.uid() = user_id`. By changing ownership to @DIM_Earn, that account automatically gets full edit access to all products. No new policies or roles are needed.
 
-1. **Processing state**: Show a fullscreen view (same blue gradient background) with the animated processing steps, keeping the user immersed in the experience rather than switching to a modal.
+## Files to Modify
+- `src/data/marketplaceProducts.ts` -- update the system user ID constant
 
-2. **Results state**: Show a fullscreen white/background page with:
-   - Header bar with "AI Product Finder" title, result count, and close button
-   - The search query displayed as a subtitle
-   - "AI ranked" badge
-   - Full-height scrollable list of `RecommendationCard` items, sorted by `match_score` descending (already sorted by the edge function)
-   - Each card shows rank badge, product image/initial, name, score %, explanation, and arrow
-   - Clicking any card calls `navigate(/marketplace/listing/${id})` and closes the modal
-   - Bottom area: "Search again" button + text input for refinement
-
-3. **Error state**: Also show fullscreen instead of bottom-sheet for consistency.
-
-4. Remove the bottom-sheet wrapper entirely -- all states use fullscreen layouts.
-
-### Technical Details
-
-- Remove the `showFullscreen` conditional that only covers `idle`/`listening`. Instead, render all states as fullscreen.
-- The `ProcessingView` will get a blue gradient background matching the listening view, with a centered spinner/steps animation.
-- The `ResultsView` will become a full-page layout with a proper scrollable list, larger cards, and clearer visual hierarchy.
-- The `RecommendationCard` component will be slightly enlarged for the full-page context.
-- No changes to `useVoiceSearch.tsx` or the edge function -- only the modal component changes.
+## Database Operations
+- UPDATE all listings from old user to @DIM_Earn (using the data insert tool, not a migration)
 
