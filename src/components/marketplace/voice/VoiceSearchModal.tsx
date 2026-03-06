@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Mic, MicOff, Loader2, Sparkles, RotateCcw, AlertCircle, Search, ArrowRight, CheckCircle2, Brain, Database, Filter, Zap, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useVoiceSearch, type VoiceRecommendation } from '@/hooks/useVoiceSearch';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,6 @@ interface VoiceSearchModalProps {
 export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const modalRef = useRef<HTMLDivElement>(null);
   const {
     state,
     transcript,
@@ -38,7 +38,6 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onCl
   useEffect(() => {
     if (isOpen && state === 'idle' && isSupported && !hasAutoStarted.current) {
       hasAutoStarted.current = true;
-      // Small delay to let modal render first
       const timer = setTimeout(() => startListening(), 200);
       return () => clearTimeout(timer);
     }
@@ -65,19 +64,21 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onCl
     onClose();
   };
 
-  if (!isOpen) return null;
+  const handleNavigate = (id: string) => {
+    navigate(`/marketplace/listing/${id}`);
+    handleClose();
+  };
 
-  const showFullscreen = state === 'idle' || state === 'listening';
+  if (!isOpen) return null;
 
   return (
     <div
-      ref={modalRef}
       className="fixed inset-0 z-[100] animate-in fade-in duration-300"
       role="dialog"
       aria-modal="true"
       aria-label="AI Voice Search"
     >
-      {showFullscreen ? (
+      {(state === 'idle' || state === 'listening') && (
         <FullscreenListeningView
           state={state}
           interimTranscript={interimTranscript}
@@ -87,64 +88,29 @@ export const VoiceSearchModal: React.FC<VoiceSearchModalProps> = ({ isOpen, onCl
           onStart={startListening}
           onTextSearch={searchByText}
         />
-      ) : (
-        <>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
-          <div className="relative h-full flex items-end md:items-center justify-center">
-            <div className={cn(
-              "relative w-full md:max-w-lg bg-background rounded-t-3xl md:rounded-2xl shadow-2xl",
-              "max-h-[85vh] overflow-y-auto",
-              "animate-in slide-in-from-bottom-4 duration-300",
-              "border border-border/50"
-            )}>
-              <div className="sticky top-0 bg-background/95 backdrop-blur-sm z-10 flex items-center justify-between p-4 border-b border-border/30">
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold text-base leading-tight">AI Product Finder</h2>
-                    <p className="text-[11px] text-muted-foreground">Results powered by AI</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={handleClose}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="p-5">
-                {state === 'processing' && <ProcessingView transcript={transcript} />}
-                {state === 'results' && (
-                  <ResultsView
-                    recommendations={recommendations}
-                    transcript={transcript}
-                    onRetry={retrySearch}
-                    onClose={handleClose}
-                    onNavigate={(id) => { navigate(`/marketplace/listing/${id}`); handleClose(); }}
-                    isSupported={isSupported}
-                    onTextSearch={searchByText}
-                  />
-                )}
-                {state === 'error' && (
-                  <ErrorView
-                    message={errorMessage}
-                    onRetry={retrySearch}
-                    onClose={handleClose}
-                    isSupported={isSupported}
-                    onTextSearch={searchByText}
-                  />
-                )}
-              </div>
-
-              <div className="flex justify-center pb-4 pt-1">
-                <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
-                  <Sparkles className="h-2.5 w-2.5" />
-                  Powered by AI · Results may vary
-                </span>
-              </div>
-            </div>
-          </div>
-        </>
+      )}
+      {state === 'processing' && (
+        <FullscreenProcessingView transcript={transcript} onClose={handleClose} />
+      )}
+      {state === 'results' && (
+        <FullscreenResultsView
+          recommendations={recommendations}
+          transcript={transcript}
+          onRetry={retrySearch}
+          onClose={handleClose}
+          onNavigate={handleNavigate}
+          isSupported={isSupported}
+          onTextSearch={searchByText}
+        />
+      )}
+      {state === 'error' && (
+        <FullscreenErrorView
+          message={errorMessage}
+          onRetry={retrySearch}
+          onClose={handleClose}
+          isSupported={isSupported}
+          onTextSearch={searchByText}
+        />
       )}
     </div>
   );
@@ -155,11 +121,7 @@ const AnimatedWaveform: React.FC<{ isActive: boolean }> = ({ isActive }) => {
   const colors = ['hsl(0, 0%, 100%)', 'hsl(45, 100%, 60%)', 'hsl(140, 70%, 55%)', 'hsl(0, 80%, 60%)'];
 
   return (
-    <svg
-      viewBox="0 0 400 80"
-      className="w-full h-20 md:h-24"
-      preserveAspectRatio="none"
-    >
+    <svg viewBox="0 0 400 80" className="w-full h-20 md:h-24" preserveAspectRatio="none">
       {colors.map((color, i) => (
         <path
           key={i}
@@ -170,35 +132,21 @@ const AnimatedWaveform: React.FC<{ isActive: boolean }> = ({ isActive }) => {
           strokeOpacity={isActive ? 0.8 : 0.4}
           className="transition-all duration-500"
           style={{
-            animation: isActive
-              ? `voiceWave${i} ${1.5 + i * 0.3}s ease-in-out infinite`
-              : 'none',
+            animation: isActive ? `voiceWave${i} ${1.5 + i * 0.3}s ease-in-out infinite` : 'none',
           }}
         />
       ))}
       <style>{`
-        @keyframes voiceWave0 {
-          0%, 100% { d: path("M0,40 Q50,40 100,25 T200,40 Q300,55 400,40"); }
-          50% { d: path("M0,40 Q50,55 100,45 T200,30 Q300,40 400,40"); }
-        }
-        @keyframes voiceWave1 {
-          0%, 100% { d: path("M0,40 Q80,30 160,50 T320,35 Q380,45 400,40"); }
-          50% { d: path("M0,40 Q80,50 160,30 T320,50 Q380,35 400,40"); }
-        }
-        @keyframes voiceWave2 {
-          0%, 100% { d: path("M0,40 Q60,50 120,30 T240,50 Q360,30 400,40"); }
-          50% { d: path("M0,40 Q60,28 120,48 T240,28 Q360,50 400,40"); }
-        }
-        @keyframes voiceWave3 {
-          0%, 100% { d: path("M0,40 Q100,35 200,50 T400,35"); }
-          50% { d: path("M0,40 Q100,50 200,30 T400,45"); }
-        }
+        @keyframes voiceWave0 { 0%, 100% { d: path("M0,40 Q50,40 100,25 T200,40 Q300,55 400,40"); } 50% { d: path("M0,40 Q50,55 100,45 T200,30 Q300,40 400,40"); } }
+        @keyframes voiceWave1 { 0%, 100% { d: path("M0,40 Q80,30 160,50 T320,35 Q380,45 400,40"); } 50% { d: path("M0,40 Q80,50 160,30 T320,50 Q380,35 400,40"); } }
+        @keyframes voiceWave2 { 0%, 100% { d: path("M0,40 Q60,50 120,30 T240,50 Q360,30 400,40"); } 50% { d: path("M0,40 Q60,28 120,48 T240,28 Q360,50 400,40"); } }
+        @keyframes voiceWave3 { 0%, 100% { d: path("M0,40 Q100,35 200,50 T400,35"); } 50% { d: path("M0,40 Q100,50 200,30 T400,45"); } }
       `}</style>
     </svg>
   );
 };
 
-/* ---- Fullscreen Listening View (Google Assistant inspired) ---- */
+/* ---- Fullscreen Listening View ---- */
 const FullscreenListeningView: React.FC<{
   state: string;
   interimTranscript: string;
@@ -213,53 +161,35 @@ const FullscreenListeningView: React.FC<{
   const isListening = state === 'listening';
 
   useEffect(() => {
-    if (isListening && interimTranscript) {
-      setShowInfo(false);
-    }
+    if (isListening && interimTranscript) setShowInfo(false);
   }, [isListening, interimTranscript]);
 
   return (
     <div className="h-full w-full flex flex-col bg-gradient-to-b from-[hsl(220,90%,52%)] via-[hsl(230,90%,48%)] to-[hsl(240,85%,40%)] text-white">
-      {/* Close button */}
       <div className="flex items-center justify-between p-4 pt-safe">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full h-10 w-10 text-white/80 hover:text-white hover:bg-white/10"
-          onClick={onClose}
-        >
+        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 text-white/80 hover:text-white hover:bg-white/10" onClick={onClose}>
           <X className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-1.5 opacity-60">
           <Sparkles className="h-3.5 w-3.5" />
           <span className="text-xs font-medium">AI Product Finder</span>
         </div>
-        <div className="w-10" /> {/* spacer */}
+        <div className="w-10" />
       </div>
 
-      {/* Main content area */}
       <div className="flex-1 flex flex-col items-center justify-center px-6 -mt-8">
-        {/* Waveform */}
         <div className="w-full max-w-md mb-8">
           <AnimatedWaveform isActive={isListening} />
         </div>
 
-        {/* Status text */}
         <div className="text-center space-y-3 mb-8">
           {isListening && interimTranscript ? (
-            <p className="text-2xl md:text-3xl font-light leading-relaxed animate-in fade-in duration-300">
-              "{interimTranscript}"
-            </p>
+            <p className="text-2xl md:text-3xl font-light leading-relaxed animate-in fade-in duration-300">"{interimTranscript}"</p>
           ) : isListening ? (
-            <p className="text-2xl md:text-3xl font-light">
-              Speak into the phone
-            </p>
+            <p className="text-2xl md:text-3xl font-light">Speak into the phone</p>
           ) : (
-            <p className="text-2xl md:text-3xl font-light">
-              {isSupported ? 'Tap the mic to start' : 'Type what you need'}
-            </p>
+            <p className="text-2xl md:text-3xl font-light">{isSupported ? 'Tap the mic to start' : 'Type what you need'}</p>
           )}
-
           {!isListening && showInfo && (
             <p className="text-sm text-white/60 max-w-xs mx-auto leading-relaxed">
               Describe what you're looking for and our AI will find the best tools, services & products for you
@@ -267,7 +197,6 @@ const FullscreenListeningView: React.FC<{
           )}
         </div>
 
-        {/* Mic button */}
         {isSupported && (
           <div className="relative mb-6">
             {isListening && (
@@ -280,33 +209,19 @@ const FullscreenListeningView: React.FC<{
               onClick={isListening ? onStop : onStart}
               className={cn(
                 "relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg",
-                isListening
-                  ? "bg-white text-[hsl(230,90%,48%)] scale-110"
-                  : "bg-white/15 text-white hover:bg-white/25 hover:scale-105"
+                isListening ? "bg-white text-[hsl(230,90%,48%)] scale-110" : "bg-white/15 text-white hover:bg-white/25 hover:scale-105"
               )}
               aria-label={isListening ? 'Stop listening' : 'Start listening'}
             >
-              {isListening ? (
-                <MicOff className="h-8 w-8" />
-              ) : (
-                <Mic className="h-8 w-8" />
-              )}
+              {isListening ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
             </button>
           </div>
         )}
-
-        {isListening && (
-          <p className="text-xs text-white/40 mb-4">Tap to stop</p>
-        )}
+        {isListening && <p className="text-xs text-white/40 mb-4">Tap to stop</p>}
       </div>
 
-      {/* Bottom section: text fallback + AI info */}
       <div className="px-6 pb-8 space-y-4">
-        {/* Text input fallback */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); if (textQuery.trim()) onTextSearch(textQuery.trim()); }}
-          className="flex gap-2"
-        >
+        <form onSubmit={(e) => { e.preventDefault(); if (textQuery.trim()) onTextSearch(textQuery.trim()); }} className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
             <input
@@ -316,16 +231,10 @@ const FullscreenListeningView: React.FC<{
               className="w-full h-11 pl-10 pr-4 rounded-full bg-white/10 border border-white/15 text-white placeholder:text-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/15 transition-all"
             />
           </div>
-          <Button
-            type="submit"
-            disabled={!textQuery.trim()}
-            className="h-11 w-11 rounded-full bg-white/15 hover:bg-white/25 text-white border-0 p-0 flex-shrink-0 disabled:opacity-30"
-          >
+          <Button type="submit" disabled={!textQuery.trim()} className="h-11 w-11 rounded-full bg-white/15 hover:bg-white/25 text-white border-0 p-0 flex-shrink-0 disabled:opacity-30">
             <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
-
-        {/* AI capabilities info */}
         <div className="flex items-center justify-center gap-4 text-[11px] text-white/40">
           <span className="flex items-center gap-1"><Zap className="h-3 w-3" /> Smart matching</span>
           <span className="flex items-center gap-1"><Star className="h-3 w-3" /> AI ranked</span>
@@ -336,8 +245,8 @@ const FullscreenListeningView: React.FC<{
   );
 };
 
-/* ---- Processing View ---- */
-const ProcessingView: React.FC<{ transcript: string }> = ({ transcript }) => {
+/* ---- Fullscreen Processing View ---- */
+const FullscreenProcessingView: React.FC<{ transcript: string; onClose: () => void }> = ({ transcript, onClose }) => {
   const [step, setStep] = useState(0);
   const steps = [
     { icon: Brain, label: 'Understanding your request…' },
@@ -352,54 +261,73 @@ const ProcessingView: React.FC<{ transcript: string }> = ({ transcript }) => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center text-center space-y-5 py-4" aria-live="polite" aria-busy="true">
-      <div className="bg-primary/5 border border-primary/10 rounded-xl px-4 py-2 max-w-xs">
-        <p className="text-sm text-foreground">"{transcript}"</p>
+    <div className="h-full w-full flex flex-col bg-gradient-to-b from-[hsl(220,90%,52%)] via-[hsl(230,90%,48%)] to-[hsl(240,85%,40%)] text-white" aria-live="polite" aria-busy="true">
+      <div className="flex items-center justify-between p-4 pt-safe">
+        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 text-white/80 hover:text-white hover:bg-white/10" onClick={onClose}>
+          <X className="h-5 w-5" />
+        </Button>
+        <div className="flex items-center gap-1.5 opacity-60">
+          <Sparkles className="h-3.5 w-3.5" />
+          <span className="text-xs font-medium">AI Product Finder</span>
+        </div>
+        <div className="w-10" />
       </div>
 
-      <div className="w-full max-w-xs space-y-2.5">
-        {steps.map((s, i) => {
-          const Icon = s.icon;
-          const isActive = i === step;
-          const isDone = i < step;
-          return (
-            <div
-              key={i}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-500",
-                isDone && "bg-primary/5",
-                isActive && "bg-primary/10 shadow-sm",
-                !isDone && !isActive && "opacity-40"
-              )}
-            >
-              <div className={cn(
-                "h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 transition-colors duration-300",
-                isDone ? "bg-primary text-primary-foreground" : isActive ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-              )}>
-                {isDone ? <CheckCircle2 className="h-4 w-4" /> : isActive ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
+        <div className="bg-white/10 border border-white/15 rounded-xl px-5 py-2.5 max-w-xs mb-8">
+          <p className="text-sm text-white/90">"{transcript}"</p>
+        </div>
+
+        <div className="w-full max-w-xs space-y-3 mb-10">
+          {steps.map((s, i) => {
+            const Icon = s.icon;
+            const isActive = i === step;
+            const isDone = i < step;
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-500",
+                  isDone && "bg-white/10",
+                  isActive && "bg-white/15 shadow-lg",
+                  !isDone && !isActive && "opacity-40"
+                )}
+              >
+                <div className={cn(
+                  "h-8 w-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors duration-300",
+                  isDone ? "bg-white text-[hsl(230,90%,48%)]" : isActive ? "bg-white/20 text-white" : "bg-white/10 text-white/60"
+                )}>
+                  {isDone ? <CheckCircle2 className="h-4 w-4" /> : isActive ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
+                </div>
+                <span className={cn(
+                  "text-sm transition-colors duration-300",
+                  isDone ? "text-white font-medium" : isActive ? "text-white" : "text-white/60"
+                )}>
+                  {s.label}
+                </span>
               </div>
-              <span className={cn(
-                "text-sm transition-colors duration-300",
-                isDone ? "text-foreground font-medium" : isActive ? "text-foreground" : "text-muted-foreground"
-              )}>
-                {s.label}
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        <div className="w-full max-w-xs space-y-2">
+          <Skeleton className="h-14 w-full rounded-xl bg-white/10" />
+          <Skeleton className="h-14 w-full rounded-xl bg-white/8 opacity-60" />
+          <Skeleton className="h-14 w-3/4 rounded-xl bg-white/5 opacity-30" />
+        </div>
       </div>
 
-      <div className="w-full space-y-2 pt-2">
-        <Skeleton className="h-16 w-full rounded-xl" />
-        <Skeleton className="h-16 w-full rounded-xl opacity-60" />
-        <Skeleton className="h-16 w-3/4 rounded-xl opacity-30" />
+      <div className="flex justify-center pb-6">
+        <span className="text-[10px] text-white/30 flex items-center gap-1">
+          <Sparkles className="h-2.5 w-2.5" /> Powered by AI · Results may vary
+        </span>
       </div>
     </div>
   );
 };
 
-/* ---- Results View ---- */
-const ResultsView: React.FC<{
+/* ---- Fullscreen Results View ---- */
+const FullscreenResultsView: React.FC<{
   recommendations: VoiceRecommendation[];
   transcript: string;
   onRetry: () => void;
@@ -410,71 +338,91 @@ const ResultsView: React.FC<{
 }> = ({ recommendations, transcript, onRetry, onClose, onNavigate, isSupported, onTextSearch }) => {
   const [fallbackText, setFallbackText] = useState('');
 
-  if (recommendations.length === 0) {
-    return (
-      <div className="flex flex-col items-center text-center space-y-4 py-4">
-        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center">
-          <Search className="h-7 w-7 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <p className="font-semibold text-sm">No matches found</p>
-          <p className="text-xs text-muted-foreground">Try rephrasing or being more specific</p>
-        </div>
-        <div className="bg-muted/50 rounded-lg px-3 py-1.5">
-          <p className="text-[11px] text-muted-foreground">"{transcript}"</p>
-        </div>
-        <div className="flex flex-col items-center gap-2 w-full">
-          {isSupported && (
-            <Button onClick={onRetry} size="sm" className="rounded-full gap-1.5 h-8 text-xs">
-              <Mic className="h-3.5 w-3.5" /> Try again
-            </Button>
-          )}
-          <form onSubmit={(e) => { e.preventDefault(); if (fallbackText.trim()) onTextSearch(fallbackText.trim()); }} className="flex gap-2 w-full max-w-sm">
-            <Input value={fallbackText} onChange={(e) => setFallbackText(e.target.value)} placeholder="Type a different query…" className="flex-1 h-9 rounded-xl text-xs" />
-            <Button type="submit" size="sm" disabled={!fallbackText.trim()} className="h-9 rounded-xl"><Search className="h-3.5 w-3.5" /></Button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="font-bold text-sm">{recommendations.length} match{recommendations.length !== 1 ? 'es' : ''} found</h3>
-          <p className="text-[11px] text-muted-foreground mt-0.5">for "{transcript}"</p>
-        </div>
-        <Badge variant="secondary" className="text-[10px] h-5">
-          <Sparkles className="h-2.5 w-2.5 mr-0.5" /> AI ranked
-        </Badge>
-      </div>
-
-      <div className="space-y-2" role="list">
-        {recommendations.map((rec, index) => (
-          <div
-            key={rec.product_id || index}
-            className="animate-in slide-in-from-bottom-2 fade-in"
-            style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'both' }}
-          >
-            <RecommendationCard recommendation={rec} onNavigate={onNavigate} rank={index + 1} />
+    <div className="h-full w-full flex flex-col bg-background">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-background/95 backdrop-blur-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <Sparkles className="h-4 w-4 text-primary" />
           </div>
-        ))}
+          <div>
+            <h2 className="font-bold text-sm leading-tight">AI Product Finder</h2>
+            <p className="text-[11px] text-muted-foreground">
+              {recommendations.length} match{recommendations.length !== 1 ? 'es' : ''} for "{transcript}"
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-[10px] h-5 hidden sm:flex">
+            <Sparkles className="h-2.5 w-2.5 mr-0.5" /> AI ranked
+          </Badge>
+          <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <div className="pt-2 space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          {isSupported && (
-            <Button variant="ghost" onClick={onRetry} size="sm" className="rounded-full gap-1.5 h-8 text-xs text-muted-foreground">
-              <Mic className="h-3.5 w-3.5" /> Search again
-            </Button>
-          )}
+      {/* Content */}
+      {recommendations.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
+            <Search className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-base">No matches found</p>
+            <p className="text-sm text-muted-foreground">Try rephrasing or being more specific</p>
+          </div>
+          <div className="bg-muted/50 rounded-lg px-4 py-2">
+            <p className="text-xs text-muted-foreground">"{transcript}"</p>
+          </div>
+          <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+            {isSupported && (
+              <Button onClick={onRetry} size="sm" className="rounded-full gap-1.5">
+                <Mic className="h-3.5 w-3.5" /> Try again
+              </Button>
+            )}
+            <form onSubmit={(e) => { e.preventDefault(); if (fallbackText.trim()) onTextSearch(fallbackText.trim()); }} className="flex gap-2 w-full">
+              <Input value={fallbackText} onChange={(e) => setFallbackText(e.target.value)} placeholder="Type a different query…" className="flex-1 h-9 rounded-xl text-xs" />
+              <Button type="submit" size="sm" disabled={!fallbackText.trim()} className="h-9 rounded-xl"><Search className="h-3.5 w-3.5" /></Button>
+            </form>
+          </div>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); if (fallbackText.trim()) onTextSearch(fallbackText.trim()); }} className="flex gap-2 w-full">
-          <Input value={fallbackText} onChange={(e) => setFallbackText(e.target.value)} placeholder="Refine your search…" className="flex-1 h-9 rounded-xl text-xs" />
-          <Button type="submit" size="sm" disabled={!fallbackText.trim()} className="h-9 rounded-xl"><Search className="h-3.5 w-3.5" /></Button>
-        </form>
-      </div>
+      ) : (
+        <ScrollArea className="flex-1">
+          <div className="p-4 space-y-2" role="list">
+            {recommendations.map((rec, index) => (
+              <div
+                key={rec.product_id || index}
+                className="animate-in slide-in-from-bottom-2 fade-in"
+                style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'both' }}
+              >
+                <RecommendationCard recommendation={rec} onNavigate={onNavigate} rank={index + 1} />
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom actions */}
+          <div className="px-4 pb-6 pt-2 space-y-3">
+            <div className="flex items-center justify-center gap-2">
+              {isSupported && (
+                <Button variant="outline" onClick={onRetry} size="sm" className="rounded-full gap-1.5 h-9 text-xs">
+                  <Mic className="h-3.5 w-3.5" /> Search again
+                </Button>
+              )}
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); if (fallbackText.trim()) onTextSearch(fallbackText.trim()); }} className="flex gap-2 w-full max-w-md mx-auto">
+              <Input value={fallbackText} onChange={(e) => setFallbackText(e.target.value)} placeholder="Refine your search…" className="flex-1 h-9 rounded-xl text-xs" />
+              <Button type="submit" size="sm" disabled={!fallbackText.trim()} className="h-9 rounded-xl"><Search className="h-3.5 w-3.5" /></Button>
+            </form>
+            <div className="flex justify-center">
+              <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1">
+                <Sparkles className="h-2.5 w-2.5" /> Powered by AI · Results may vary
+              </span>
+            </div>
+          </div>
+        </ScrollArea>
+      )}
     </div>
   );
 };
@@ -528,8 +476,8 @@ const RecommendationCard: React.FC<{
   );
 };
 
-/* ---- Error View ---- */
-const ErrorView: React.FC<{
+/* ---- Fullscreen Error View ---- */
+const FullscreenErrorView: React.FC<{
   message: string;
   onRetry: () => void;
   onClose: () => void;
@@ -539,27 +487,41 @@ const ErrorView: React.FC<{
   const [fallbackText, setFallbackText] = useState('');
 
   return (
-    <div className="flex flex-col items-center text-center space-y-4 py-4" aria-live="assertive">
-      <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
-        <AlertCircle className="h-7 w-7 text-destructive" />
-      </div>
-      <div className="space-y-1">
-        <p className="font-semibold text-sm">Something went wrong</p>
-        <p className="text-xs text-muted-foreground max-w-xs">{message}</p>
-      </div>
-      <div className="flex flex-col items-center gap-2 w-full">
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm" onClick={onClose} className="rounded-full h-8 text-xs">Close</Button>
-          {isSupported && (
-            <Button size="sm" onClick={onRetry} className="rounded-full gap-1.5 h-8 text-xs">
-              <RotateCcw className="h-3.5 w-3.5" /> Try Again
-            </Button>
-          )}
+    <div className="h-full w-full flex flex-col bg-background" aria-live="assertive">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+          </div>
+          <h2 className="font-bold text-sm">Something went wrong</h2>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); if (fallbackText.trim()) onTextSearch(fallbackText.trim()); }} className="flex gap-2 w-full max-w-sm">
-          <Input value={fallbackText} onChange={(e) => setFallbackText(e.target.value)} placeholder="Or type your query…" className="flex-1 h-9 rounded-xl text-xs" />
-          <Button type="submit" size="sm" disabled={!fallbackText.trim()} className="h-9 rounded-xl"><Search className="h-3.5 w-3.5" /></Button>
-        </form>
+        <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center space-y-5">
+        <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-1.5">
+          <p className="font-semibold text-base">Something went wrong</p>
+          <p className="text-sm text-muted-foreground max-w-xs">{message}</p>
+        </div>
+        <div className="flex flex-col items-center gap-3 w-full max-w-sm">
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onClose} className="rounded-full h-9 text-xs">Close</Button>
+            {isSupported && (
+              <Button size="sm" onClick={onRetry} className="rounded-full gap-1.5 h-9 text-xs">
+                <RotateCcw className="h-3.5 w-3.5" /> Try Again
+              </Button>
+            )}
+          </div>
+          <form onSubmit={(e) => { e.preventDefault(); if (fallbackText.trim()) onTextSearch(fallbackText.trim()); }} className="flex gap-2 w-full">
+            <Input value={fallbackText} onChange={(e) => setFallbackText(e.target.value)} placeholder="Or type your query…" className="flex-1 h-9 rounded-xl text-xs" />
+            <Button type="submit" size="sm" disabled={!fallbackText.trim()} className="h-9 rounded-xl"><Search className="h-3.5 w-3.5" /></Button>
+          </form>
+        </div>
       </div>
     </div>
   );
