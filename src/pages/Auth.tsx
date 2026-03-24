@@ -49,12 +49,9 @@ const Auth = () => {
         password 
       });
       
-      const { error, data } = await signUp(validated.email, validated.password, validated.fullName);
-      
-      console.log('[Signup] Result:', { error, data, user: data?.user?.id, identities: data?.user?.identities });
+      const { error } = await signUp(validated.email, validated.password, validated.fullName);
       
       if (error) {
-        console.error('[Signup] Error details:', JSON.stringify(error, null, 2));
         setError(handleAuthError(error));
       } else {
         setSuccess('Check your email for confirmation link!');
