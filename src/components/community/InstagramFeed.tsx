@@ -371,43 +371,41 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
       );
     }
 
-    // Desktop Instagram-style feed
+    // Desktop professional feed - single column, max-width for readability
     return (
       <>
-        <div className={cn("space-y-6", className)}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {visibleItems.map((item, index) => (
-              <FeedItem key={`original-${(item as CommunityInsight).id}-${index}`} index={index} isVisible={true}>
-                <InstagramPostDesktop
-                  insight={item as CommunityInsight}
-                  onLikeClick={onLikeClick!}
-                  onViewClick={onViewClick!}
-                  onVideoTap={onVideoTap}
-                  getInitials={getInitials}
-                />
-              </FeedItem>
-            ))}
-            
-            {/* Show skeletons for items being loaded */}
-            {hasMoreLocal && (
-              <LazyFeedSection onVisible={loadMoreItems}>
-                <InsightCardSkeleton />
-              </LazyFeedSection>
-            )}
+        <div className={cn("space-y-5 max-w-2xl mx-auto", className)}>
+          {visibleItems.map((item, index) => (
+            <FeedItem key={`original-${(item as CommunityInsight).id}-${index}`} index={index} isVisible={true}>
+              <InstagramPostDesktop
+                insight={item as CommunityInsight}
+                onLikeClick={onLikeClick!}
+                onViewClick={onViewClick!}
+                onVideoTap={onVideoTap}
+                getInitials={getInitials}
+              />
+            </FeedItem>
+          ))}
+          
+          {/* Show skeletons for items being loaded */}
+          {hasMoreLocal && (
+            <LazyFeedSection onVisible={loadMoreItems}>
+              <InsightCardSkeleton />
+            </LazyFeedSection>
+          )}
 
-            {/* Looped items for endless scrolling */}
-            {isLoopingEnabled && loopedItems.map((item, index) => (
-              <FeedItem key={`looped-${(item as CommunityInsight).id}-${index}`} index={index} isVisible={true}>
-                <InstagramPostDesktop
-                  insight={item as CommunityInsight}
-                  onLikeClick={onLikeClick!}
-                  onViewClick={onViewClick!}
-                  onVideoTap={onVideoTap}
-                  getInitials={getInitials}
-                />
-              </FeedItem>
-            ))}
-          </div>
+          {/* Looped items for endless scrolling */}
+          {isLoopingEnabled && loopedItems.map((item, index) => (
+            <FeedItem key={`looped-${(item as CommunityInsight).id}-${index}`} index={index} isVisible={true}>
+              <InstagramPostDesktop
+                insight={item as CommunityInsight}
+                onLikeClick={onLikeClick!}
+                onViewClick={onViewClick!}
+                onVideoTap={onVideoTap}
+                getInitials={getInitials}
+              />
+            </FeedItem>
+          ))}
           
           {/* Infinite scroll trigger */}
           {!hasMoreLocal && hasMore && (
