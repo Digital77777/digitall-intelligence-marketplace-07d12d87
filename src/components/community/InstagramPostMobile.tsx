@@ -166,14 +166,12 @@ export const InstagramPostMobile = memo(({
       <div className="flex items-center justify-between px-3 py-2.5">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-500 p-[2px]">
-              <Avatar className="w-full h-full border-2 border-background">
-                <AvatarImage src={insight.profiles?.avatar_url || undefined} />
-                <AvatarFallback className="text-xs bg-muted">
-                  {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
+            <Avatar className="w-9 h-9 border border-border">
+              <AvatarImage src={insight.profiles?.avatar_url || undefined} />
+              <AvatarFallback className="text-xs bg-muted font-medium">
+                {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
+              </AvatarFallback>
+            </Avatar>
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
