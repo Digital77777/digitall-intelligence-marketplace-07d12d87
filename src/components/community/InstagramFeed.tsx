@@ -248,15 +248,9 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     }
     
     return (
-      <div className={cn("space-y-4", className)}>
+      <div className={cn("space-y-5 max-w-2xl mx-auto", className)}>
         {type === 'insight' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* First skeleton is highlighted/larger */}
-            <div className="md:col-span-2 lg:col-span-1">
-              <InsightCardSkeleton />
-            </div>
-            <InsightCardSkeleton />
-            <InsightCardSkeleton />
+          <div className="space-y-5">
             <InsightCardSkeleton />
             <InsightCardSkeleton />
             <InsightCardSkeleton />
