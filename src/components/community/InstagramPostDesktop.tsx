@@ -298,7 +298,7 @@ export const InstagramPostDesktop = memo(({
         {/* Author Row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9 ring-2 ring-border">
+            <Avatar className="h-9 w-9 border border-border">
               <AvatarImage src={insight.profiles?.avatar_url || undefined} />
               <AvatarFallback className="text-xs font-medium bg-muted">
                 {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
