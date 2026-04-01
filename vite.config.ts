@@ -25,9 +25,10 @@ export default defineConfig(({ mode }) => {
         skipWaiting: false,
         clientsClaim: false,
         cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}'],
         navigateFallback: 'index.html',
-        navigateFallbackDenylist: [/^\/api/],
+        navigateFallbackDenylist: [/^\/api/, /^\/~oauth/],
         runtimeCaching: [
           {
             urlPattern: ({ request }) => request.destination === 'document',
