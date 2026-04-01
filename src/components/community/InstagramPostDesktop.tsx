@@ -1,7 +1,8 @@
 import React, { memo, useState, useCallback, useRef, useEffect } from "react";
-import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
+import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye, Share2, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { CommunityInsight } from "@/types/community";
 import { formatDistanceToNow } from "date-fns";
 import useEmblaCarousel from "embla-carousel-react";
@@ -40,6 +41,14 @@ export const InstagramPostDesktop = memo(({
   
   if (insight.cover_image) {
     mediaItems.push({ type: 'image', src: insight.cover_image });
+  }
+  
+  if (insight.images && insight.images.length > 0) {
+    insight.images.forEach((img) => {
+      if (img !== insight.cover_image) {
+        mediaItems.push({ type: 'image', src: img });
+      }
+    });
   }
   
   if (insight.videos && insight.videos.length > 0) {
@@ -139,7 +148,7 @@ export const InstagramPostDesktop = memo(({
     emblaApi?.scrollNext();
   }, [emblaApi]);
 
-  const timeAgo = formatDistanceToNow(new Date(insight.created_at), { addSuffix: false });
+  const timeAgo = formatDistanceToNow(new Date(insight.created_at), { addSuffix: true });
 
   const truncateByWords = useCallback((text: string, wordLimit: number): { truncated: string; isTruncated: boolean } => {
     const words = text.trim().split(/\s+/);
@@ -147,72 +156,42 @@ export const InstagramPostDesktop = memo(({
       return { truncated: text, isTruncated: false };
     }
     return { 
-      truncated: words.slice(0, wordLimit).join(' ') + '...', 
+      truncated: words.slice(0, wordLimit).join(' ') + '…', 
       isTruncated: true 
     };
   }, []);
 
   const hasMedia = mediaItems.length > 0;
-  const wordLimit = hasMedia ? 40 : 100;
+  const wordLimit = hasMedia ? 30 : 80;
   const { truncated: contentPreview, isTruncated } = truncateByWords(insight.content, wordLimit);
+
+  const categoryLabel = insight.category?.replace(/[-_]/g, ' ');
 
   return (
     <article 
-      className="border border-border rounded-lg bg-card overflow-hidden hover:shadow-lg transition-shadow duration-200" 
+      className="group border border-border rounded-xl bg-card overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.15)] hover:border-primary/20" 
       ref={containerRef}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-500 p-[2px]">
-              <Avatar className="w-full h-full border-2 border-card">
-                <AvatarImage src={insight.profiles?.avatar_url || undefined} />
-                <AvatarFallback className="text-sm bg-muted">
-                  {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold leading-tight hover:underline cursor-pointer">
-                {insight.profiles?.full_name || "Community Member"}
-              </span>
-              {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{timeAgo}</span>
-              <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-primary font-medium">#{insight.category.toLowerCase().replace(/\s+/g, '')}</span>
-            </div>
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Media Content */}
-      {mediaItems.length > 0 && (
-        <div className="relative bg-black cursor-pointer" onClick={handleDoubleClick}>
+      {/* Media Content - 16:10 aspect for a professional look */}
+      {hasMedia && (
+        <div className="relative cursor-pointer overflow-hidden" onClick={handleDoubleClick}>
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex">
               {mediaItems.map((media, index) => (
                 <div 
                   key={index} 
-                  className="flex-[0_0_100%] min-w-0 relative flex items-center justify-center aspect-square"
+                  className="flex-[0_0_100%] min-w-0 relative aspect-[16/10] bg-muted"
                 >
                   {media.type === 'image' ? (
                     <img
                       src={media.src}
                       alt={insight.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                       loading="lazy"
                     />
                   ) : (
                     <div 
-                      className="relative w-full h-full flex items-center justify-center group"
+                      className="relative w-full h-full group/video"
                       onClick={(e) => {
                         e.stopPropagation();
                         if (onVideoTap) {
@@ -230,8 +209,8 @@ export const InstagramPostDesktop = memo(({
                         playsInline
                       />
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="bg-black/30 rounded-full p-4 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <svg className="w-12 h-12 text-white fill-white" viewBox="0 0 24 24">
+                        <div className="bg-black/20 rounded-full p-4 backdrop-blur-sm opacity-0 group-hover/video:opacity-100 transition-opacity duration-200">
+                          <svg className="w-10 h-10 text-white fill-white" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z" />
                           </svg>
                         </div>
@@ -241,12 +220,12 @@ export const InstagramPostDesktop = memo(({
                           e.stopPropagation();
                           toggleMute(e);
                         }}
-                        className="absolute bottom-4 right-4 p-2.5 rounded-full bg-card/80 backdrop-blur-sm z-10 hover:bg-card transition-colors"
+                        className="absolute bottom-3 right-3 p-2 rounded-full bg-black/50 backdrop-blur-sm z-10 hover:bg-black/70 transition-colors text-white"
                       >
                         {isMuted ? (
-                          <VolumeX className="h-5 w-5" />
+                          <VolumeX className="h-4 w-4" />
                         ) : (
-                          <Volume2 className="h-5 w-5" />
+                          <Volume2 className="h-4 w-4" />
                         )}
                       </button>
                     </div>
@@ -256,23 +235,30 @@ export const InstagramPostDesktop = memo(({
             </div>
           </div>
 
+          {/* Image counter badge */}
+          {hasMultipleMedia && (
+            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
+              {selectedMediaIndex + 1} / {mediaItems.length}
+            </div>
+          )}
+
           {/* Carousel Navigation */}
           {hasMultipleMedia && (
             <>
               {selectedMediaIndex > 0 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); scrollPrev(); }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/90 backdrop-blur-sm shadow-lg hover:bg-card transition-colors"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/90 shadow-md hover:bg-white transition-colors text-black"
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
               )}
               {selectedMediaIndex < mediaItems.length - 1 && (
                 <button
                   onClick={(e) => { e.stopPropagation(); scrollNext(); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/90 backdrop-blur-sm shadow-lg hover:bg-card transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-white/90 shadow-md hover:bg-white transition-colors text-black"
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               )}
             </>
@@ -282,7 +268,7 @@ export const InstagramPostDesktop = memo(({
           {showDoubleTapHeart && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <Heart 
-                className="w-28 h-28 text-white fill-white drop-shadow-lg" 
+                className="w-24 h-24 text-white fill-white drop-shadow-lg" 
                 style={{ animation: 'heartPulse 1s ease-out forwards' }}
               />
             </div>
@@ -290,14 +276,14 @@ export const InstagramPostDesktop = memo(({
 
           {/* Carousel dots */}
           {hasMultipleMedia && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
               {mediaItems.map((_, index) => (
                 <div
                   key={index}
                   className={cn(
-                    "w-2 h-2 rounded-full transition-colors",
+                    "w-1.5 h-1.5 rounded-full transition-all duration-200",
                     index === selectedMediaIndex 
-                      ? "bg-primary" 
+                      ? "bg-white w-4" 
                       : "bg-white/50"
                   )}
                 />
@@ -307,78 +293,140 @@ export const InstagramPostDesktop = memo(({
         </div>
       )}
 
-      {/* Text-only post */}
-      {mediaItems.length === 0 && (
-        <div 
-          className="px-6 py-8 bg-gradient-to-br from-muted/30 to-muted/10 min-h-[280px] flex flex-col justify-center cursor-pointer"
-          onClick={handleDoubleClick}
+      {/* Content Section */}
+      <div className="p-5">
+        {/* Author Row */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-9 w-9 ring-2 ring-border">
+              <AvatarImage src={insight.profiles?.avatar_url || undefined} />
+              <AvatarFallback className="text-xs font-medium bg-muted">
+                {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-semibold leading-tight hover:underline cursor-pointer">
+                  {insight.profiles?.full_name || "Community Member"}
+                </span>
+                {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+              </div>
+              <div className="flex items-center gap-1.5">
+                {insight.profiles?.headline && (
+                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {insight.profiles.headline}
+                  </span>
+                )}
+                {!insight.profiles?.headline && (
+                  <span className="text-xs text-muted-foreground">{timeAgo}</span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {categoryLabel && (
+              <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5 capitalize">
+                {categoryLabel}
+              </Badge>
+            )}
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Title */}
+        <h3 
+          className="text-base font-semibold leading-snug mb-2 cursor-pointer hover:text-primary transition-colors line-clamp-2"
+          onClick={handleViewPost}
         >
-          <h3 className="text-xl font-semibold mb-3 leading-tight">{insight.title}</h3>
-          <p className="text-base leading-relaxed text-muted-foreground">
+          {insight.title}
+        </h3>
+
+        {/* Content Preview */}
+        <div className="mb-3">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {isExpanded ? insight.content : contentPreview}
           </p>
+          {isTruncated && !isExpanded && (
+            <button 
+              onClick={() => setIsExpanded(true)}
+              className="text-sm font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
+            >
+              Read more
+            </button>
+          )}
         </div>
-      )}
 
-      {/* Action Bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-        <div className="flex items-center gap-5">
-          <button 
-            onClick={handleLikeClick} 
-            className="p-1 hover:scale-110 transition-transform"
-            aria-label={isLiked ? "Unlike" : "Like"}
+        {/* Text-only post gets a subtle quote-style treatment */}
+        {!hasMedia && (
+          <div 
+            className="mb-3 pl-4 border-l-2 border-primary/30 py-1 cursor-pointer"
+            onClick={handleDoubleClick}
           >
-            <Heart 
+            <p className="text-sm italic text-muted-foreground/80 leading-relaxed line-clamp-3">
+              {insight.content.substring(0, 150)}
+            </p>
+          </div>
+        )}
+
+        {/* Engagement Stats */}
+        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+          <span className="font-medium">{likesCount.toLocaleString()} likes</span>
+          <span>·</span>
+          <span>{(insight.views_count || 0).toLocaleString()} views</span>
+          {insight.profiles?.headline && (
+            <>
+              <span>·</span>
+              <span>{timeAgo}</span>
+            </>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-border -mx-5 mb-2" />
+
+        {/* Action Bar */}
+        <div className="flex items-center justify-between -mx-1">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleLikeClick}
               className={cn(
-                "h-7 w-7 transition-all",
-                isLiked 
-                  ? "fill-red-500 text-red-500" 
-                  : "hover:text-muted-foreground/80"
+                "gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3",
+                isLiked && "text-red-500 hover:text-red-600"
               )}
-            />
-          </button>
-          <button 
-            onClick={handleViewPost} 
-            className="p-1 hover:scale-110 transition-transform" 
-            aria-label="View comments"
-          >
-            <MessageCircle className="h-7 w-7 hover:text-muted-foreground/80" />
-          </button>
-          <button 
-            onClick={handleViewPost} 
-            className="p-1 hover:scale-110 transition-transform"
-            aria-label="View full post"
-          >
-            <Eye className="h-7 w-7 hover:text-muted-foreground/80" />
-          </button>
+            >
+              <Heart 
+                className={cn(
+                  "h-[18px] w-[18px] transition-all",
+                  isLiked && "fill-red-500 text-red-500"
+                )}
+              />
+              <span className="text-xs font-medium">Like</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleViewPost}
+              className="gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3"
+            >
+              <MessageCircle className="h-[18px] w-[18px]" />
+              <span className="text-xs font-medium">Comment</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleViewPost}
+              className="gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3"
+            >
+              <Eye className="h-[18px] w-[18px]" />
+              <span className="text-xs font-medium">View</span>
+            </Button>
+          </div>
         </div>
       </div>
-
-      {/* Likes count */}
-      <div className="px-4 pb-2">
-        <span className="text-sm font-semibold">{likesCount.toLocaleString()} likes</span>
-      </div>
-
-      {/* Caption for media posts */}
-      {mediaItems.length > 0 && (
-        <div className="px-4 pb-3">
-          <h3 className="font-semibold text-base mb-1">{insight.title}</h3>
-          <p className="text-sm">
-            <span className="font-semibold mr-1.5">
-              {insight.profiles?.full_name || "Community Member"}
-            </span>
-            {isExpanded ? insight.content : contentPreview}
-          </p>
-        </div>
-      )}
-
-      {/* View comments link */}
-      <button 
-        onClick={handleViewPost}
-        className="px-4 pb-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        View more
-      </button>
 
       {/* CSS for heart animation */}
       <style>{`

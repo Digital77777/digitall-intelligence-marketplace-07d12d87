@@ -139,7 +139,7 @@ const ContinuationFeed = memo(({
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="max-w-2xl mx-auto space-y-5">
           {allDisplayItems.map((item, index) => (
             <div
               key={`cont-${item.id}-${index}`}
