@@ -20,7 +20,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { 
   useFollowStatus, 
   useFollowUser, 
-  useUnfollowUser 
+  useUnfollowUser,
+  useIsFollowedBy 
 } from "@/hooks/useFollows";
 import { 
   usePendingRequests, 
@@ -56,6 +57,7 @@ const NetworkMemberCard = ({
 }) => {
   const { user: currentUser } = useAuth();
   const { data: followStatus } = useFollowStatus(user.user_id);
+  const { data: isFollowedBy = false } = useIsFollowedBy(user.user_id);
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const sendConnectionRequest = useSendConnectionRequest();
@@ -73,6 +75,7 @@ const NetworkMemberCard = ({
         headline: user.headline,
       }}
       isFollowing={isFollowing}
+      isFollowedBy={isFollowedBy}
       connectionStatus={connectionStatus}
       isOwnProfile={isOwnProfile}
       onFollow={() => followUser.mutate(user.user_id)}

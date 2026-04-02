@@ -13,7 +13,7 @@ import { InsightDetailModal } from "@/components/community/InsightDetailModal";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest } from "@/hooks/useConnections";
-import { useFollowStatus, useFollowersCount, useFollowingCount, useFollowUser, useUnfollowUser } from "@/hooks/useFollows";
+import { useFollowStatus, useFollowersCount, useFollowingCount, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 import { SocialActions } from "@/components/community/SocialActionButton";
@@ -31,6 +31,7 @@ const PublicProfilePage = () => {
   
   // Follow hooks
   const { data: followStatus } = useFollowStatus(userId || "");
+  const { data: isFollowedBy = false } = useIsFollowedBy(userId || "");
   const { data: followersCount = 0 } = useFollowersCount(userId || "");
   const { data: followingCount = 0 } = useFollowingCount(userId || "");
   const followUser = useFollowUser();
@@ -233,6 +234,7 @@ const PublicProfilePage = () => {
                       <SocialActions
                         userId={userId!}
                         isFollowing={isFollowing}
+                        isFollowedBy={isFollowedBy}
                         connectionStatus={
                           !connectionStatus 
                             ? "none" 

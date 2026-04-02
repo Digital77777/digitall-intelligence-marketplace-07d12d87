@@ -20,6 +20,7 @@ export interface MemberCardProps {
     is_top_contributor?: boolean;
   };
   isFollowing: boolean;
+  isFollowedBy?: boolean;
   connectionStatus: "none" | "pending" | "pending_received" | "accepted";
   isOwnProfile: boolean;
   onFollow: () => void;
@@ -35,6 +36,7 @@ export interface MemberCardProps {
 const MemberCard: React.FC<MemberCardProps> = ({
   member,
   isFollowing,
+  isFollowedBy = false,
   connectionStatus,
   isOwnProfile,
   onFollow,
@@ -125,6 +127,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
                 <SocialActions
                   userId={member.user_id}
                   isFollowing={isFollowing}
+                  isFollowedBy={isFollowedBy}
                   connectionStatus={connectionStatus}
                   onFollow={onFollow}
                   onUnfollow={onUnfollow}
@@ -191,6 +194,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
                 <SocialActions
                   userId={member.user_id}
                   isFollowing={isFollowing}
+                  isFollowedBy={isFollowedBy}
                   connectionStatus={connectionStatus}
                   onFollow={onFollow}
                   onUnfollow={onUnfollow}
@@ -281,6 +285,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
             <SocialActions
               userId={member.user_id}
               isFollowing={isFollowing}
+              isFollowedBy={isFollowedBy}
               connectionStatus={connectionStatus}
               onFollow={onFollow}
               onUnfollow={onUnfollow}

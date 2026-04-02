@@ -94,7 +94,7 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
     return (
       <Button
         size={size}
-        onClick={onSecondaryAction || onAction}
+        onClick={isFollow ? onAction : (onSecondaryAction || onAction)}
         disabled={disabled}
         className={cn(
           "bg-emerald-600 hover:bg-emerald-700 text-white",
@@ -102,7 +102,7 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
           className
         )}
       >
-        <Check className="h-4 w-4 mr-1.5" />
+        {isFollow ? <UserPlus className="h-4 w-4 mr-1.5" /> : <Check className="h-4 w-4 mr-1.5" />}
         {isFollow ? "Follow Back" : "Accept"}
       </Button>
     );
@@ -156,6 +156,7 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
 interface SocialActionsProps {
   userId: string;
   isFollowing: boolean;
+  isFollowedBy?: boolean; // Whether the other user follows the current user
   connectionStatus: "none" | "pending" | "pending_received" | "accepted";
   onFollow: () => void;
   onUnfollow: () => void;
@@ -172,6 +173,7 @@ interface SocialActionsProps {
 
 export const SocialActions: React.FC<SocialActionsProps> = ({
   isFollowing,
+  isFollowedBy = false,
   connectionStatus,
   onFollow,
   onUnfollow,
@@ -186,6 +188,8 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
   const getFollowState = (): ActionState => {
     if (isFollowPending) return "loading";
     if (isFollowing) return "active";
+    // If the other user follows us but we don't follow them, show "Follow Back"
+    if (isFollowedBy) return "pending_received";
     return "none";
   };
 

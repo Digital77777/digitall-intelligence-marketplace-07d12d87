@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
 import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest } from "@/hooks/useConnections";
-import { useFollowStatus, useFollowUser, useUnfollowUser } from "@/hooks/useFollows";
+import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MemberCard from "@/components/community/MemberCard";
@@ -26,6 +26,7 @@ const MemberCardWithHooks = ({
   const { user } = useAuth();
   const { data: connectionStatus } = useConnectionStatus(member.user_id);
   const { data: followStatus } = useFollowStatus(member.user_id);
+  const { data: isFollowedBy = false } = useIsFollowedBy(member.user_id);
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnectionRequest();
   const followUser = useFollowUser();
@@ -56,6 +57,7 @@ const MemberCardWithHooks = ({
         is_top_contributor: member.is_top_contributor,
       }}
       isFollowing={isFollowing}
+      isFollowedBy={isFollowedBy}
       connectionStatus={getConnectionStatusString()}
       isOwnProfile={isOwnProfile}
       onFollow={() => followUser.mutate(member.user_id)}
