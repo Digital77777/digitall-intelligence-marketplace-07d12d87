@@ -57,6 +57,7 @@ const NetworkMemberCard = ({
 }) => {
   const { user: currentUser } = useAuth();
   const { data: followStatus } = useFollowStatus(user.user_id);
+  const { data: isFollowedBy = false } = useIsFollowedBy(user.user_id);
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const sendConnectionRequest = useSendConnectionRequest();
