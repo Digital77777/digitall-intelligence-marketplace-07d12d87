@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
 import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest } from "@/hooks/useConnections";
-import { useFollowStatus, useFollowUser, useUnfollowUser } from "@/hooks/useFollows";
+import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import MemberCard from "@/components/community/MemberCard";
