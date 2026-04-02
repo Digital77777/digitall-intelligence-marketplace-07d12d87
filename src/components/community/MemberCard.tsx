@@ -36,6 +36,7 @@ export interface MemberCardProps {
 const MemberCard: React.FC<MemberCardProps> = ({
   member,
   isFollowing,
+  isFollowedBy = false,
   connectionStatus,
   isOwnProfile,
   onFollow,
