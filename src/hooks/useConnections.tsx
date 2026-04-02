@@ -162,13 +162,16 @@ export const useSendConnectionRequest = () => {
         .maybeSingle();
 
       if (existing) {
-        throw new Error(
-          existing.status === "pending"
-            ? "Connection request already pending"
-            : existing.status === "accepted"
-            ? "Already connected"
-            : "Connection was previously declined"
-        );
+        if (existing.status === "ignored") {
+          // Allow re-requesting after being ignored - delete old and create new
+          await supabase.from("user_connections").delete().eq("id", existing.id);
+        } else {
+          throw new Error(
+            existing.status === "pending"
+              ? "Connection request already pending"
+              : "Already connected"
+          );
+        }
       }
 
       const { data, error } = await supabase
