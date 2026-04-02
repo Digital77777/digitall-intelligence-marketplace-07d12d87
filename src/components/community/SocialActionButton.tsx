@@ -94,7 +94,7 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
     return (
       <Button
         size={size}
-        onClick={onSecondaryAction || onAction}
+        onClick={isFollow ? onAction : (onSecondaryAction || onAction)}
         disabled={disabled}
         className={cn(
           "bg-emerald-600 hover:bg-emerald-700 text-white",
@@ -102,7 +102,7 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
           className
         )}
       >
-        <Check className="h-4 w-4 mr-1.5" />
+        {isFollow ? <UserPlus className="h-4 w-4 mr-1.5" /> : <Check className="h-4 w-4 mr-1.5" />}
         {isFollow ? "Follow Back" : "Accept"}
       </Button>
     );
