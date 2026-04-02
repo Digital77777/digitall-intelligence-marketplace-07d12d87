@@ -234,6 +234,7 @@ const PublicProfilePage = () => {
                       <SocialActions
                         userId={userId!}
                         isFollowing={isFollowing}
+                        isFollowedBy={isFollowedBy}
                         connectionStatus={
                           !connectionStatus 
                             ? "none" 
