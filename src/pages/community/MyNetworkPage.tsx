@@ -20,7 +20,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { 
   useFollowStatus, 
   useFollowUser, 
-  useUnfollowUser 
+  useUnfollowUser,
+  useIsFollowedBy 
 } from "@/hooks/useFollows";
 import { 
   usePendingRequests, 
