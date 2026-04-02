@@ -26,6 +26,7 @@ const MemberCardWithHooks = ({
   const { user } = useAuth();
   const { data: connectionStatus } = useConnectionStatus(member.user_id);
   const { data: followStatus } = useFollowStatus(member.user_id);
+  const { data: isFollowedBy = false } = useIsFollowedBy(member.user_id);
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnectionRequest();
   const followUser = useFollowUser();
