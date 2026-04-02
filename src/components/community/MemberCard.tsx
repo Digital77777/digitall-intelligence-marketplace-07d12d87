@@ -194,6 +194,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
                 <SocialActions
                   userId={member.user_id}
                   isFollowing={isFollowing}
+                  isFollowedBy={isFollowedBy}
                   connectionStatus={connectionStatus}
                   onFollow={onFollow}
                   onUnfollow={onUnfollow}
