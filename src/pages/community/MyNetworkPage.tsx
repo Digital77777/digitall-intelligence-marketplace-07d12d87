@@ -75,6 +75,7 @@ const NetworkMemberCard = ({
         headline: user.headline,
       }}
       isFollowing={isFollowing}
+      isFollowedBy={isFollowedBy}
       connectionStatus={connectionStatus}
       isOwnProfile={isOwnProfile}
       onFollow={() => followUser.mutate(user.user_id)}
