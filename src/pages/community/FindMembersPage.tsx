@@ -57,6 +57,7 @@ const MemberCardWithHooks = ({
         is_top_contributor: member.is_top_contributor,
       }}
       isFollowing={isFollowing}
+      isFollowedBy={isFollowedBy}
       connectionStatus={getConnectionStatusString()}
       isOwnProfile={isOwnProfile}
       onFollow={() => followUser.mutate(member.user_id)}
