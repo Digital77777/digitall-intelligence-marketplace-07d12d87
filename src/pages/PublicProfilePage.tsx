@@ -31,6 +31,7 @@ const PublicProfilePage = () => {
   
   // Follow hooks
   const { data: followStatus } = useFollowStatus(userId || "");
+  const { data: isFollowedBy = false } = useIsFollowedBy(userId || "");
   const { data: followersCount = 0 } = useFollowersCount(userId || "");
   const { data: followingCount = 0 } = useFollowingCount(userId || "");
   const followUser = useFollowUser();
