@@ -33,7 +33,31 @@ export const useFollowStatus = (userId: string) => {
   });
 };
 
-export const useFollowersCount = (userId: string) => {
+// Check if a user follows the current user (for "Follow Back" detection)
+export const useIsFollowedBy = (userId: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["is-followed-by", user?.id, userId],
+    queryFn: async () => {
+      if (!user || !userId || user.id === userId) return false;
+
+      const { data, error } = await supabase
+        .from("user_follows")
+        .select("id")
+        .eq("follower_id", userId)
+        .eq("following_id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return !!data;
+    },
+    enabled: !!user && !!userId && user.id !== userId,
+    staleTime: 30000,
+  });
+};
+
+
   return useQuery({
     queryKey: ["followers-count", userId],
     queryFn: async () => {
