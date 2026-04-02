@@ -20,6 +20,7 @@ export interface MemberCardProps {
     is_top_contributor?: boolean;
   };
   isFollowing: boolean;
+  isFollowedBy?: boolean;
   connectionStatus: "none" | "pending" | "pending_received" | "accepted";
   isOwnProfile: boolean;
   onFollow: () => void;
