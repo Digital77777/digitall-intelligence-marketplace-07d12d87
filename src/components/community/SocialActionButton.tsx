@@ -156,6 +156,7 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
 interface SocialActionsProps {
   userId: string;
   isFollowing: boolean;
+  isFollowedBy?: boolean; // Whether the other user follows the current user
   connectionStatus: "none" | "pending" | "pending_received" | "accepted";
   onFollow: () => void;
   onUnfollow: () => void;
@@ -172,6 +173,7 @@ interface SocialActionsProps {
 
 export const SocialActions: React.FC<SocialActionsProps> = ({
   isFollowing,
+  isFollowedBy = false,
   connectionStatus,
   onFollow,
   onUnfollow,
@@ -186,6 +188,8 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
   const getFollowState = (): ActionState => {
     if (isFollowPending) return "loading";
     if (isFollowing) return "active";
+    // If the other user follows us but we don't follow them, show "Follow Back"
+    if (isFollowedBy) return "pending_received";
     return "none";
   };
 
