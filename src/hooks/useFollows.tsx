@@ -175,6 +175,7 @@ export const useUnfollowUser = () => {
     },
     onSuccess: (_, userId) => {
       queryClient.invalidateQueries({ queryKey: ["follow-status"] });
+      queryClient.invalidateQueries({ queryKey: ["is-followed-by"] });
       queryClient.invalidateQueries({ queryKey: ["followers-count", userId] });
       queryClient.invalidateQueries({ queryKey: ["following-count"] });
       toast({
