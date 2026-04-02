@@ -57,7 +57,7 @@ export const useIsFollowedBy = (userId: string) => {
   });
 };
 
-
+export const useFollowersCount = (userId: string) => {
   return useQuery({
     queryKey: ["followers-count", userId],
     queryFn: async () => {
