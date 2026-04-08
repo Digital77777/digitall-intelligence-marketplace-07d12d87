@@ -198,6 +198,7 @@ const routeGroups: AppRoute[] = [
   { path: "/", component: Index },
   { path: "/auth", component: Auth },
   { path: "/dashboard", component: DashboardPage, protected: true },
+  { path: "/menu", component: MenuPage, protected: true },
 
   // Learning
   { path: "/learning-paths", component: LearningPaths, protected: true },
