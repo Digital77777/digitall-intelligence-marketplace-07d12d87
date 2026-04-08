@@ -169,8 +169,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     if (items.length === 0) {
       setVisibleCount(1);
       setIsFirstBatchLoaded(false);
-      setLoopedItems([]);
-      setIsLoopingEnabled(false);
     }
   }, [items.length]);
 
@@ -194,42 +192,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     return () => observer.disconnect();
   }, [onLoadMore, hasMore, isFetchingMore]);
 
-  // Enable looping once all server content is loaded
-  useEffect(() => {
-    if (!hasMore && items.length >= 6 && !isLoopingEnabled) {
-      setIsLoopingEnabled(true);
-    }
-  }, [hasMore, items.length, isLoopingEnabled]);
-
-  // Infinite loop scroll - add more items from beginning when reaching end
-  useEffect(() => {
-    if (!isLoopingEnabled || type !== 'insight') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          // Add next batch of items from original list
-          setLoopedItems(prev => {
-            const currentLoopIndex = prev.length % items.length;
-            const nextBatch = items.slice(currentLoopIndex, currentLoopIndex + 6);
-            // If we've looped through, start from beginning
-            if (nextBatch.length < 6) {
-              const remaining = 6 - nextBatch.length;
-              return [...prev, ...nextBatch, ...items.slice(0, remaining)];
-            }
-            return [...prev, ...nextBatch];
-          });
-        }
-      },
-      { threshold: 0.1, rootMargin: '400px' }
-    );
-
-    if (loopLoadRef.current) {
-      observer.observe(loopLoadRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [isLoopingEnabled, items, type]);
 
   const loadMoreItems = useCallback(() => {
     setVisibleCount(prev => Math.min(prev + 6, items.length));
