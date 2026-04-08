@@ -29,6 +29,7 @@ import ReferralPage from "./pages/ReferralPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import LearningPaths from "./pages/LearningPaths";
 import MyActivityPage from "./pages/MyActivityPage";
+import MenuPage from "./pages/MenuPage";
 
 // Learning - Lazy loaded (secondary pages)
 const FoundationPath = lazy(() => import("./pages/course/FoundationPath"));
