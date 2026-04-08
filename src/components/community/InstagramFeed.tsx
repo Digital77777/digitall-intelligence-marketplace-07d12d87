@@ -151,11 +151,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   const [visibleCount, setVisibleCount] = useState(1);
   const [isFirstBatchLoaded, setIsFirstBatchLoaded] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const loopLoadRef = useRef<HTMLDivElement>(null);
-  
-  // Track looped items for infinite scrolling
-  const [loopedItems, setLoopedItems] = useState<T[]>([]);
-  const [isLoopingEnabled, setIsLoopingEnabled] = useState(false);
 
   // Load first item immediately, then progressively load more
   useEffect(() => {
@@ -174,8 +169,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     if (items.length === 0) {
       setVisibleCount(1);
       setIsFirstBatchLoaded(false);
-      setLoopedItems([]);
-      setIsLoopingEnabled(false);
     }
   }, [items.length]);
 
@@ -199,42 +192,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     return () => observer.disconnect();
   }, [onLoadMore, hasMore, isFetchingMore]);
 
-  // Enable looping once all server content is loaded
-  useEffect(() => {
-    if (!hasMore && items.length >= 6 && !isLoopingEnabled) {
-      setIsLoopingEnabled(true);
-    }
-  }, [hasMore, items.length, isLoopingEnabled]);
-
-  // Infinite loop scroll - add more items from beginning when reaching end
-  useEffect(() => {
-    if (!isLoopingEnabled || type !== 'insight') return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          // Add next batch of items from original list
-          setLoopedItems(prev => {
-            const currentLoopIndex = prev.length % items.length;
-            const nextBatch = items.slice(currentLoopIndex, currentLoopIndex + 6);
-            // If we've looped through, start from beginning
-            if (nextBatch.length < 6) {
-              const remaining = 6 - nextBatch.length;
-              return [...prev, ...nextBatch, ...items.slice(0, remaining)];
-            }
-            return [...prev, ...nextBatch];
-          });
-        }
-      },
-      { threshold: 0.1, rootMargin: '400px' }
-    );
-
-    if (loopLoadRef.current) {
-      observer.observe(loopLoadRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [isLoopingEnabled, items, type]);
 
   const loadMoreItems = useCallback(() => {
     setVisibleCount(prev => Math.min(prev + 6, items.length));
@@ -286,10 +243,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
     <div ref={loadMoreRef} className="h-1" aria-hidden="true" />
   );
 
-  // Loop trigger for endless scrolling
-  const LoopScrollTrigger = () => (
-    <div ref={loopLoadRef} className="h-1" aria-hidden="true" />
-  );
 
   if (type === 'insight') {
     // Mobile Instagram-style feed with pull-to-refresh
@@ -324,23 +277,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
               </>
             )}
 
-            {/* Looped items for endless scrolling */}
-            {isLoopingEnabled && loopedItems.map((item, index) => (
-              <FeedItem key={`looped-${(item as CommunityInsight).id}-${index}`} index={index} isVisible={true}>
-                <InstagramPostMobile
-                  insight={item as CommunityInsight}
-                  onLikeClick={onLikeClick!}
-                  onViewClick={onViewClick!}
-                  onVideoTap={onVideoTap}
-                  getInitials={getInitials}
-                />
-              </FeedItem>
-            ))}
-
-            {/* Loop trigger for endless scrolling when server content exhausted */}
-            {isLoopingEnabled && (
-              <LoopScrollTrigger />
-            )}
           </div>
         </div>
       );
@@ -388,18 +324,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
             </LazyFeedSection>
           )}
 
-          {/* Looped items for endless scrolling */}
-          {isLoopingEnabled && loopedItems.map((item, index) => (
-            <FeedItem key={`looped-${(item as CommunityInsight).id}-${index}`} index={index} isVisible={true}>
-              <InstagramPostDesktop
-                insight={item as CommunityInsight}
-                onLikeClick={onLikeClick!}
-                onViewClick={onViewClick!}
-                onVideoTap={onVideoTap}
-                getInitials={getInitials}
-              />
-            </FeedItem>
-          ))}
           
           {/* Infinite scroll trigger */}
           {!hasMoreLocal && hasMore && (
@@ -407,11 +331,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
               <InfiniteScrollTrigger />
               {isFetchingMore && <LoadingIndicator />}
             </>
-          )}
-
-          {/* Loop trigger for endless scrolling */}
-          {isLoopingEnabled && (
-            <LoopScrollTrigger />
           )}
         </div>
         {!hideScrollToTop && (
