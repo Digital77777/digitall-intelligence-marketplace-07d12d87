@@ -34,7 +34,7 @@ const ContinuationFeed = memo(({
   const isMobile = useIsMobile();
   const [activated, setActivated] = useState(false);
   const [visibleCount, setVisibleCount] = useState(0);
-  const [loopedItems, setLoopedItems] = useState<CommunityInsight[]>([]);
+  
   const bottomRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -77,18 +77,7 @@ const ContinuationFeed = memo(({
             if (next > items.length && hasNextPage && fetchNextPage && !isFetchingNextPage) {
               fetchNextPage();
             }
-            // If all server content exhausted, loop
-            if (next > items.length && !hasNextPage && items.length >= 3) {
-              setLoopedItems(prevLooped => {
-                const idx = prevLooped.length % items.length;
-                const batch = [];
-                for (let i = 0; i < 3; i++) {
-                  batch.push(items[(idx + i) % items.length]);
-                }
-                return [...prevLooped, ...batch];
-              });
-            }
-            return next;
+            return Math.min(next, items.length);
           });
         }
       },
@@ -101,11 +90,10 @@ const ContinuationFeed = memo(({
 
   if (!activated) return null;
 
-  // Items to show from original list (ones not already shown in main feed above)
+  // Items to show from original list
   const continuationItems = items.slice(0, visibleCount);
-  const allDisplayItems = [...continuationItems, ...loopedItems];
 
-  if (allDisplayItems.length === 0) return null;
+  if (continuationItems.length === 0) return null;
 
   const PostComponent = isMobile ? InstagramPostMobile : InstagramPostDesktop;
 
