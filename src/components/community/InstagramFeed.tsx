@@ -151,11 +151,6 @@ function InstagramFeedComponent<T extends CommunityInsight | CommunityTopic>({
   const [visibleCount, setVisibleCount] = useState(1);
   const [isFirstBatchLoaded, setIsFirstBatchLoaded] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  const loopLoadRef = useRef<HTMLDivElement>(null);
-  
-  // Track looped items for infinite scrolling
-  const [loopedItems, setLoopedItems] = useState<T[]>([]);
-  const [isLoopingEnabled, setIsLoopingEnabled] = useState(false);
 
   // Load first item immediately, then progressively load more
   useEffect(() => {
