@@ -109,7 +109,7 @@ const ContinuationFeed = memo(({
       {isMobile ? (
         <div className="-mx-4 sm:-mx-6">
           <div className="divide-y divide-border">
-            {allDisplayItems.map((item, index) => (
+            {continuationItems.map((item, index) => (
               <div
                 key={`cont-${item.id}-${index}`}
                 className="animate-fade-in"
@@ -128,7 +128,7 @@ const ContinuationFeed = memo(({
         </div>
       ) : (
         <div className="max-w-2xl mx-auto space-y-5">
-          {allDisplayItems.map((item, index) => (
+          {continuationItems.map((item, index) => (
             <div
               key={`cont-${item.id}-${index}`}
               className="animate-fade-in"
