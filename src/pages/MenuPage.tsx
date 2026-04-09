@@ -6,42 +6,95 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTier } from "@/contexts/TierContext";
 import {
-  LayoutDashboard,
-  MessageSquare,
-  Users,
-  Store,
-  UserPlus,
-  Clapperboard,
-  BookOpen,
-  Brain,
-  Gift,
-  CreditCard,
-  Star,
-  Heart,
-  Bell,
-  Shield,
-  RefreshCw,
-  HelpCircle,
-  ChevronDown,
-  ChevronRight,
-  LogOut,
-  ArrowLeft,
-  Briefcase,
-  Trophy,
-  Calendar,
-  Settings,
-  Sparkles,
-  ShoppingBag,
-  PlusCircle,
+  LayoutDashboard, MessageSquare, Users, Store, UserPlus, Clapperboard,
+  BookOpen, Brain, Gift, CreditCard, Bell, RefreshCw, HelpCircle,
+  ChevronDown, ChevronRight, LogOut, ArrowLeft, Briefcase, Trophy,
+  Calendar, Settings, Sparkles, ShoppingBag, PlusCircle, Heart,
+  Star, Shield, Compass, TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+interface MenuItem {
+  icon: React.ElementType;
+  label: string;
+  path: string;
+  color: string;
+  description?: string;
+}
+
+const MenuGridCard = ({ item }: { item: MenuItem }) => (
+  <Link
+    to={item.path}
+    className="group flex flex-col gap-2 bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md hover:border-primary/20 active:bg-muted/50 transition-all duration-200 min-h-[80px]"
+  >
+    <div className="flex items-center justify-between">
+      <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center bg-muted/80 group-hover:scale-105 transition-transform")}>
+        <item.icon className={cn("h-5 w-5", item.color)} />
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+    </div>
+    <div>
+      <span className="text-sm font-semibold leading-tight">{item.label}</span>
+      {item.description && (
+        <p className="text-xs text-muted-foreground mt-0.5 hidden lg:block">{item.description}</p>
+      )}
+    </div>
+  </Link>
+);
+
+const AccordionSection = ({
+  icon: Icon,
+  title,
+  items,
+  open,
+  onToggle,
+}: {
+  icon: React.ElementType;
+  title: string;
+  items: { icon: React.ElementType; label: string; path: string }[];
+  open: boolean;
+  onToggle: () => void;
+}) => (
+  <div>
+    <button
+      onClick={onToggle}
+      className="w-full flex items-center justify-between bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md active:bg-muted/50 transition-all duration-200"
+    >
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+          <Icon className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <span className="font-medium">{title}</span>
+      </div>
+      <ChevronDown
+        className={cn("h-5 w-5 text-muted-foreground transition-transform duration-200", open && "rotate-180")}
+      />
+    </button>
+    {open && (
+      <div className="space-y-0.5 mt-1 bg-card rounded-xl border border-border overflow-hidden">
+        {items.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 active:bg-muted/50 transition-colors"
+          >
+            <item.icon className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm font-medium">{item.label}</span>
+          </Link>
+        ))}
+      </div>
+    )}
+  </div>
+);
 
 const MenuPage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { canAccessFeature } = useTier();
   const canSell = canAccessFeature("marketplace_sell");
+  const isMobile = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -62,36 +115,31 @@ const MenuPage = () => {
 
   const getInitials = () => {
     if (profile?.full_name) {
-      return profile.full_name
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
+      return profile.full_name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
     }
     return user?.email?.slice(0, 2).toUpperCase() || "U";
   };
 
-  const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", color: "text-blue-600" },
-    { icon: MessageSquare, label: "Messages", path: "/community/inbox", color: "text-violet-600" },
-    { icon: Users, label: "My Network", path: "/community/my-network", color: "text-sky-600" },
-    { icon: Store, label: "Marketplace", path: "/marketplace", color: "text-emerald-600" },
-    { icon: UserPlus, label: "Find Members", path: "/community/find-members", color: "text-blue-500" },
-    { icon: Clapperboard, label: "Reels", path: "/community/reels", color: "text-rose-500" },
-    { icon: BookOpen, label: "Learning Paths", path: "/learning-paths", color: "text-amber-600" },
-    { icon: Brain, label: "AI Tools", path: "/ai-tools", color: "text-purple-600" },
-    { icon: Calendar, label: "Events", path: "/community/browse-events", color: "text-red-500" },
-    { icon: Gift, label: "Programs & Rewards", path: "/referrals", color: "text-pink-500" },
-    { icon: Heart, label: "Wishlist", path: "/marketplace/wishlist", color: "text-rose-600" },
-    { icon: Trophy, label: "Challenges", path: "/challenge/1", color: "text-yellow-600" },
+  const mainItems: MenuItem[] = [
+    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", color: "text-blue-600", description: "Overview & stats" },
+    { icon: MessageSquare, label: "Messages", path: "/community/inbox", color: "text-violet-600", description: "Chat with members" },
+    { icon: Users, label: "My Network", path: "/community/my-network", color: "text-sky-600", description: "Connections & follows" },
+    { icon: Store, label: "Marketplace", path: "/marketplace", color: "text-emerald-600", description: "Browse & sell products" },
+    { icon: UserPlus, label: "Find Members", path: "/community/find-members", color: "text-blue-500", description: "Discover people" },
+    { icon: Clapperboard, label: "Reels", path: "/community/reels", color: "text-rose-500", description: "Short video content" },
+    { icon: BookOpen, label: "Learning Paths", path: "/learning-paths", color: "text-amber-600", description: "Courses & tutorials" },
+    { icon: Brain, label: "AI Tools", path: "/ai-tools", color: "text-purple-600", description: "AI-powered tools" },
+    { icon: Calendar, label: "Events", path: "/community/browse-events", color: "text-red-500", description: "Upcoming events" },
+    { icon: Gift, label: "Programs & Rewards", path: "/referrals", color: "text-pink-500", description: "Earn rewards" },
+    { icon: Heart, label: "Wishlist", path: "/marketplace/wishlist", color: "text-rose-600", description: "Saved items" },
+    { icon: Trophy, label: "Challenges", path: "/challenge/1", color: "text-yellow-600", description: "Compete & win" },
   ];
 
-  const sellerItems = canSell
+  const sellerItems: MenuItem[] = canSell
     ? [
-        { icon: ShoppingBag, label: "My Listings", path: "/marketplace/my-listings", color: "text-teal-600" },
-        { icon: PlusCircle, label: "Create Listing", path: "/marketplace/create", color: "text-green-600" },
-        { icon: Briefcase, label: "Seller Dashboard", path: "/seller-dashboard", color: "text-indigo-600" },
+        { icon: ShoppingBag, label: "My Listings", path: "/marketplace/my-listings", color: "text-teal-600", description: "Manage products" },
+        { icon: PlusCircle, label: "Create Listing", path: "/marketplace/create", color: "text-green-600", description: "Add new product" },
+        { icon: Briefcase, label: "Seller Dashboard", path: "/seller-dashboard", color: "text-indigo-600", description: "Sales analytics" },
       ]
     : [];
 
@@ -123,13 +171,17 @@ const MenuPage = () => {
         </Button>
       </div>
 
-      <div className="px-4 py-4 space-y-4 max-w-lg mx-auto">
-        {/* Profile Card */}
+      {/* Desktop: two-column layout / Mobile: single column */}
+      <div className={cn(
+        "px-4 py-6 mx-auto",
+        isMobile ? "max-w-lg space-y-4" : "max-w-5xl"
+      )}>
+        {/* Profile Card - full width */}
         <Link
           to={user ? `/profile/${user.id}` : "/auth"}
-          className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors"
+          className="flex items-center gap-4 bg-card rounded-xl p-5 border border-border shadow-sm hover:shadow-md active:bg-muted/50 transition-all duration-200 mb-4"
         >
-          <Avatar className="h-14 w-14 border-2 border-border">
+          <Avatar className={cn("border-2 border-border", isMobile ? "h-14 w-14" : "h-16 w-16")}>
             <AvatarImage src={profile?.avatar_url || undefined} />
             <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
               {getInitials()}
@@ -149,133 +201,72 @@ const MenuPage = () => {
         {/* Invite Friends */}
         <Link
           to="/referrals"
-          className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors"
+          className="flex items-center gap-3 bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md active:bg-muted/50 transition-all duration-200 mb-6"
         >
-          <div className="h-10 w-10 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
             <Heart className="h-5 w-5 text-rose-500" />
           </div>
           <span className="font-medium">Invite friends</span>
         </Link>
 
-        {/* Main Feature Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="flex flex-col gap-2 bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors min-h-[80px]"
-            >
-              <item.icon className={cn("h-6 w-6", item.color)} />
-              <span className="text-sm font-medium leading-tight">{item.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        {/* Seller Section */}
-        {sellerItems.length > 0 && (
-          <>
-            <div className="flex items-center gap-2 pt-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Seller Tools
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {sellerItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className="flex flex-col gap-2 bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors min-h-[80px]"
-                >
-                  <item.icon className={cn("h-6 w-6", item.color)} />
-                  <span className="text-sm font-medium leading-tight">{item.label}</span>
-                </Link>
+        <div className={cn(isMobile ? "space-y-4" : "grid grid-cols-[1fr_320px] gap-6")}>
+          {/* Left column: Feature grid */}
+          <div className="space-y-4">
+            <div className={cn("grid gap-3", isMobile ? "grid-cols-2" : "grid-cols-3")}>
+              {mainItems.map((item) => (
+                <MenuGridCard key={item.path} item={item} />
               ))}
             </div>
-          </>
-        )}
 
-        {/* Settings & Privacy Accordion */}
-        <button
-          onClick={() => setSettingsOpen(!settingsOpen)}
-          className="w-full flex items-center justify-between bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-              <Settings className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <span className="font-medium">Settings & preferences</span>
-          </div>
-          <ChevronDown
-            className={cn(
-              "h-5 w-5 text-muted-foreground transition-transform duration-200",
-              settingsOpen && "rotate-180"
+            {/* Seller Section */}
+            {sellerItems.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 pt-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Seller Tools
+                  </span>
+                </div>
+                <div className={cn("grid gap-3", isMobile ? "grid-cols-2" : "grid-cols-3")}>
+                  {sellerItems.map((item) => (
+                    <MenuGridCard key={item.path} item={item} />
+                  ))}
+                </div>
+              </div>
             )}
-          />
-        </button>
-        {settingsOpen && (
-          <div className="space-y-1 -mt-2 bg-card rounded-xl border border-border overflow-hidden">
-            {settingsItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/50 transition-colors"
-              >
-                <item.icon className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium">{item.label}</span>
-              </Link>
-            ))}
           </div>
-        )}
 
-        {/* Help & Support Accordion */}
-        <button
-          onClick={() => setHelpOpen(!helpOpen)}
-          className="w-full flex items-center justify-between bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-              <HelpCircle className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <span className="font-medium">Help & support</span>
-          </div>
-          <ChevronDown
-            className={cn(
-              "h-5 w-5 text-muted-foreground transition-transform duration-200",
-              helpOpen && "rotate-180"
-            )}
-          />
-        </button>
-        {helpOpen && (
-          <div className="space-y-1 -mt-2 bg-card rounded-xl border border-border overflow-hidden">
-            {helpItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className="flex items-center gap-3 px-4 py-3.5 active:bg-muted/50 transition-colors"
-              >
-                <item.icon className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium">{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
+          {/* Right column (desktop) / Below (mobile): Settings, Help, Logout */}
+          <div className="space-y-3">
+            <AccordionSection
+              icon={Settings}
+              title="Settings & preferences"
+              items={settingsItems}
+              open={settingsOpen}
+              onToggle={() => setSettingsOpen(!settingsOpen)}
+            />
 
-        {/* Log out */}
-        <button
-          onClick={() => {
-            signOut();
-            navigate("/");
-          }}
-          className="w-full flex items-center gap-3 bg-card rounded-xl p-4 border border-border shadow-sm active:bg-muted/50 transition-colors"
-        >
-          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-            <LogOut className="h-5 w-5 text-muted-foreground" />
-          </div>
-          <span className="font-medium">Log out</span>
-        </button>
+            <AccordionSection
+              icon={HelpCircle}
+              title="Help & support"
+              items={helpItems}
+              open={helpOpen}
+              onToggle={() => setHelpOpen(!helpOpen)}
+            />
 
-        {/* Bottom spacing for mobile footer */}
+            {/* Log out */}
+            <button
+              onClick={() => { signOut(); navigate("/"); }}
+              className="w-full flex items-center gap-3 bg-card rounded-xl p-4 border border-border shadow-sm hover:shadow-md active:bg-muted/50 transition-all duration-200"
+            >
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                <LogOut className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <span className="font-medium">Log out</span>
+            </button>
+          </div>
+        </div>
+
         <div className="h-4" />
       </div>
     </div>

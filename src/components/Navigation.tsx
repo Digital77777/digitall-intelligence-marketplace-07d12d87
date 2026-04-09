@@ -1,11 +1,11 @@
-import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, CreditCard, LayoutDashboard, ArrowRight, MessageSquare, RefreshCw, ShoppingBag, PlusCircle } from "lucide-react";
+import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { usePrefetch } from "@/hooks/usePrefetch";
@@ -146,106 +146,12 @@ const Navigation = () => {
             {loading ? <div className="w-20 h-8 animate-pulse bg-muted rounded" /> : user ? (
               <>
                 <NotificationBell />
-                {isMobile ? (
-                  <Link to="/menu" aria-label="Open menu">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="flex items-center gap-2" aria-label="Account menu">
-                        <User className="h-4 w-4" />
-                        Account
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <div className="flex flex-col space-y-1 p-2">
-                        <p className="text-sm font-medium leading-none">{user.email}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          Student Account
-                        </p>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        asChild
-                        onMouseEnter={() => handleMouseEnter('/dashboard')}
-                      >
-                        <Link to="/dashboard">
-                          <div className="flex items-center">
-                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                            Dashboard
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        asChild
-                        onMouseEnter={() => handleMouseEnter('/subscription')}
-                      >
-                        <Link to="/subscription">
-                          <div className="flex items-center">
-                            <CreditCard className="mr-2 h-4 w-4" />
-                            Subscription
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                      {canSell && (
-                        <>
-                          <DropdownMenuItem 
-                            asChild
-                            onMouseEnter={() => handleMouseEnter('/marketplace/my-listings')}
-                          >
-                            <Link to="/marketplace/my-listings">
-                              <div className="flex items-center">
-                                <ShoppingBag className="mr-2 h-4 w-4" />
-                                My Listings
-                              </div>
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            asChild
-                            onMouseEnter={() => handleMouseEnter('/marketplace/create')}
-                          >
-                            <Link to="/marketplace/create">
-                              <div className="flex items-center">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Create Listing
-                              </div>
-                            </Link>
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      <DropdownMenuItem 
-                        asChild
-                        onMouseEnter={() => handleMouseEnter('/update-app')}
-                      >
-                        <Link to="/update-app">
-                          <div className="flex items-center">
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Update Latest Version
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        asChild
-                        onMouseEnter={() => handleMouseEnter('/feedback')}
-                      >
-                        <Link to="/feedback">
-                          <div className="flex items-center">
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Feedback
-                          </div>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={signOut}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <Link to="/menu" aria-label="Open menu">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    {!isMobile && <span>Account</span>}
+                  </Button>
+                </Link>
               </>
             ) : <>
                 <Link to="/auth">
