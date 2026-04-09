@@ -1,11 +1,11 @@
-import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, CreditCard, LayoutDashboard, ArrowRight, MessageSquare, RefreshCw, ShoppingBag, PlusCircle } from "lucide-react";
+import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { usePrefetch } from "@/hooks/usePrefetch";
