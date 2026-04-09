@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { InsightDetailModal } from "@/components/community/InsightDetailModal";
+import { FullScreenContentViewer } from "@/components/community/FullScreenContentViewer";
 import { FullscreenVideoModal } from "@/components/community/FullscreenVideoModal";
 import { EventDetailModal } from "@/components/community/EventDetailModal";
 import { TopicCard } from "@/components/community/TopicCard";
@@ -760,8 +760,17 @@ const CommunityPage = () => {
         </div>
       </div>
 
-      {/* Insight Detail Modal */}
-      {selectedInsight && <InsightDetailModal insight={selectedInsight} open={!!selectedInsight} onOpenChange={open => !open && setSelectedInsight(null)} />}
+      {/* Fullscreen Content Viewer */}
+      {selectedInsight && (
+        <FullScreenContentViewer
+          insight={selectedInsight}
+          isOpen={!!selectedInsight}
+          onClose={() => setSelectedInsight(null)}
+          onLikeClick={handleLikeInsight}
+          feedInsights={filteredInsights}
+          onNavigateToInsight={(insight) => setSelectedInsight(insight)}
+        />
+      )}
 
       {selectedEvent && <EventDetailModal event={selectedEvent} isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} onJoinEvent={handleJoinEventClick} />}
 
