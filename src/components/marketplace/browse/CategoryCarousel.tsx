@@ -32,33 +32,27 @@ export const CategoryCarousel = memo(({
   if (listings.length === 0) return null;
 
   return (
-    <section className={cn("space-y-4", className)}>
+    <section className={cn("space-y-3", className)}>
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl md:text-2xl font-bold">{title}</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg md:text-xl font-bold">{title}</h2>
           {showBadge && badgeText && (
-            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-semibold rounded-full">
               {badgeText}
             </span>
           )}
         </div>
         {onSeeAll && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSeeAll}
-            className="text-primary hover:text-primary/80 -mr-2"
-          >
-            See All
-            <ChevronRight className="h-4 w-4 ml-1" />
+          <Button variant="ghost" size="sm" onClick={onSeeAll} className="text-primary text-xs -mr-2">
+            See All <ChevronRight className="h-3 w-3 ml-0.5" />
           </Button>
         )}
       </div>
 
-      {/* Mobile: 2-column grid */}
-      <div className="grid grid-cols-2 gap-3 md:hidden">
-        {listings.slice(0, 10).map((listing) => (
+      {/* Mobile: dense 2-column grid */}
+      <div className="grid grid-cols-2 gap-2 md:hidden">
+        {listings.slice(0, 6).map((listing) => (
           <ProductCard
             key={listing.id}
             listing={listing}
@@ -69,15 +63,12 @@ export const CategoryCarousel = memo(({
         ))}
       </div>
 
-      {/* Desktop: Horizontal carousel */}
+      {/* Desktop: Horizontal scroll */}
       <div className="hidden md:block">
         <ScrollArea className="w-full -mx-4 px-4">
-          <div className="flex gap-4 pb-4">
-            {listings.slice(0, 10).map((listing) => (
-              <div 
-                key={listing.id} 
-                className="flex-shrink-0 w-[320px]"
-              >
+          <div className="flex gap-3 pb-4">
+            {listings.slice(0, 12).map((listing) => (
+              <div key={listing.id} className="flex-shrink-0 w-[200px]">
                 <ProductCard
                   listing={listing}
                   onFavorite={onFavorite}
