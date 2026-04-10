@@ -30,6 +30,7 @@ import SubscriptionPage from "./pages/SubscriptionPage";
 import LearningPaths from "./pages/LearningPaths";
 import MyActivityPage from "./pages/MyActivityPage";
 import MenuPage from "./pages/MenuPage";
+import NotificationsPage from "./pages/NotificationsPage";
 
 // Learning - Lazy loaded (secondary pages)
 const FoundationPath = lazy(() => import("./pages/course/FoundationPath"));
@@ -199,6 +200,7 @@ const routeGroups: AppRoute[] = [
   { path: "/auth", component: Auth },
   { path: "/dashboard", component: DashboardPage, protected: true },
   { path: "/menu", component: MenuPage, protected: true },
+  { path: "/notifications", component: NotificationsPage, protected: true },
 
   // Learning
   { path: "/learning-paths", component: LearningPaths, protected: true },
