@@ -41,7 +41,6 @@ export default function BrowseMarketplacePage() {
   const [page, setPage] = useState(1);
   const observer = useRef<IntersectionObserver>();
 
-  // Get featured listings for hero
   const featuredListings = listings.filter(l => l.is_featured).slice(0, 5);
   const heroListings = featuredListings.length > 0 ? featuredListings : suggestedListings.slice(0, 5);
 
@@ -56,7 +55,6 @@ export default function BrowseMarketplacePage() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
-  // Read category from URL params on mount
   useEffect(() => {
     const categoryParam = searchParams.get('category');
     if (categoryParam) {
@@ -84,14 +82,12 @@ export default function BrowseMarketplacePage() {
     }
   }, [page, fetchListings, searchQuery, selectedTab, selectedCategory]);
 
-  // Handle category click from Categories tab
   const handleCategoryClick = useCallback((categoryId: string) => {
     setSelectedCategory(categoryId);
     setSelectedTab('for-you');
     setSearchParams({ category: categoryId });
   }, [setSearchParams]);
 
-  // Get selected category name for display
   const selectedCategoryName = selectedCategory 
     ? categories.find(c => c.id === selectedCategory)?.name 
     : null;
@@ -100,11 +96,6 @@ export default function BrowseMarketplacePage() {
     setSelectedCategory(null);
     setSearchParams({});
   }, [setSearchParams]);
-
-  const handleViewDetails = useCallback((listing: MarketplaceListing) => {
-    setSelectedListing(listing);
-    setIsDetailsModalOpen(true);
-  }, []);
 
   const handleFavorite = useCallback((listingId: string) => {
     toggleFavorite(listingId);
@@ -120,38 +111,35 @@ export default function BrowseMarketplacePage() {
         keywords={['AI marketplace', 'AI tools', 'digital products', 'freelance services', 'automation', 'templates', 'machine learning']}
         canonicalUrl="/marketplace/browse"
       />
-      <div className="min-h-screen bg-background">
-        {/* Main Content */}
-        <div className="container mx-auto px-4 py-6 space-y-8">
-          {/* Hero Section */}
+      <div className="min-h-screen bg-muted/30">
+        <div className="container mx-auto px-3 md:px-4 py-4 md:py-6 space-y-5 md:space-y-6">
+          {/* Hero with category sidebar */}
           {selectedTab === 'for-you' && (
             <MarketplaceHero 
-              featuredListings={heroListings} 
+              featuredListings={heroListings}
+              categories={categories}
+              onCategoryClick={handleCategoryClick}
               isLoading={isInitialLoading} 
             />
           )}
 
-          {/* Search Bar */}
+          {/* Search */}
           <SearchBar
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search products, services, jobs..."
-            trendingSearches={['AI Tools', 'Templates', 'Web Design', 'Automation']}
+            placeholder="Search products, services, tools..."
+            trendingSearches={['AI Tools', 'Templates', 'Automation', 'Data Science']}
             wishlistCount={favoriteIds.size}
           />
 
-          {/* Animated Tabs */}
-          <AnimatedTabs
-            activeTab={selectedTab}
-            onTabChange={setSelectedTab}
-          />
+          {/* Tabs */}
+          <AnimatedTabs activeTab={selectedTab} onTabChange={setSelectedTab} />
 
-          {/* Tab Content */}
+          {/* Content */}
           <div className="min-h-[50vh]">
-            {/* For You Tab */}
+            {/* For You */}
             {selectedTab === 'for-you' && (
-              <div className="space-y-10">
-                {/* Active category filter */}
+              <div className="space-y-6 md:space-y-8">
                 {selectedCategoryName && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Filtered by:</span>
@@ -172,7 +160,7 @@ export default function BrowseMarketplacePage() {
                   </>
                 ) : (
                   <>
-                    {/* New & Noteworthy */}
+                    {/* Hot Picks */}
                     <NewAndNoteworthy
                       listings={listings}
                       onFavorite={handleFavorite}
@@ -180,10 +168,10 @@ export default function BrowseMarketplacePage() {
                       isPending={isPending}
                     />
 
-                    {/* Suggested for You */}
+                    {/* Suggested */}
                     {suggestedListings.length > 0 && (
                       <CategoryCarousel
-                        title="Suggested for You"
+                        title="Recommended For You"
                         listings={suggestedListings}
                         onFavorite={handleFavorite}
                         isFavorited={isFavorited}
@@ -195,9 +183,9 @@ export default function BrowseMarketplacePage() {
 
                     {/* Category Sections */}
                     {Object.entries(categoryListings).map(([categoryName, categoryItems], index) => {
-                      const isLastCategory = index === Object.entries(categoryListings).length - 1;
+                      const isLast = index === Object.entries(categoryListings).length - 1;
                       return (
-                        <div key={categoryName} ref={isLastCategory ? lastListingElementRef : null}>
+                        <div key={categoryName} ref={isLast ? lastListingElementRef : null}>
                           <CategoryCarousel
                             title={categoryName}
                             listings={categoryItems}
@@ -209,33 +197,30 @@ export default function BrowseMarketplacePage() {
                       );
                     })}
 
-                    {/* Loading indicator */}
                     {loading && page > 1 && (
-                      <div className="text-center py-8">
-                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                      <div className="text-center py-6">
+                        <div className="inline-flex items-center gap-2 text-muted-foreground text-sm">
                           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                           Loading more...
                         </div>
                       </div>
                     )}
 
-                    {/* End of results */}
                     {!hasMore && listings.length > 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        You've seen all the listings
+                      <div className="text-center py-6 text-sm text-muted-foreground">
+                        You've explored all listings
                       </div>
                     )}
 
-                    {/* Empty state */}
                     {listings.length === 0 && !loading && (
                       <div className="text-center py-16">
-                        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
-                          <svg className="w-8 h-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                          <svg className="w-7 h-7 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                           </svg>
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">No listings found</h3>
-                        <p className="text-muted-foreground">Try adjusting your search or check back later</p>
+                        <h3 className="text-base font-semibold mb-1">No listings found</h3>
+                        <p className="text-sm text-muted-foreground">Try adjusting your search or check back later</p>
                       </div>
                     )}
                   </>
@@ -243,12 +228,13 @@ export default function BrowseMarketplacePage() {
               </div>
             )}
 
-            {/* Top Charts Tab */}
+            {/* Top Charts */}
             {selectedTab === 'top-charts' && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold">Top Charts</h2>
-                  <span className="text-sm text-muted-foreground">Most popular listings</span>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 bg-primary rounded-full" />
+                  <h2 className="text-lg md:text-xl font-bold">Top Charts</h2>
+                  <span className="text-xs text-muted-foreground">Most popular</span>
                 </div>
                 
                 {isInitialLoading ? (
@@ -261,37 +247,30 @@ export default function BrowseMarketplacePage() {
                       isFavorited={isFavorited}
                       isPending={isPending}
                     />
-                    
-                    {/* Infinite scroll trigger */}
-                    {topChartListings.length > 0 && (
-                      <div ref={lastListingElementRef} className="h-4" />
-                    )}
-                    
+                    {topChartListings.length > 0 && <div ref={lastListingElementRef} className="h-4" />}
                     {loading && page > 1 && (
                       <div className="text-center py-4">
-                        <div className="inline-flex items-center gap-2 text-muted-foreground">
+                        <div className="inline-flex items-center gap-2 text-muted-foreground text-sm">
                           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                           Loading more...
                         </div>
                       </div>
                     )}
-                    
                     {!hasMore && topChartListings.length > 0 && (
-                      <div className="text-center py-4 text-muted-foreground">
-                        End of rankings
-                      </div>
+                      <div className="text-center py-4 text-sm text-muted-foreground">End of rankings</div>
                     )}
                   </>
                 )}
               </div>
             )}
 
-            {/* Categories Tab */}
+            {/* Categories */}
             {selectedTab === 'categories' && (
-              <div className="space-y-6">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold">Categories</h2>
-                  <span className="text-sm text-muted-foreground">Browse by category</span>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-1 h-5 bg-primary rounded-full" />
+                  <h2 className="text-lg md:text-xl font-bold">Categories</h2>
+                  <span className="text-xs text-muted-foreground">Browse by category</span>
                 </div>
                 
                 {isInitialLoading ? (
@@ -313,15 +292,12 @@ export default function BrowseMarketplacePage() {
           </div>
         </div>
 
-        {/* Floating Filter Button (Mobile) */}
         <FloatingFilterButton
           onApplyFilters={(filters) => {
             console.log('Applying filters:', filters);
-            // Filter logic can be implemented here
           }}
         />
 
-        {/* Listing Details Modal */}
         <ListingDetailsModal
           listing={selectedListing}
           isOpen={isDetailsModalOpen}
