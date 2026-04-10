@@ -7,7 +7,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { useIsMobile } from "@/hooks/use-mobile";
-import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { Bell } from "lucide-react";
 import { usePrefetch } from "@/hooks/usePrefetch";
 import { useTier } from "@/contexts/TierContext";
 const Navigation = () => {
