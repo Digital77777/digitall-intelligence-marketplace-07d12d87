@@ -1,8 +1,7 @@
 import React, { memo } from 'react';
-import { Sparkles, ChevronRight } from 'lucide-react';
+import { Flame, ChevronRight, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
 import { ProductCard } from './ProductCard';
 import { cn } from '@/lib/utils';
@@ -24,92 +23,66 @@ export const NewAndNoteworthy = memo(({
   isPending = () => false,
   className,
 }: NewAndNoteworthyProps) => {
-  // Filter for recent listings (last 7 days)
   const recentListings = listings.filter(listing => {
     const createdAt = new Date(listing.created_at);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     return createdAt >= weekAgo;
-  }).slice(0, 8);
+  }).slice(0, 12);
 
-  // If no recent listings, show latest listings with a different message
-  const displayListings = recentListings.length > 0 ? recentListings : listings.slice(0, 8);
+  const displayListings = recentListings.length > 0 ? recentListings : listings.slice(0, 12);
   const isShowingRecent = recentListings.length > 0;
 
   if (displayListings.length === 0) return null;
 
   return (
-    <section className={cn("space-y-4", className)}>
-      {/* Header */}
+    <section className={cn("space-y-3", className)}>
+      {/* Header - Alibaba-style with accent bar */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="text-xl md:text-2xl font-bold">
-              {isShowingRecent ? 'New & Noteworthy' : 'Latest Additions'}
-            </h2>
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-5 bg-primary rounded-full" />
+          <Flame className="h-5 w-5 text-orange-500" />
+          <h2 className="text-lg md:text-xl font-bold">
+            {isShowingRecent ? 'Hot Picks' : 'Recommended'}
+          </h2>
           {isShowingRecent && (
-            <Badge className="bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
-              Fresh
+            <Badge className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 text-[10px]">
+              <Zap className="h-2.5 w-2.5 mr-0.5" />
+              New
             </Badge>
           )}
         </div>
         {onSeeAll && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSeeAll}
-            className="text-primary hover:text-primary/80 -mr-2"
-          >
-            See All
-            <ChevronRight className="h-4 w-4 ml-1" />
+          <Button variant="ghost" size="sm" onClick={onSeeAll} className="text-primary text-xs -mr-2">
+            See All <ChevronRight className="h-3 w-3 ml-0.5" />
           </Button>
         )}
       </div>
 
-      {/* Grid for desktop, scroll for mobile */}
-      <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {displayListings.slice(0, 4).map((listing, idx) => (
-          <div 
-            key={listing.id}
-            className="animate-fade-in"
-            style={{ animationDelay: `${idx * 100}ms` }}
-          >
+      {/* Desktop: 5-column dense grid */}
+      <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        {displayListings.slice(0, 12).map((listing, idx) => (
+          <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
             <ProductCard
               listing={listing}
               onFavorite={onFavorite}
               isFavorited={isFavorited(listing.id)}
               isPending={isPending(listing.id)}
             />
-            {isShowingRecent && (
-              <Badge className="absolute top-3 left-3 bg-green-500 text-white border-0 z-10">
-                NEW
-              </Badge>
-            )}
           </div>
         ))}
       </div>
 
-      {/* Mobile: 2-column grid */}
-      <div className="grid grid-cols-2 gap-3 md:hidden">
-        {displayListings.map((listing, idx) => (
-          <div 
-            key={listing.id} 
-            className="relative animate-fade-in"
-            style={{ animationDelay: `${idx * 100}ms` }}
-          >
+      {/* Mobile: 2-column dense grid */}
+      <div className="grid grid-cols-2 gap-2 md:hidden">
+        {displayListings.slice(0, 8).map((listing, idx) => (
+          <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${idx * 50}ms` }}>
             <ProductCard
               listing={listing}
               onFavorite={onFavorite}
               isFavorited={isFavorited(listing.id)}
               isPending={isPending(listing.id)}
             />
-            {isShowingRecent && (
-              <Badge className="absolute top-3 left-3 bg-green-500 text-white border-0 z-10">
-                NEW
-              </Badge>
-            )}
           </div>
         ))}
       </div>

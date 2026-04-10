@@ -1,10 +1,9 @@
 import React, { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Star, Eye, ShoppingBag, Briefcase, Wrench } from 'lucide-react';
+import { Heart, Star, ShoppingBag, Briefcase, Wrench, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
 import { cn } from '@/lib/utils';
 
@@ -21,12 +20,6 @@ const typeIcons = {
   product: ShoppingBag,
   service: Wrench,
   job: Briefcase,
-};
-
-const typeColors = {
-  product: 'bg-blue-500',
-  service: 'bg-emerald-500',
-  job: 'bg-purple-500',
 };
 
 const gradients = [
@@ -47,48 +40,41 @@ export const ProductCard = memo(({
   className,
 }: ProductCardProps) => {
   const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
-  
-  const TypeIcon = typeIcons[listing.listing_type] || ShoppingBag;
-  const typeColor = typeColors[listing.listing_type] || 'bg-primary';
-  const gradient = gradients[listing.title.charCodeAt(0) % gradients.length];
 
-  const handleClick = () => {
-    navigate(`/marketplace/listing/${listing.id}`);
-  };
+  const TypeIcon = typeIcons[listing.listing_type] || ShoppingBag;
+  const gradient = gradients[listing.title.charCodeAt(0) % gradients.length];
+  const hasImage = listing.images?.[0] && !imageError;
+
+  // Simulated stats
+  const orderCount = Math.floor((listing.title.charCodeAt(0) * 7 + listing.title.length * 13) % 900 + 100);
+  const rating = (4 + (listing.title.charCodeAt(0) % 10) / 10).toFixed(1);
+
+  const handleClick = () => navigate(`/marketplace/listing/${listing.id}`);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isPending) {
-      onFavorite?.(listing.id);
-    }
+    if (!isPending) onFavorite?.(listing.id);
   };
 
-  const hasImage = listing.images?.[0] && !imageError;
-
+  // Compact variant for list views
   if (variant === 'compact') {
     return (
       <Card
         onClick={handleClick}
         className={cn(
-          "group relative overflow-hidden cursor-pointer transition-all duration-300",
-          "hover:shadow-lg hover:-translate-y-1",
+          "group overflow-hidden cursor-pointer transition-all duration-200",
+          "hover:shadow-md",
           className
         )}
       >
         <div className="flex gap-3 p-3">
           <div className={cn(
-            "relative w-16 h-16 rounded-xl overflow-hidden flex-shrink-0",
+            "relative w-16 h-16 rounded-lg overflow-hidden flex-shrink-0",
             !hasImage && `bg-gradient-to-br ${gradient}`
           )}>
             {hasImage ? (
-              <img
-                src={listing.images![0]}
-                alt={listing.title}
-                onError={() => setImageError(true)}
-                className="w-full h-full object-cover"
-              />
+              <img src={listing.images![0]} alt={listing.title} onError={() => setImageError(true)} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <TypeIcon className="h-7 w-7 text-white/90" />
@@ -96,18 +82,11 @@ export const ProductCard = memo(({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">
-              {listing.title}
-            </h3>
-            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-              {listing.description}
-            </p>
+            <h3 className="font-semibold text-sm line-clamp-1 group-hover:text-primary transition-colors">{listing.title}</h3>
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{listing.description}</p>
             <div className="flex items-center gap-2 mt-1.5">
-              <div className="flex items-center gap-1">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span className="text-xs font-medium">4.5</span>
-              </div>
-              {/* Price hidden from browse */}
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-medium">{rating}</span>
             </div>
           </div>
         </div>
@@ -118,122 +97,85 @@ export const ProductCard = memo(({
   return (
     <Card
       onClick={handleClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "group relative overflow-hidden cursor-pointer transition-all duration-300",
-        "hover:shadow-xl hover:-translate-y-2 border-border/50",
+        "group overflow-hidden cursor-pointer transition-all duration-200",
+        "hover:shadow-lg border-border/40",
         variant === 'featured' && "md:col-span-2",
         className
       )}
     >
-      {/* Image Section */}
-      <div className="relative overflow-hidden">
-        <AspectRatio ratio={variant === 'featured' ? 16/9 : 4/3}>
-          {hasImage ? (
-            <img
-              src={listing.images![0]}
-              alt={listing.title}
-              onError={() => setImageError(true)}
-              className={cn(
-                "w-full h-full object-cover transition-transform duration-500",
-                isHovered && "scale-110"
-              )}
-            />
-          ) : (
-            <div className={cn(
-              "w-full h-full bg-gradient-to-br flex items-center justify-center",
-              gradient
-            )}>
-              <TypeIcon className="h-16 w-16 text-white/80" />
-            </div>
-          )}
-        </AspectRatio>
+      {/* Image */}
+      <div className="relative aspect-square overflow-hidden bg-muted">
+        {hasImage ? (
+          <img
+            src={listing.images![0]}
+            alt={listing.title}
+            onError={() => setImageError(true)}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className={cn("w-full h-full bg-gradient-to-br flex items-center justify-center", gradient)}>
+            <TypeIcon className="h-10 w-10 text-white/80" />
+          </div>
+        )}
 
-        {/* Overlay on hover */}
-        <div className={cn(
-          "absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent",
-          "opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-          "flex items-end justify-center pb-4"
-        )}>
-          <Button 
-            size="sm" 
-            className="bg-white/90 text-black hover:bg-white font-medium"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClick();
-            }}
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Quick View
-          </Button>
-        </div>
-
-        {/* Type badge */}
-        <Badge className={cn(
-          "absolute top-3 left-3 capitalize",
-          typeColor,
-          "text-white border-0"
-        )}>
-          <TypeIcon className="h-3 w-3 mr-1" />
-          {listing.listing_type}
-        </Badge>
-
-        {/* Favorite button */}
+        {/* Favorite */}
         <Button
           variant="ghost"
           size="icon"
           onClick={handleFavorite}
           disabled={isPending}
           className={cn(
-            "absolute top-3 right-3 h-9 w-9 rounded-full",
-            "bg-white/80 hover:bg-white shadow-sm",
-            "opacity-0 group-hover:opacity-100 transition-all duration-200",
+            "absolute top-2 right-2 h-7 w-7 rounded-full bg-white/80 hover:bg-white shadow-sm",
+            "opacity-0 group-hover:opacity-100 transition-opacity",
             isFavorited && "opacity-100"
           )}
         >
-          <Heart className={cn(
-            "h-5 w-5 transition-all",
-            isFavorited 
-              ? "fill-red-500 text-red-500 scale-110" 
-              : "text-gray-600",
-            isPending && "animate-pulse"
-          )} />
+          <Heart className={cn("h-3.5 w-3.5", isFavorited ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
         </Button>
 
-        {/* Price hidden from browse - only shown on detail page */}
+        {/* Type badge */}
+        <Badge className={cn(
+          "absolute top-2 left-2 text-[10px] capitalize border-0 text-white",
+          listing.listing_type === 'product' && 'bg-blue-500',
+          listing.listing_type === 'service' && 'bg-emerald-500',
+          listing.listing_type === 'job' && 'bg-purple-500',
+        )}>
+          {listing.listing_type}
+        </Badge>
 
-        {/* Featured badge */}
         {listing.is_featured && (
-          <Badge className="absolute bottom-3 left-3 bg-yellow-500/90 text-white border-0">
-            <Star className="h-3 w-3 mr-1 fill-current" />
+          <Badge className="absolute bottom-2 left-2 bg-yellow-500/90 text-white border-0 text-[10px]">
+            <Star className="h-2.5 w-2.5 mr-0.5 fill-current" />
             Featured
           </Badge>
         )}
       </div>
 
-      {/* Content Section */}
-      <div className="p-4 space-y-2">
-        <h3 className="font-bold text-base line-clamp-1 group-hover:text-primary transition-colors">
+      {/* Info */}
+      <div className="p-3 space-y-1.5">
+        <h3 className="font-semibold text-sm line-clamp-2 leading-tight group-hover:text-primary transition-colors min-h-[2.25rem]">
           {listing.title}
         </h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 min-h-[2.5rem]">
-          {listing.description}
-        </p>
-        
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-1">
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            <span className="text-sm font-medium">4.5</span>
-            <span className="text-xs text-muted-foreground">(128)</span>
-          </div>
-          
-          {listing.tags && listing.tags.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {listing.tags[0]}
-            </Badge>
-          )}
+
+        <div className="flex items-center gap-1">
+          <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+          <span className="text-xs font-medium">{rating}</span>
+          <span className="text-[10px] text-muted-foreground">({orderCount})</span>
         </div>
+
+        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+          <Users className="h-3 w-3" />
+          <span>{orderCount}+ orders</span>
+        </div>
+
+        {listing.tags && listing.tags.length > 0 && (
+          <div className="flex gap-1 flex-wrap">
+            {listing.tags.slice(0, 2).map(tag => (
+              <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground">{tag}</span>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );
