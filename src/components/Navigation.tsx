@@ -145,7 +145,11 @@ const Navigation = () => {
             </Sheet>
             {loading ? <div className="w-20 h-8 animate-pulse bg-muted rounded" /> : user ? (
               <>
-                <NotificationBell />
+                <Link to="/notifications" aria-label="Notifications">
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Bell className="h-5 w-5" />
+                  </Button>
+                </Link>
                 <Link to="/menu" aria-label="Open menu">
                   <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
