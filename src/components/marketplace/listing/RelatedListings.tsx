@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { MarketplaceListing } from '@/hooks/useMarketplace';
 import { ProductCard } from '@/components/marketplace/browse/ProductCard';
-import { ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronRight, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface RelatedListingsProps {
@@ -15,41 +15,26 @@ interface RelatedListingsProps {
 }
 
 export const RelatedListings: React.FC<RelatedListingsProps> = ({
-  listings,
-  isFavorited,
-  isPending,
-  onFavorite,
-  className
+  listings, isFavorited, isPending, onFavorite, className
 }) => {
   const navigate = useNavigate();
-
   if (listings.length === 0) return null;
 
   return (
-    <section className={cn("space-y-6", className)}>
-      {/* Header */}
+    <section className={cn("space-y-4", className)}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight">You Might Also Like</h2>
-            <p className="text-sm text-muted-foreground">Discover similar products</p>
-          </div>
+        <div className="flex items-center gap-2">
+          <div className="w-1 h-5 bg-orange-500 rounded-full" />
+          <h2 className="text-base font-bold">Recommended For You</h2>
+          <Flame className="w-4 h-4 text-orange-500" />
         </div>
-        <Button 
-          variant="ghost" 
-          className="gap-2 hidden md:flex"
-          onClick={() => navigate('/marketplace/browse')}
-        >
-          View All
-          <ChevronRight className="w-4 h-4" />
+        <Button variant="ghost" size="sm" className="gap-1 text-xs h-7 hidden md:flex"
+          onClick={() => navigate('/marketplace/browse')}>
+          View All <ChevronRight className="w-3 h-3" />
         </Button>
       </div>
 
-      {/* Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3">
         {listings.map((listing) => (
           <ProductCard
             key={listing.id}
@@ -61,15 +46,10 @@ export const RelatedListings: React.FC<RelatedListingsProps> = ({
         ))}
       </div>
 
-      {/* Mobile View All */}
       <div className="md:hidden">
-        <Button 
-          variant="outline" 
-          className="w-full gap-2"
-          onClick={() => navigate('/marketplace/browse')}
-        >
-          Explore More Products
-          <ChevronRight className="w-4 h-4" />
+        <Button variant="outline" size="sm" className="w-full gap-1 text-xs"
+          onClick={() => navigate('/marketplace/browse')}>
+          Explore More <ChevronRight className="w-3 h-3" />
         </Button>
       </div>
     </section>
