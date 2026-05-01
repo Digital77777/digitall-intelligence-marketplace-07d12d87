@@ -194,28 +194,35 @@ const MarketplacePage = () => {
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 Buy, sell, and hire in the world's largest AI marketplace. Connect with experts, showcase your skills, and grow your business
               </p>
-              <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-3 md:gap-4">
-                <PrefetchLink to="/marketplace/browse" className="w-full md:w-auto">
-                  <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
-                    Browse Marketplace
-                    <ArrowRight className="h-4 w-4 md:h-5 md:w-5 ml-2" />
-                  </Button>
-                </PrefetchLink>
-                <div className="flex gap-3 md:gap-4">
-                  <PrefetchLink to="/marketplace/browse-freelancers" className="flex-1 md:flex-none">
-                    <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
-                      <Users className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                      Browse Freelancers
-                    </Button>
-                  </PrefetchLink>
-                  <PrefetchLink to="/marketplace/jobs" className="flex-1 md:flex-none">
-                    <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
-                      <Briefcase className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                      Browse Jobs
-                    </Button>
-                  </PrefetchLink>
-                </div>
+            </div>
+
+            {/* Facebook-style icon button strip */}
+            <div className="mt-8 max-w-3xl mx-auto">
+              <div className="grid grid-cols-5 gap-2 md:gap-3">
+                {[
+                  { label: "Browse", icon: <LayoutGrid className="h-5 w-5" />, to: "/marketplace/browse", gradient: "from-emerald-500 to-teal-500" },
+                  { label: "Freelancers", icon: <Users className="h-5 w-5" />, to: "/marketplace/browse-freelancers", gradient: "from-blue-500 to-cyan-500" },
+                  { label: "Jobs", icon: <Briefcase className="h-5 w-5" />, to: "/marketplace/jobs", gradient: "from-purple-500 to-pink-500" },
+                  { label: "Products", icon: <Store className="h-5 w-5" />, to: "/marketplace/browse", gradient: "from-orange-500 to-red-500" },
+                  { label: "Dashboard", icon: <Clock className="h-5 w-5" />, to: "/client-dashboard", gradient: "from-indigo-500 to-violet-500" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.to)}
+                    onMouseEnter={() => handleMouseEnter(item.to)}
+                    onTouchStart={() => handleTouchStart(item.to)}
+                    className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/50 hover:border-primary/40 hover:shadow-ai transition-all"
+                  >
+                    <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform`}>
+                      {item.icon}
+                    </div>
+                    <span className="text-[11px] md:text-xs font-medium text-foreground text-center leading-tight">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
               </div>
+            </div>
             </div>
           </div>
         </section>
