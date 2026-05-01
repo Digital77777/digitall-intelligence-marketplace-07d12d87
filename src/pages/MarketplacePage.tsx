@@ -292,72 +292,81 @@ const MarketplacePage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
               {isLoadingFeatured ? (
-                // Loading skeletons
-                Array.from({ length: 3 }).map((_, index) => (
+                Array.from({ length: 6 }).map((_, index) => (
                   <Card key={index} className="border-border/50">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-12" />
-                      </div>
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <div className="flex items-center justify-between mb-4">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-5 w-16" />
-                      </div>
-                      <Skeleton className="h-9 w-full" />
+                    <CardContent className="p-3 md:p-6">
+                      <Skeleton className="h-24 md:h-32 w-full mb-3 rounded-lg" />
+                      <Skeleton className="h-4 w-16 mb-2" />
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-8 w-full" />
                     </CardContent>
                   </Card>
                 ))
               ) : featuredListings.length > 0 ? (
-                featuredListings.slice(0, 6).map(listing => (
-                  <Card key={listing.id} className="border-border/50 hover:shadow-lg transition-all duration-300">
-                    <CardContent className="p-6">
-                      {/* Listing image */}
-                      {listing.images && listing.images.length > 0 && (
-                        <div className="mb-4 rounded-lg overflow-hidden h-32 bg-muted">
-                          <img 
-                            src={listing.images[0]} 
-                            alt={listing.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex items-start justify-between mb-4">
-                        <Badge variant="outline" className="text-xs">
-                          {getCategory(listing.tags, listing.listing_type)}
-                        </Badge>
-                        {listing.is_featured && (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs text-muted-foreground">Featured</span>
+                featuredListings.slice(0, 6).map(listing => {
+                  const gradients = [
+                    'from-emerald-500 to-teal-500',
+                    'from-blue-500 to-cyan-500',
+                    'from-purple-500 to-pink-500',
+                    'from-orange-500 to-red-500',
+                    'from-indigo-500 to-violet-500',
+                    'from-rose-500 to-fuchsia-500',
+                  ];
+                  const gradient = gradients[featuredListings.indexOf(listing) % gradients.length];
+                  return (
+                    <Card key={listing.id} className="group hover:shadow-ai transition-all duration-300 border-border/50 flex flex-col">
+                      <CardHeader className="pb-2 md:pb-4 p-3 md:p-6">
+                        {listing.images && listing.images.length > 0 ? (
+                          <div className="mb-2 md:mb-4 rounded-lg overflow-hidden h-20 md:h-32 bg-muted">
+                            <img
+                              src={listing.images[0]}
+                              alt={listing.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className={`w-10 h-10 md:w-16 md:h-16 rounded-lg md:rounded-xl bg-gradient-to-r ${gradient} flex items-center justify-center text-white mb-2 md:mb-4`}>
+                            <Store className="h-5 w-5 md:h-8 md:w-8" />
                           </div>
                         )}
-                      </div>
-                      
-                      <h3 className="font-semibold mb-2 line-clamp-2">{listing.title}</h3>
-                      
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm text-muted-foreground truncate max-w-[120px]">
-                          by {listing.seller_name}
-                        </span>
-                        <span className="font-bold text-primary">
-                          {formatPrice(listing.price, listing.currency, listing.listing_type)}
-                        </span>
-                      </div>
-                      
-                      <PrefetchLink to={`/marketplace/listing/${listing.id}`}>
-                        <Button size="sm" variant="outline" className="w-full">
-                          {listing.listing_type === "job" ? "View Job" : "View Details"}
-                        </Button>
-                      </PrefetchLink>
-                    </CardContent>
-                  </Card>
-                ))
+                        <div className="flex items-center justify-between mb-1 md:mb-2 gap-1 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px] md:text-xs px-1.5 py-0">
+                            {getCategory(listing.tags, listing.listing_type)}
+                          </Badge>
+                          {listing.is_featured && (
+                            <Badge variant="outline" className="text-[10px] md:text-xs font-bold text-success px-1.5 py-0 hidden md:inline-flex gap-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-sm md:text-xl group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                          {listing.title}
+                        </CardTitle>
+                        <CardDescription className="text-muted-foreground text-xs md:text-base flex items-center justify-between gap-2">
+                          <span className="truncate">by {listing.seller_name}</span>
+                          <span className="font-bold text-primary whitespace-nowrap">
+                            {formatPrice(listing.price, listing.currency, listing.listing_type)}
+                          </span>
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4 p-3 md:p-6 pt-0 md:pt-0 mt-auto">
+                        <PrefetchLink to={`/marketplace/listing/${listing.id}`}>
+                          <Button size="sm" className="w-full group/btn text-xs md:text-sm">
+                            {listing.listing_type === "job" ? "View Job" : "View Details"}
+                            <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                          </Button>
+                        </PrefetchLink>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               ) : (
-                <div className="col-span-3 text-center py-12">
+                <div className="col-span-2 md:col-span-3 text-center py-12">
                   <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No listings available yet. Be the first to create one!</p>
                   <PrefetchLink to="/marketplace/sell-products">
