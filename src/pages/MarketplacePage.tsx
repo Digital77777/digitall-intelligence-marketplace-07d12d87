@@ -223,7 +223,6 @@ const MarketplacePage = () => {
                 ))}
               </div>
             </div>
-            </div>
           </div>
         </section>
 
