@@ -100,6 +100,7 @@ const InstallPWAPage = lazy(() => import("./pages/InstallPWAPage"));
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 const EditListingPage = lazy(() => import("./pages/EditListingPage"));
 const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
+const ListingPreviewFeedPage = lazy(() => import("./pages/ListingPreviewFeedPage"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 const UpdateAppPage = lazy(() => import("./pages/UpdateAppPage"));
 
@@ -221,6 +222,7 @@ const routeGroups: AppRoute[] = [
   // Marketplace
   { path: "/marketplace", component: MarketplacePage, protected: true },
   { path: "/marketplace/browse", component: BrowseMarketplacePage, protected: true },
+  { path: "/marketplace/preview/:id", component: ListingPreviewFeedPage, protected: true },
   { path: "/marketplace/listing/:id", component: ListingDetailPage, protected: true },
   { path: "/marketplace/sell-products", component: SellProductsPage, protected: true },
   { path: "/marketplace/freelance-services", component: FreelanceServicesPage, protected: true },
