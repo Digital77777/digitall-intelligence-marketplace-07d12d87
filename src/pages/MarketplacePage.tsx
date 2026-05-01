@@ -1,4 +1,4 @@
-import { Store, Briefcase, Users, Code, DollarSign, ArrowRight, Star, MapPin, Clock, TrendingUp, Shield } from "lucide-react";
+import { Store, Briefcase, Users, Code, DollarSign, ArrowRight, Star, MapPin, Clock, TrendingUp, Shield, LayoutGrid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,27 +194,33 @@ const MarketplacePage = () => {
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 Buy, sell, and hire in the world's largest AI marketplace. Connect with experts, showcase your skills, and grow your business
               </p>
-              <div className="flex flex-col md:flex-row md:flex-wrap justify-center gap-3 md:gap-4">
-                <PrefetchLink to="/marketplace/browse" className="w-full md:w-auto">
-                  <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
-                    Browse Marketplace
-                    <ArrowRight className="h-4 w-4 md:h-5 md:w-5 ml-2" />
-                  </Button>
-                </PrefetchLink>
-                <div className="flex gap-3 md:gap-4">
-                  <PrefetchLink to="/marketplace/browse-freelancers" className="flex-1 md:flex-none">
-                    <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
-                      <Users className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                      Browse Freelancers
-                    </Button>
-                  </PrefetchLink>
-                  <PrefetchLink to="/marketplace/jobs" className="flex-1 md:flex-none">
-                    <Button size="sm" variant="outline" className="w-full md:text-base md:px-6 md:py-5">
-                      <Briefcase className="h-4 w-4 md:h-5 md:w-5 mr-2" />
-                      Browse Jobs
-                    </Button>
-                  </PrefetchLink>
-                </div>
+            </div>
+
+            {/* Facebook-style icon button strip */}
+            <div className="mt-8 max-w-3xl mx-auto">
+              <div className="grid grid-cols-5 gap-2 md:gap-3">
+                {[
+                  { label: "Browse", icon: <LayoutGrid className="h-5 w-5" />, to: "/marketplace/browse", gradient: "from-emerald-500 to-teal-500" },
+                  { label: "Freelancers", icon: <Users className="h-5 w-5" />, to: "/marketplace/browse-freelancers", gradient: "from-blue-500 to-cyan-500" },
+                  { label: "Jobs", icon: <Briefcase className="h-5 w-5" />, to: "/marketplace/jobs", gradient: "from-purple-500 to-pink-500" },
+                  { label: "Products", icon: <Store className="h-5 w-5" />, to: "/marketplace/browse", gradient: "from-orange-500 to-red-500" },
+                  { label: "Dashboard", icon: <Clock className="h-5 w-5" />, to: "/client-dashboard", gradient: "from-indigo-500 to-violet-500" },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.to)}
+                    onMouseEnter={() => handleMouseEnter(item.to)}
+                    onTouchStart={() => handleTouchStart(item.to)}
+                    className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border/50 hover:border-primary/40 hover:shadow-ai transition-all"
+                  >
+                    <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white shadow-sm group-hover:scale-110 transition-transform`}>
+                      {item.icon}
+                    </div>
+                    <span className="text-[11px] md:text-xs font-medium text-foreground text-center leading-tight">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -237,36 +243,36 @@ const MarketplacePage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-8">
               {marketplaceCategories.map(category => {
               const isSellFeature = category.title === "Sell Your Creations" || category.title === "Freelance Services" || category.title === "Post Job Opportunities" || category.title === "AI Development";
               const targetUrl = isSellFeature && !canSell ? "/subscription" : category.title === "Sell Your Creations" ? "/marketplace/sell-products" : category.title === "Freelance Services" ? "/marketplace/freelance-services" : category.title === "Post Job Opportunities" ? "/marketplace/post-jobs" : "/marketplace/ai-development";
-              return <Card key={category.id} className="group hover:shadow-ai transition-all duration-300 border-border/50">
-                    <CardHeader className="pb-4">
-                      <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${category.gradient} flex items-center justify-center text-white mb-4`}>
+              return <Card key={category.id} className="group hover:shadow-ai transition-all duration-300 border-border/50 flex flex-col">
+                    <CardHeader className="pb-2 md:pb-4 p-3 md:p-6">
+                      <div className={`w-10 h-10 md:w-16 md:h-16 rounded-lg md:rounded-xl bg-gradient-to-r ${category.gradient} flex items-center justify-center text-white mb-2 md:mb-4 [&>svg]:h-5 [&>svg]:w-5 md:[&>svg]:h-8 md:[&>svg]:w-8`}>
                         {category.icon}
                       </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="flex items-center justify-between mb-1 md:mb-2 gap-1 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px] md:text-xs px-1.5 py-0">
                           {category.category}
                         </Badge>
-                        <Badge variant="outline" className="text-xs font-bold text-success">
+                        <Badge variant="outline" className="text-[10px] md:text-xs font-bold text-success px-1.5 py-0 hidden md:inline-flex">
                           {category.feature}
                         </Badge>
                       </div>
-                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                      <CardTitle className="text-sm md:text-xl group-hover:text-primary transition-colors leading-tight">
                         {category.title}
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground">
+                      <CardDescription className="text-muted-foreground text-xs md:text-base line-clamp-2 md:line-clamp-none">
                         {category.description}
                       </CardDescription>
                     </CardHeader>
-                    
-                    <CardContent className="space-y-4">
+
+                    <CardContent className="space-y-4 p-3 md:p-6 pt-0 md:pt-0 mt-auto">
                       <PrefetchLink to={targetUrl}>
-                        <Button className="w-full group/btn">
-                          {isSellFeature && !canSell ? "Upgrade to Access" : "Get Started"}
-                          <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                        <Button size="sm" className="w-full group/btn text-xs md:text-sm">
+                          {isSellFeature && !canSell ? "Upgrade" : "Get Started"}
+                          <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
                       </PrefetchLink>
                     </CardContent>
@@ -286,72 +292,81 @@ const MarketplacePage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
               {isLoadingFeatured ? (
-                // Loading skeletons
-                Array.from({ length: 3 }).map((_, index) => (
+                Array.from({ length: 6 }).map((_, index) => (
                   <Card key={index} className="border-border/50">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <Skeleton className="h-5 w-20" />
-                        <Skeleton className="h-5 w-12" />
-                      </div>
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <div className="flex items-center justify-between mb-4">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-5 w-16" />
-                      </div>
-                      <Skeleton className="h-9 w-full" />
+                    <CardContent className="p-3 md:p-6">
+                      <Skeleton className="h-24 md:h-32 w-full mb-3 rounded-lg" />
+                      <Skeleton className="h-4 w-16 mb-2" />
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-8 w-full" />
                     </CardContent>
                   </Card>
                 ))
               ) : featuredListings.length > 0 ? (
-                featuredListings.slice(0, 6).map(listing => (
-                  <Card key={listing.id} className="border-border/50 hover:shadow-lg transition-all duration-300">
-                    <CardContent className="p-6">
-                      {/* Listing image */}
-                      {listing.images && listing.images.length > 0 && (
-                        <div className="mb-4 rounded-lg overflow-hidden h-32 bg-muted">
-                          <img 
-                            src={listing.images[0]} 
-                            alt={listing.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex items-start justify-between mb-4">
-                        <Badge variant="outline" className="text-xs">
-                          {getCategory(listing.tags, listing.listing_type)}
-                        </Badge>
-                        {listing.is_featured && (
-                          <div className="flex items-center gap-1">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                            <span className="text-xs text-muted-foreground">Featured</span>
+                featuredListings.slice(0, 6).map(listing => {
+                  const gradients = [
+                    'from-emerald-500 to-teal-500',
+                    'from-blue-500 to-cyan-500',
+                    'from-purple-500 to-pink-500',
+                    'from-orange-500 to-red-500',
+                    'from-indigo-500 to-violet-500',
+                    'from-rose-500 to-fuchsia-500',
+                  ];
+                  const gradient = gradients[featuredListings.indexOf(listing) % gradients.length];
+                  return (
+                    <Card key={listing.id} className="group hover:shadow-ai transition-all duration-300 border-border/50 flex flex-col">
+                      <CardHeader className="pb-2 md:pb-4 p-3 md:p-6">
+                        {listing.images && listing.images.length > 0 ? (
+                          <div className="mb-2 md:mb-4 rounded-lg overflow-hidden h-20 md:h-32 bg-muted">
+                            <img
+                              src={listing.images[0]}
+                              alt={listing.title}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+                        ) : (
+                          <div className={`w-10 h-10 md:w-16 md:h-16 rounded-lg md:rounded-xl bg-gradient-to-r ${gradient} flex items-center justify-center text-white mb-2 md:mb-4`}>
+                            <Store className="h-5 w-5 md:h-8 md:w-8" />
                           </div>
                         )}
-                      </div>
-                      
-                      <h3 className="font-semibold mb-2 line-clamp-2">{listing.title}</h3>
-                      
-                      <div className="flex items-center justify-between mb-4">
-                        <span className="text-sm text-muted-foreground truncate max-w-[120px]">
-                          by {listing.seller_name}
-                        </span>
-                        <span className="font-bold text-primary">
-                          {formatPrice(listing.price, listing.currency, listing.listing_type)}
-                        </span>
-                      </div>
-                      
-                      <PrefetchLink to={`/marketplace/listing/${listing.id}`}>
-                        <Button size="sm" variant="outline" className="w-full">
-                          {listing.listing_type === "job" ? "View Job" : "View Details"}
-                        </Button>
-                      </PrefetchLink>
-                    </CardContent>
-                  </Card>
-                ))
+                        <div className="flex items-center justify-between mb-1 md:mb-2 gap-1 flex-wrap">
+                          <Badge variant="secondary" className="text-[10px] md:text-xs px-1.5 py-0">
+                            {getCategory(listing.tags, listing.listing_type)}
+                          </Badge>
+                          {listing.is_featured && (
+                            <Badge variant="outline" className="text-[10px] md:text-xs font-bold text-success px-1.5 py-0 hidden md:inline-flex gap-1">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              Featured
+                            </Badge>
+                          )}
+                        </div>
+                        <CardTitle className="text-sm md:text-xl group-hover:text-primary transition-colors leading-tight line-clamp-2">
+                          {listing.title}
+                        </CardTitle>
+                        <CardDescription className="text-muted-foreground text-xs md:text-base flex items-center justify-between gap-2">
+                          <span className="truncate">by {listing.seller_name}</span>
+                          <span className="font-bold text-primary whitespace-nowrap">
+                            {formatPrice(listing.price, listing.currency, listing.listing_type)}
+                          </span>
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4 p-3 md:p-6 pt-0 md:pt-0 mt-auto">
+                        <PrefetchLink to={`/marketplace/listing/${listing.id}`}>
+                          <Button size="sm" className="w-full group/btn text-xs md:text-sm">
+                            {listing.listing_type === "job" ? "View Job" : "View Details"}
+                            <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                          </Button>
+                        </PrefetchLink>
+                      </CardContent>
+                    </Card>
+                  );
+                })
               ) : (
-                <div className="col-span-3 text-center py-12">
+                <div className="col-span-2 md:col-span-3 text-center py-12">
                   <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No listings available yet. Be the first to create one!</p>
                   <PrefetchLink to="/marketplace/sell-products">
@@ -365,77 +380,6 @@ const MarketplacePage = () => {
           </div>
         </section>
 
-        {/* Quick Actions */}
-        <section className="py-12">
-          <div className="container mx-auto px-6">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold mb-2">Quick Actions</h2>
-              <p className="text-muted-foreground">Jump straight to what you need</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button variant="outline" size="lg" onClick={() => navigate('/marketplace/browse')} onMouseEnter={() => handleMouseEnter('/marketplace/browse')} onTouchStart={() => handleTouchStart('/marketplace/browse')}>
-                <Store className="h-5 w-5 mr-2" />
-                Browse Products
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/marketplace/browse-freelancers')} onMouseEnter={() => handleMouseEnter('/marketplace/browse-freelancers')} onTouchStart={() => handleTouchStart('/marketplace/browse-freelancers')}>
-                <Users className="h-5 w-5 mr-2" />
-                Find Freelancers
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/marketplace/jobs')} onMouseEnter={() => handleMouseEnter('/marketplace/jobs')} onTouchStart={() => handleTouchStart('/marketplace/jobs')}>
-                <Briefcase className="h-5 w-5 mr-2" />
-                Browse Jobs
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/client-dashboard')} onMouseEnter={() => handleMouseEnter('/client-dashboard')} onTouchStart={() => handleTouchStart('/client-dashboard')}>
-                <Clock className="h-5 w-5 mr-2" />
-                Client Dashboard
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* How It Works */}
-        <section className="py-16">
-          <div className="container mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How It Works</h2>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                Simple steps to start selling, buying, or hiring in the AI marketplace
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl">
-                  1
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Create Your Profile</h3>
-                <p className="text-muted-foreground">
-                  Set up your profile, showcase your skills, and build your reputation
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl">
-                  2
-                </div>
-                <h3 className="text-xl font-semibold mb-2">List or Browse</h3>
-                <p className="text-muted-foreground">
-                  Create listings for your services or browse available opportunities
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl">
-                  3
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Connect & Transact</h3>
-                <p className="text-muted-foreground">
-                  Secure transactions with built-in protection and payment processing
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Security & Trust */}
         <section className="py-16 bg-gradient-to-r from-primary/5 to-accent/5">
