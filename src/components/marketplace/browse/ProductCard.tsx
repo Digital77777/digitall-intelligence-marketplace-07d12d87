@@ -50,7 +50,7 @@ export const ProductCard = memo(({
   const orderCount = Math.floor((listing.title.charCodeAt(0) * 7 + listing.title.length * 13) % 900 + 100);
   const rating = (4 + (listing.title.charCodeAt(0) % 10) / 10).toFixed(1);
 
-  const handleClick = () => navigate(`/marketplace/listing/${listing.id}`);
+  const handleClick = () => navigate(`/marketplace/preview/${listing.id}`);
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
