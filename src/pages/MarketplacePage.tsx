@@ -243,36 +243,36 @@ const MarketplacePage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-8">
               {marketplaceCategories.map(category => {
               const isSellFeature = category.title === "Sell Your Creations" || category.title === "Freelance Services" || category.title === "Post Job Opportunities" || category.title === "AI Development";
               const targetUrl = isSellFeature && !canSell ? "/subscription" : category.title === "Sell Your Creations" ? "/marketplace/sell-products" : category.title === "Freelance Services" ? "/marketplace/freelance-services" : category.title === "Post Job Opportunities" ? "/marketplace/post-jobs" : "/marketplace/ai-development";
-              return <Card key={category.id} className="group hover:shadow-ai transition-all duration-300 border-border/50">
-                    <CardHeader className="pb-4">
-                      <div className={`w-16 h-16 rounded-xl bg-gradient-to-r ${category.gradient} flex items-center justify-center text-white mb-4`}>
+              return <Card key={category.id} className="group hover:shadow-ai transition-all duration-300 border-border/50 flex flex-col">
+                    <CardHeader className="pb-2 md:pb-4 p-3 md:p-6">
+                      <div className={`w-10 h-10 md:w-16 md:h-16 rounded-lg md:rounded-xl bg-gradient-to-r ${category.gradient} flex items-center justify-center text-white mb-2 md:mb-4 [&>svg]:h-5 [&>svg]:w-5 md:[&>svg]:h-8 md:[&>svg]:w-8`}>
                         {category.icon}
                       </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="flex items-center justify-between mb-1 md:mb-2 gap-1 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px] md:text-xs px-1.5 py-0">
                           {category.category}
                         </Badge>
-                        <Badge variant="outline" className="text-xs font-bold text-success">
+                        <Badge variant="outline" className="text-[10px] md:text-xs font-bold text-success px-1.5 py-0 hidden md:inline-flex">
                           {category.feature}
                         </Badge>
                       </div>
-                      <CardTitle className="text-xl group-hover:text-primary transition-colors">
+                      <CardTitle className="text-sm md:text-xl group-hover:text-primary transition-colors leading-tight">
                         {category.title}
                       </CardTitle>
-                      <CardDescription className="text-muted-foreground">
+                      <CardDescription className="text-muted-foreground text-xs md:text-base line-clamp-2 md:line-clamp-none">
                         {category.description}
                       </CardDescription>
                     </CardHeader>
-                    
-                    <CardContent className="space-y-4">
+
+                    <CardContent className="space-y-4 p-3 md:p-6 pt-0 md:pt-0 mt-auto">
                       <PrefetchLink to={targetUrl}>
-                        <Button className="w-full group/btn">
-                          {isSellFeature && !canSell ? "Upgrade to Access" : "Get Started"}
-                          <ArrowRight className="h-4 w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                        <Button size="sm" className="w-full group/btn text-xs md:text-sm">
+                          {isSellFeature && !canSell ? "Upgrade" : "Get Started"}
+                          <ArrowRight className="h-3 w-3 md:h-4 md:w-4 ml-1 md:ml-2 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>
                       </PrefetchLink>
                     </CardContent>
