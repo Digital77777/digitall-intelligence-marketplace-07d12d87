@@ -339,69 +339,60 @@ export const InstagramPostDesktop = memo(({
           </div>
         </div>
 
-        {/* Facebook-style dynamic font sizing: no media + short text => large prominent font */}
-        {(() => {
-          const combinedLength = (insight.title?.length || 0) + (insight.content?.length || 0);
-          const isShortTextPost = !hasMedia && combinedLength < 80;
+        {/* Facebook-style dynamic font sizing (shared logic) */}
+        {typography.isShortTextPost ? (
+          <div
+            className="mb-3 cursor-pointer"
+            onClick={handleDoubleClick}
+          >
+            <h3
+              className={cn(typography.titleClass, "cursor-pointer hover:text-primary transition-colors")}
+              onClick={handleViewPost}
+            >
+              {insight.title}
+            </h3>
+            <p className={typography.contentClass}>
+              {insight.content}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Title */}
+            <h3
+              className="text-base font-semibold leading-snug mb-2 cursor-pointer hover:text-primary transition-colors line-clamp-2"
+              onClick={handleViewPost}
+            >
+              {insight.title}
+            </h3>
 
-          if (isShortTextPost) {
-            return (
+            {/* Content Preview */}
+            <div className="mb-3">
+              <p className="text-sm text-muted-foreground leading-relaxed [&_a]:text-sm">
+                {isExpanded ? insight.content : contentPreview}
+              </p>
+              {isTruncated && !isExpanded && (
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="text-sm font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
+                >
+                  Read more
+                </button>
+              )}
+            </div>
+
+            {/* Text-only post gets a subtle quote-style treatment */}
+            {!hasMedia && (
               <div
-                className="mb-3 cursor-pointer"
+                className="mb-3 pl-4 border-l-2 border-primary/30 py-1 cursor-pointer"
                 onClick={handleDoubleClick}
               >
-                <h3
-                  className="text-2xl md:text-3xl font-bold leading-tight mb-2 break-words hover:text-primary transition-colors"
-                  onClick={handleViewPost}
-                >
-                  {insight.title}
-                </h3>
-                <p className="text-2xl md:text-3xl font-semibold leading-tight text-foreground whitespace-pre-wrap break-words [&_a]:text-2xl md:[&_a]:text-3xl [&_a]:font-semibold">
-                  {insight.content}
+                <p className="text-sm italic text-muted-foreground/80 leading-relaxed line-clamp-3">
+                  {insight.content.substring(0, 150)}
                 </p>
               </div>
-            );
-          }
-
-          return (
-            <>
-              {/* Title */}
-              <h3
-                className="text-base font-semibold leading-snug mb-2 cursor-pointer hover:text-primary transition-colors line-clamp-2"
-                onClick={handleViewPost}
-              >
-                {insight.title}
-              </h3>
-
-              {/* Content Preview */}
-              <div className="mb-3">
-                <p className="text-sm text-muted-foreground leading-relaxed [&_a]:text-sm">
-                  {isExpanded ? insight.content : contentPreview}
-                </p>
-                {isTruncated && !isExpanded && (
-                  <button
-                    onClick={() => setIsExpanded(true)}
-                    className="text-sm font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
-                  >
-                    Read more
-                  </button>
-                )}
-              </div>
-
-              {/* Text-only post gets a subtle quote-style treatment */}
-              {!hasMedia && (
-                <div
-                  className="mb-3 pl-4 border-l-2 border-primary/30 py-1 cursor-pointer"
-                  onClick={handleDoubleClick}
-                >
-                  <p className="text-sm italic text-muted-foreground/80 leading-relaxed line-clamp-3">
-                    {insight.content.substring(0, 150)}
-                  </p>
-                </div>
-              )}
-            </>
-          );
-        })()}
+            )}
+          </>
+        )}
 
         {/* Engagement Stats */}
         <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
