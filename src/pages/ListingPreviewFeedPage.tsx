@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMarketplace, MarketplaceListing } from '@/hooks/useMarketplace';
 import { AlibabaPreviewCard } from '@/components/marketplace/preview/AlibabaPreviewCard';
+import {
+  AlibabaPreviewCardSkeleton,
+  AlibabaPreviewFeedSkeleton,
+} from '@/components/marketplace/preview/AlibabaPreviewCardSkeleton';
 import { TierGate } from '@/components/tier/TierGate';
 import { SEOHead } from '@/components/SEOHead';
 import { Loader2 } from 'lucide-react';
