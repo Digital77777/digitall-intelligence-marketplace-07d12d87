@@ -314,35 +314,25 @@ export const InstagramPostMobile = memo(({
       )}
 
       {/* Text-only post (Facebook-style) */}
-      {mediaItems.length === 0 && (() => {
-        // Facebook-style dynamic font sizing: no media + short text => large prominent font
-        const combinedLength = (insight.title?.length || 0) + (insight.content?.length || 0);
-        const isShortTextPost = combinedLength < 80;
-        const titleClass = isShortTextPost
-          ? "text-2xl sm:text-3xl font-bold text-foreground leading-tight mb-3 break-words"
-          : "text-base font-bold text-foreground leading-snug mb-3";
-        const contentClass = isShortTextPost
-          ? "text-2xl sm:text-3xl font-semibold leading-tight text-foreground whitespace-pre-wrap break-words [&_a]:text-2xl sm:[&_a]:text-3xl [&_a]:font-semibold"
-          : "text-[15px] leading-relaxed text-foreground whitespace-pre-wrap [&_a]:text-[15px]";
-        return (
-        <div 
-          className={cn("px-4", isShortTextPost ? "py-6" : "py-4")}
+      {!hasMedia && (
+        <div
+          className={cn(typography.containerPaddingClass)}
           onClick={handleDoubleTap}
         >
-          {/* Bold title */}
-          <h2 className={titleClass}>
+          {/* Title */}
+          <h2 className={typography.titleClass}>
             {insight.title}
           </h2>
-          {/* Content with Facebook-like typography */}
-          <div className={contentClass}>
+          {/* Content with shared dynamic typography */}
+          <div className={typography.contentClass}>
             {isExpanded ? insight.content : contentPreview}
             {isTruncated && !isExpanded && (
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsExpanded(true);
                 }}
-                className="text-muted-foreground font-medium ml-1 hover:underline text-base"
+                className={typography.inlineActionClass}
               >
                 more
               </button>
@@ -351,17 +341,16 @@ export const InstagramPostMobile = memo(({
           {/* Double-tap heart animation for text posts */}
           {showDoubleTapHeart && (
             <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
-              <Heart 
-                className="w-24 h-24 text-red-500 fill-red-500 drop-shadow-lg" 
-                style={{ 
+              <Heart
+                className="w-24 h-24 text-red-500 fill-red-500 drop-shadow-lg"
+                style={{
                   animation: 'heartPulse 1s ease-out forwards'
                 }}
               />
             </div>
           )}
         </div>
-        );
-      })()}
+      )}
 
       {/* Action Bar */}
       <div className="flex items-center justify-between px-3 py-2">
