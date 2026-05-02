@@ -160,6 +160,9 @@ export const InstagramPostMobile = memo(({
   const wordLimit = hasMedia ? 30 : 70;
   const { truncated: contentPreview, isTruncated } = truncateByWords(insight.content, wordLimit);
 
+  // Shared Facebook-style dynamic font sizing (consistent across mobile/desktop)
+  const typography = usePostTypography(insight, { hasMedia });
+
   return (
     <article className="border-b border-border bg-background" ref={containerRef}>
       {/* Header */}
