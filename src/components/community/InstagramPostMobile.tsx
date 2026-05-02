@@ -356,7 +356,8 @@ export const InstagramPostMobile = memo(({
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Action Bar */}
       <div className="flex items-center justify-between px-3 py-2">
