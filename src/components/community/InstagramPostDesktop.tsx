@@ -166,6 +166,9 @@ export const InstagramPostDesktop = memo(({
   const wordLimit = hasMedia ? 30 : 80;
   const { truncated: contentPreview, isTruncated } = truncateByWords(insight.content, wordLimit);
 
+  // Shared Facebook-style dynamic font sizing (consistent across mobile/desktop)
+  const typography = usePostTypography(insight, { hasMedia });
+
   const categoryLabel = insight.category?.replace(/[-_]/g, ' ');
 
   return (
