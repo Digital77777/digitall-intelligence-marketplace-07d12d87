@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useMarketplace, MarketplaceListing } from '@/hooks/useMarketplace';
 import { AlibabaPreviewCard } from '@/components/marketplace/preview/AlibabaPreviewCard';
+import {
+  AlibabaPreviewCardSkeleton,
+  AlibabaPreviewFeedSkeleton,
+} from '@/components/marketplace/preview/AlibabaPreviewCardSkeleton';
 import { TierGate } from '@/components/tier/TierGate';
 import { SEOHead } from '@/components/SEOHead';
 import { Loader2 } from 'lucide-react';
@@ -77,35 +81,36 @@ export default function ListingPreviewFeedPage() {
       {/* Black background mimics Alibaba inter-card gap */}
       <div className="min-h-screen bg-black">
         {primaryLoading || !primary ? (
-          <div className="min-h-screen flex items-center justify-center bg-background">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
+          <AlibabaPreviewCardSkeleton />
         ) : (
-          <>
-            {/* Primary card with overlay top bar */}
-            <AlibabaPreviewCard listing={primary} showTopBar onBack={() => navigate(-1)} />
+          <AlibabaPreviewCard listing={primary} showTopBar onBack={() => navigate(-1)} />
+        )}
 
-            {/* Following cards */}
-            {feed.map((listing) => (
-              <div key={listing.id} className="mt-2">
-                <AlibabaPreviewCard listing={listing} />
-              </div>
-            ))}
+        {/* Following cards */}
+        {feed.map((listing) => (
+          <div key={listing.id} className="mt-2">
+            <AlibabaPreviewCard listing={listing} />
+          </div>
+        ))}
 
-            {/* Sentinel + loading */}
-            <div ref={sentinelRef} className="h-4" />
-            {loading && (
-              <div className="flex items-center justify-center py-6 text-white/70 text-sm gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading more...
-              </div>
-            )}
-            {!hasMore && feed.length > 0 && (
-              <div className="text-center py-8 text-white/50 text-xs">
-                You've reached the end
-              </div>
-            )}
-          </>
+        {/* Initial feed skeleton (no related cards loaded yet) */}
+        {feed.length === 0 && loading && !primaryLoading && (
+          <div className="mt-2">
+            <AlibabaPreviewFeedSkeleton count={3} />
+          </div>
+        )}
+
+        {/* Sentinel + load-more skeleton */}
+        <div ref={sentinelRef} className="h-4" />
+        {loading && feed.length > 0 && (
+          <div className="mt-2">
+            <AlibabaPreviewFeedSkeleton count={2} />
+          </div>
+        )}
+        {!hasMore && feed.length > 0 && (
+          <div className="text-center py-8 text-white/50 text-xs">
+            You've reached the end
+          </div>
         )}
       </div>
     </TierGate>
