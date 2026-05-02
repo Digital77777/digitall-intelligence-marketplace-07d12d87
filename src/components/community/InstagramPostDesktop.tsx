@@ -9,6 +9,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
+import { usePostTypography } from "./usePostTypography";
 
 interface InstagramPostDesktopProps {
   insight: CommunityInsight;
