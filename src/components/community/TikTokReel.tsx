@@ -152,7 +152,35 @@ export const TikTokReel = ({
     }
   };
 
-  const getInitials = (name: string | null) => {
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    const wasPlaying = !videoRef.current?.paused;
+    try {
+      setIsDownloading(true);
+      setDownloadProgress(0);
+      videoRef.current?.pause();
+      toast({ title: "Preparing download…", description: "Adding DIM watermark to your video." });
+      await downloadVideoWithWatermark(
+        reel.video_url,
+        `dim-reel-${reel.id.slice(0, 8)}`,
+        (r) => setDownloadProgress(Math.round(r * 100)),
+      );
+      toast({ title: "Download ready!", description: "Your watermarked video has been saved." });
+    } catch (err) {
+      console.error("Download failed", err);
+      toast({
+        title: "Download failed",
+        description: "This video can't be re-encoded in your browser. Try again or use a different browser.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
+      if (wasPlaying) videoRef.current?.play().catch(() => {});
+    }
+  };
+
+
     if (!name) return "U";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
