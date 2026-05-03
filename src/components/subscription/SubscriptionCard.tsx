@@ -98,11 +98,11 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             const tierName = tier.name.toLowerCase();
             if (!isCurrentTier && !isAdminEmail) {
               if (tierName === 'creator') {
-                window.open('https://paystack.shop/pay/xlgcwqb3jq', '_blank');
+                window.open('https://paystack.shop/pay/ts0e31g1c2', '_blank');
                 return;
               }
               if (tierName === 'career') {
-                window.open('https://paystack.shop/pay/p8i77ax7q3', '_blank');
+                window.open('https://paystack.shop/pay/zilqdln6c9', '_blank');
                 return;
               }
             }
