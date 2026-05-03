@@ -349,7 +349,25 @@ export const TikTokReel = ({
           </span>
         </button>
 
-        {/* Rotating music disc */}
+        {/* Download button (with DIM watermark) */}
+        <button
+          onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+          disabled={isDownloading}
+          className="flex flex-col items-center gap-1 active:scale-90 transition-transform disabled:opacity-70"
+        >
+          <div className="text-white p-0.5">
+            {isDownloading ? (
+              <Loader2 className="w-7 h-7 animate-spin" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            ) : (
+              <Download className="w-7 h-7" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            )}
+          </div>
+          <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            {isDownloading ? `${downloadProgress}%` : "Save"}
+          </span>
+        </button>
+
+
         <div className="mt-2">
           <div 
             className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg"
