@@ -273,6 +273,7 @@ const routeGroups: AppRoute[] = [
   { path: "/analytics", component: AnalyticsPage, protected: true },
   { path: "/support", component: SupportPage, protected: true },
   { path: "/subscription", component: SubscriptionPage, protected: true },
+  { path: "/payment-success", component: PaymentSuccessPage, protected: true },
   { path: "/referrals", component: ReferralPage, protected: true },
   { path: "/notification-settings", component: NotificationSettingsPage, protected: true },
   { path: "/install-pwa", component: InstallPWAPage },
