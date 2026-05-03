@@ -39,6 +39,8 @@ export const TikTokReel = ({
   const [isBuffering, setIsBuffering] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const [authorProfile, setAuthorProfile] = useState<{ 
     full_name: string | null; 
     avatar_url: string | null 
