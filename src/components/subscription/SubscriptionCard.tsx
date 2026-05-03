@@ -101,10 +101,12 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             if (!isCurrentTier && !isAdminEmail) {
               if (tierName === 'creator') {
                 window.open('https://paystack.shop/pay/ts0e31g1c2', '_blank');
+                navigate('/payment-success?tier=creator');
                 return;
               }
               if (tierName === 'career') {
                 window.open('https://paystack.shop/pay/zilqdln6c9', '_blank');
+                navigate('/payment-success?tier=career');
                 return;
               }
             }
