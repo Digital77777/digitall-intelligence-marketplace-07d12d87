@@ -9,8 +9,8 @@ const corsHeaders = {
 
 // Tier mapping based on Paystack payment links
 const PAYMENT_LINK_TO_TIER: Record<string, string> = {
-  "xlgcwqb3jq": "creator", // Creator tier payment link
-  "p8i77ax7q3": "career",  // Career tier payment link
+  "ts0e31g1c2": "creator", // Creator tier payment link
+  "zilqdln6c9": "career",  // Career tier payment link
 };
 
 serve(async (req: Request) => {
