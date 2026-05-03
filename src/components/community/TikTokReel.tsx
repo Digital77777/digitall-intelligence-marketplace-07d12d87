@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Bookmark, Share2, Plus, Music2, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, Plus, Music2, Loader2, Download } from "lucide-react";
+import { downloadVideoWithWatermark } from "@/lib/videoWatermark";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,8 @@ export const TikTokReel = ({
   const [isBuffering, setIsBuffering] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
   const [authorProfile, setAuthorProfile] = useState<{ 
     full_name: string | null; 
     avatar_url: string | null 
@@ -146,6 +149,34 @@ export const TikTokReel = ({
     } catch {
       navigator.clipboard.writeText(window.location.href);
       toast({ title: "Link copied!" });
+    }
+  };
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    const wasPlaying = !videoRef.current?.paused;
+    try {
+      setIsDownloading(true);
+      setDownloadProgress(0);
+      videoRef.current?.pause();
+      toast({ title: "Preparing download…", description: "Adding DIM watermark to your video." });
+      await downloadVideoWithWatermark(
+        reel.video_url,
+        `dim-reel-${reel.id.slice(0, 8)}`,
+        (r) => setDownloadProgress(Math.round(r * 100)),
+      );
+      toast({ title: "Download ready!", description: "Your watermarked video has been saved." });
+    } catch (err) {
+      console.error("Download failed", err);
+      toast({
+        title: "Download failed",
+        description: "This video can't be re-encoded in your browser. Try again or use a different browser.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+      setDownloadProgress(0);
+      if (wasPlaying) videoRef.current?.play().catch(() => {});
     }
   };
 
@@ -318,7 +349,25 @@ export const TikTokReel = ({
           </span>
         </button>
 
-        {/* Rotating music disc */}
+        {/* Download button (with DIM watermark) */}
+        <button
+          onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+          disabled={isDownloading}
+          className="flex flex-col items-center gap-1 active:scale-90 transition-transform disabled:opacity-70"
+        >
+          <div className="text-white p-0.5">
+            {isDownloading ? (
+              <Loader2 className="w-7 h-7 animate-spin" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            ) : (
+              <Download className="w-7 h-7" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
+            )}
+          </div>
+          <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
+            {isDownloading ? `${downloadProgress}%` : "Download"}
+          </span>
+        </button>
+
+
         <div className="mt-2">
           <div 
             className="w-10 h-10 rounded-lg overflow-hidden border-2 border-white/30 shadow-lg"
