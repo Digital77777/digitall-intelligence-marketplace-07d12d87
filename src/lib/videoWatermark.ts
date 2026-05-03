@@ -64,8 +64,11 @@ export async function downloadVideoWithWatermark(
 
   // Try to also capture audio from the video element
   try {
-    // @ts-expect-error captureStream on HTMLMediaElement
-    const audioStream: MediaStream | undefined = video.captureStream?.() || video.mozCaptureStream?.();
+    const v = video as HTMLVideoElement & {
+      captureStream?: () => MediaStream;
+      mozCaptureStream?: () => MediaStream;
+    };
+    const audioStream: MediaStream | undefined = v.captureStream?.() || v.mozCaptureStream?.();
     if (audioStream) {
       audioStream.getAudioTracks().forEach((t) => canvasStream.addTrack(t));
     }
