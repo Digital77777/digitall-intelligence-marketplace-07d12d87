@@ -27,6 +27,7 @@ import MarketplacePage from "./pages/MarketplacePage";
 import CommunityPage from "./pages/CommunityPage";
 import ReferralPage from "./pages/ReferralPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import LearningPaths from "./pages/LearningPaths";
 import MyActivityPage from "./pages/MyActivityPage";
 import MenuPage from "./pages/MenuPage";
