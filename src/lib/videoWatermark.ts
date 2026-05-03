@@ -58,9 +58,9 @@ export async function downloadVideoWithWatermark(
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas not supported");
 
-  // Capture canvas video stream
-  // @ts-expect-error captureStream not in older lib types
-  const canvasStream: MediaStream = canvas.captureStream(30);
+  const canvasStream: MediaStream = (canvas as HTMLCanvasElement & {
+    captureStream: (fps?: number) => MediaStream;
+  }).captureStream(30);
 
   // Try to also capture audio from the video element
   try {
