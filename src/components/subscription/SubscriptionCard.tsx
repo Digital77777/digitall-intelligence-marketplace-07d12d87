@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +47,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   onSelect,
   loading
 }) => {
+  const navigate = useNavigate();
   const features = Array.isArray(tier.features) ? tier.features : [];
   const isPopular = tier.name === 'creator';
 
@@ -99,10 +101,12 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             if (!isCurrentTier && !isAdminEmail) {
               if (tierName === 'creator') {
                 window.open('https://paystack.shop/pay/ts0e31g1c2', '_blank');
+                navigate('/payment-success?tier=creator');
                 return;
               }
               if (tierName === 'career') {
                 window.open('https://paystack.shop/pay/zilqdln6c9', '_blank');
+                navigate('/payment-success?tier=career');
                 return;
               }
             }

@@ -27,6 +27,7 @@ import MarketplacePage from "./pages/MarketplacePage";
 import CommunityPage from "./pages/CommunityPage";
 import ReferralPage from "./pages/ReferralPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import LearningPaths from "./pages/LearningPaths";
 import MyActivityPage from "./pages/MyActivityPage";
 import MenuPage from "./pages/MenuPage";
@@ -272,6 +273,7 @@ const routeGroups: AppRoute[] = [
   { path: "/analytics", component: AnalyticsPage, protected: true },
   { path: "/support", component: SupportPage, protected: true },
   { path: "/subscription", component: SubscriptionPage, protected: true },
+  { path: "/payment-success", component: PaymentSuccessPage, protected: true },
   { path: "/referrals", component: ReferralPage, protected: true },
   { path: "/notification-settings", component: NotificationSettingsPage, protected: true },
   { path: "/install-pwa", component: InstallPWAPage },
