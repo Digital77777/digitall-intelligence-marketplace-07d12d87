@@ -363,7 +363,7 @@ export const TikTokReel = ({
             )}
           </div>
           <span className="text-white text-xs font-semibold" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.5)' }}>
-            {isDownloading ? `${downloadProgress}%` : "Save"}
+            {isDownloading ? `${downloadProgress}%` : "Download"}
           </span>
         </button>
 
