@@ -47,6 +47,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   onSelect,
   loading
 }) => {
+  const navigate = useNavigate();
   const features = Array.isArray(tier.features) ? tier.features : [];
   const isPopular = tier.name === 'creator';
 
