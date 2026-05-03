@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Heart, MessageCircle, Bookmark, Share2, Plus, Music2, Loader2 } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, Plus, Music2, Loader2, Download } from "lucide-react";
+import { downloadVideoWithWatermark } from "@/lib/videoWatermark";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
