@@ -429,6 +429,8 @@ export const TikTokReel = ({
           </div>
         </div>
       </div>
+      {/* /Player frame */}
+      </div>
     </div>
   );
 };
