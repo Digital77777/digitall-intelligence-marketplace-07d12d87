@@ -199,37 +199,49 @@ export const TikTokReel = ({
   const username = authorProfile?.full_name?.toLowerCase().replace(/\s+/g, "_") || "user";
 
   return (
-    <div 
-      className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden"
+    <div
+      className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden md:flex md:items-center md:justify-center"
       onClick={handleTap}
     >
-      {/* Full-screen video */}
-      {!videoError ? (
-        <video
-          ref={videoRef}
-          src={reel.video_url}
-          poster={reel.thumbnail_url || undefined}
-          className="absolute inset-0 w-full h-full object-cover"
-          loop
-          playsInline
-          muted={isMuted}
-          autoPlay={isActive}
-          onWaiting={() => setIsBuffering(true)}
-          onPlaying={() => setIsBuffering(false)}
-          onCanPlay={() => setIsBuffering(false)}
-          onError={handleVideoError}
+      {/* Desktop: blurred backdrop using thumbnail for cinematic feel */}
+      {reel.thumbnail_url && (
+        <div
+          aria-hidden
+          className="hidden md:block absolute inset-0 bg-cover bg-center scale-110 blur-3xl opacity-40 pointer-events-none"
+          style={{ backgroundImage: `url(${reel.thumbnail_url})` }}
         />
-      ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
-          <p className="text-white/70 text-sm mb-2">Video unavailable</p>
-          <button 
-            onClick={(e) => { e.stopPropagation(); setVideoError(false); }}
-            className="text-white border border-white/30 px-4 py-2 rounded-lg text-sm"
-          >
-            Retry
-          </button>
-        </div>
       )}
+      <div className="hidden md:block absolute inset-0 bg-black/60 pointer-events-none" />
+
+      {/* Player frame: full-screen on mobile, constrained 9:16 card on desktop */}
+      <div className="relative w-full h-full md:w-auto md:h-[min(86vh,780px)] md:aspect-[9/16] md:rounded-2xl md:overflow-hidden md:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] md:ring-1 md:ring-white/10">
+        {/* Full-screen video */}
+        {!videoError ? (
+          <video
+            ref={videoRef}
+            src={reel.video_url}
+            poster={reel.thumbnail_url || undefined}
+            className="absolute inset-0 w-full h-full object-cover"
+            loop
+            playsInline
+            muted={isMuted}
+            autoPlay={isActive}
+            onWaiting={() => setIsBuffering(true)}
+            onPlaying={() => setIsBuffering(false)}
+            onCanPlay={() => setIsBuffering(false)}
+            onError={handleVideoError}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+            <p className="text-white/70 text-sm mb-2">Video unavailable</p>
+            <button
+              onClick={(e) => { e.stopPropagation(); setVideoError(false); }}
+              className="text-white border border-white/30 px-4 py-2 rounded-lg text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
       {/* Loading spinner */}
       {isBuffering && isActive && (
