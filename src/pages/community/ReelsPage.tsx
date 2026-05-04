@@ -280,7 +280,7 @@ const ReelsPage = () => {
       
       <div className="fixed inset-0 bg-black z-50">
         {/* Top Navigation - TikTok style */}
-        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-4 bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-4 md:pt-5 md:pb-3 md:px-6 bg-gradient-to-b from-black/60 to-transparent">
           <div className="flex items-center justify-between">
             {/* Back button */}
             <button
@@ -349,7 +349,7 @@ const ReelsPage = () => {
         {/* Mute button - bottom left */}
         <button
           onClick={() => setIsMuted(prev => !prev)}
-          className="absolute bottom-8 left-4 z-30 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white"
+          className="absolute bottom-8 left-4 md:bottom-6 md:left-6 z-30 p-2.5 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white transition-colors"
         >
           {isMuted ? (
             <VolumeX className="w-5 h-5" />
