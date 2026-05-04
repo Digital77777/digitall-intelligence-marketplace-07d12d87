@@ -280,7 +280,7 @@ const ReelsPage = () => {
       
       <div className="fixed inset-0 bg-black z-50">
         {/* Top Navigation - TikTok style */}
-        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-4 bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 z-30 pt-12 pb-4 px-4 md:pt-5 md:pb-3 md:px-6 bg-gradient-to-b from-black/60 to-transparent">
           <div className="flex items-center justify-between">
             {/* Back button */}
             <button
