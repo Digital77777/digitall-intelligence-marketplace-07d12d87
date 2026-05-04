@@ -375,158 +375,70 @@ export const InstagramPostDesktop = memo(({
         </div>
       )}
 
-      {/* Content Section */}
-      <div className="p-5">
-        {/* Author Row */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-9 w-9 border border-border">
-              <AvatarImage src={insight.profiles?.avatar_url || undefined} />
-              <AvatarFallback className="text-xs font-medium bg-muted">
-                {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-semibold leading-tight hover:underline cursor-pointer">
-                  {insight.profiles?.full_name || "Community Member"}
-                </span>
-                {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
-              </div>
-              <div className="flex items-center gap-1.5">
-                {insight.profiles?.headline && (
-                  <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                    {insight.profiles.headline}
-                  </span>
-                )}
-                {!insight.profiles?.headline && (
-                  <span className="text-xs text-muted-foreground">{timeAgo}</span>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            {categoryLabel && (
-              <Badge variant="secondary" className="text-[10px] font-medium px-2 py-0.5 capitalize">
-                {categoryLabel}
-              </Badge>
-            )}
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Facebook-style dynamic font sizing (shared logic) */}
-        {typography.isShortTextPost ? (
-          <div
-            className="mb-3 cursor-pointer"
-            onClick={handleDoubleClick}
-          >
-            <h3
-              className={cn(typography.titleClass, "cursor-pointer hover:text-primary transition-colors")}
-              onClick={handleViewPost}
-            >
-              {insight.title}
-            </h3>
-            <p className={typography.contentClass}>
-              {insight.content}
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Title */}
-            <h3
-              className="text-base font-semibold leading-snug mb-2 cursor-pointer hover:text-primary transition-colors line-clamp-2"
-              onClick={handleViewPost}
-            >
-              {insight.title}
-            </h3>
-
-            {/* Content Preview */}
-            <div className="mb-3">
-              <p className="text-sm text-muted-foreground leading-relaxed [&_a]:text-sm">
-                {isExpanded ? insight.content : contentPreview}
-              </p>
-              {isTruncated && !isExpanded && (
-                <button
-                  onClick={() => setIsExpanded(true)}
-                  className="text-sm font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
-                >
-                  Read more
-                </button>
-              )}
-            </div>
-
-            {/* Text-only post gets a subtle quote-style treatment */}
-            {!hasMedia && (
-              <div
-                className="mb-3 pl-4 border-l-2 border-primary/30 py-1 cursor-pointer"
-                onClick={handleDoubleClick}
-              >
-                <p className="text-sm italic text-muted-foreground/80 leading-relaxed line-clamp-3">
-                  {insight.content.substring(0, 150)}
-                </p>
-              </div>
-            )}
-          </>
-        )}
-
+      {/* Footer: stats + action bar */}
+      <div className={cn("px-6 pt-4 pb-3", hasMedia && "border-t border-border/50")}>
         {/* Engagement Stats */}
-        <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-          <span className="font-medium">{likesCount.toLocaleString()} likes</span>
-          <span>·</span>
-          <span>{(insight.views_count || 0).toLocaleString()} views</span>
-          {insight.profiles?.headline && (
-            <>
-              <span>·</span>
-              <span>{timeAgo}</span>
-            </>
-          )}
+        <div className="flex items-center justify-between text-[12px] text-muted-foreground mb-3">
+          <div className="flex items-center gap-2">
+            {likesCount > 0 && (
+              <div className="flex items-center gap-1.5">
+                <span className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-red-500/10">
+                  <Heart className="h-2.5 w-2.5 fill-red-500 text-red-500" />
+                </span>
+                <span className="font-medium">{likesCount.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span>{(insight.views_count || 0).toLocaleString()} views</span>
+          </div>
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-border -mx-5 mb-2" />
+        <div className="h-px bg-border/70 -mx-6 mb-1" />
 
         {/* Action Bar */}
-        <div className="flex items-center justify-between -mx-1">
-          <div className="flex items-center">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLikeClick}
+        <div className="flex items-center justify-around pt-1">
+          <Button
+            variant="ghost"
+            onClick={handleLikeClick}
+            className={cn(
+              "flex-1 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 h-10 rounded-lg font-medium",
+              isLiked && "text-red-500 hover:text-red-600"
+            )}
+          >
+            <Heart
               className={cn(
-                "gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3",
-                isLiked && "text-red-500 hover:text-red-600"
+                "h-[18px] w-[18px] transition-all",
+                isLiked && "fill-red-500 text-red-500"
               )}
-            >
-              <Heart 
-                className={cn(
-                  "h-[18px] w-[18px] transition-all",
-                  isLiked && "fill-red-500 text-red-500"
-                )}
-              />
-              <span className="text-xs font-medium">Like</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleViewPost}
-              className="gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3"
-            >
-              <MessageCircle className="h-[18px] w-[18px]" />
-              <span className="text-xs font-medium">Comment</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleViewPost}
-              className="gap-1.5 text-muted-foreground hover:text-foreground h-9 px-3"
-            >
-              <Eye className="h-[18px] w-[18px]" />
-              <span className="text-xs font-medium">View</span>
-            </Button>
-          </div>
+            />
+            <span className="text-[13px]">Like</span>
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleViewPost}
+            className="flex-1 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 h-10 rounded-lg font-medium"
+          >
+            <MessageCircle className="h-[18px] w-[18px]" />
+            <span className="text-[13px]">Comment</span>
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleViewPost}
+            className="flex-1 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 h-10 rounded-lg font-medium"
+          >
+            <Share2 className="h-[18px] w-[18px]" />
+            <span className="text-[13px]">Share</span>
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleViewPost}
+            className="flex-1 gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/60 h-10 rounded-lg font-medium"
+          >
+            <Eye className="h-[18px] w-[18px]" />
+            <span className="text-[13px]">View</span>
+          </Button>
         </div>
       </div>
 
