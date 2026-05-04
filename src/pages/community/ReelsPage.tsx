@@ -349,7 +349,7 @@ const ReelsPage = () => {
         {/* Mute button - bottom left */}
         <button
           onClick={() => setIsMuted(prev => !prev)}
-          className="absolute bottom-8 left-4 z-30 p-2 rounded-full bg-black/40 backdrop-blur-sm text-white"
+          className="absolute bottom-8 left-4 md:bottom-6 md:left-6 z-30 p-2.5 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white transition-colors"
         >
           {isMuted ? (
             <VolumeX className="w-5 h-5" />
