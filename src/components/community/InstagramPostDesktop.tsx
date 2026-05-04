@@ -173,12 +173,90 @@ export const InstagramPostDesktop = memo(({
 
   return (
     <article 
-      className="group border border-border rounded-xl bg-card overflow-hidden transition-all duration-300 hover:shadow-[0_8px_30px_-12px_hsl(var(--primary)/0.15)] hover:border-primary/20" 
+      className="group relative border border-border/60 rounded-2xl bg-card overflow-hidden transition-all duration-300 hover:shadow-[0_12px_40px_-16px_hsl(var(--primary)/0.18)] hover:border-border" 
       ref={containerRef}
     >
-      {/* Media Content - 16:10 aspect for a professional look */}
+      {/* Author Header — placed first for a professional editorial layout */}
+      <header className="flex items-start justify-between px-6 pt-5 pb-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <Avatar className="h-11 w-11 ring-1 ring-border shrink-0">
+            <AvatarImage src={insight.profiles?.avatar_url || undefined} />
+            <AvatarFallback className="text-sm font-semibold bg-muted">
+              {getInitials(insight.profiles?.full_name, insight.profiles?.email)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-[15px] font-semibold leading-tight hover:underline cursor-pointer truncate">
+                {insight.profiles?.full_name || "Community Member"}
+              </span>
+              {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
+            </div>
+            {insight.profiles?.headline && (
+              <span className="text-xs text-muted-foreground truncate max-w-[320px] leading-tight mt-0.5">
+                {insight.profiles.headline}
+              </span>
+            )}
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/80 mt-0.5">
+              <span>{timeAgo}</span>
+              {categoryLabel && (
+                <>
+                  <span aria-hidden>·</span>
+                  <span className="capitalize hover:text-primary cursor-pointer transition-colors">
+                    {categoryLabel}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <Button variant="ghost" size="icon" className="h-9 w-9 -mr-2 text-muted-foreground hover:text-foreground rounded-full shrink-0">
+          <MoreHorizontal className="h-[18px] w-[18px]" />
+        </Button>
+      </header>
+
+      {/* Text content above media — more natural reading order */}
+      <div className="px-6 pb-4">
+        {typography.isShortTextPost ? (
+          <div className="cursor-pointer py-2" onClick={handleDoubleClick}>
+            <h3
+              className={cn(typography.titleClass, "cursor-pointer hover:text-primary transition-colors")}
+              onClick={handleViewPost}
+            >
+              {insight.title}
+            </h3>
+            <p className={cn(typography.contentClass, "mt-2")}>
+              {insight.content}
+            </p>
+          </div>
+        ) : (
+          <>
+            <h3
+              className="text-[17px] font-semibold leading-snug mb-1.5 cursor-pointer hover:text-primary transition-colors line-clamp-2 tracking-tight"
+              onClick={handleViewPost}
+            >
+              {insight.title}
+            </h3>
+            <div>
+              <p className="text-[14.5px] text-foreground/80 leading-relaxed [&_a]:text-primary [&_a]:underline-offset-2 hover:[&_a]:underline">
+                {isExpanded ? insight.content : contentPreview}
+              </p>
+              {isTruncated && !isExpanded && (
+                <button
+                  onClick={() => setIsExpanded(true)}
+                  className="text-sm font-medium text-primary hover:text-primary/80 mt-1 transition-colors"
+                >
+                  Show more
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Media Content — full bleed, 16:10 aspect for a professional look */}
       {hasMedia && (
-        <div className="relative cursor-pointer overflow-hidden" onClick={handleDoubleClick}>
+        <div className="relative cursor-pointer overflow-hidden bg-muted/40" onClick={handleDoubleClick}>
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex">
               {mediaItems.map((media, index) => (
