@@ -35,6 +35,9 @@ import NotificationsPage from "./pages/NotificationsPage";
 
 // Learning - Lazy loaded (secondary pages)
 const FoundationPath = lazy(() => import("./pages/course/FoundationPath"));
+const PathDetailPage = lazy(() => import("./pages/learning/PathDetailPage"));
+const CourseMissionsPage = lazy(() => import("./pages/learning/CourseMissionsPage"));
+const MissionPage = lazy(() => import("./pages/learning/MissionPage"));
 const PracticalSkills = lazy(() => import("./pages/course/PracticalSkills"));
 const TechnicalDeveloper = lazy(() => import("./pages/course/TechnicalDeveloper"));
 const BusinessCareers = lazy(() => import("./pages/course/BusinessCareers"));
@@ -206,6 +209,9 @@ const routeGroups: AppRoute[] = [
 
   // Learning
   { path: "/learning-paths", component: LearningPaths, protected: true },
+  { path: "/learning-paths/:pathId", component: PathDetailPage, protected: true },
+  { path: "/learning-paths/:pathId/:courseId", component: CourseMissionsPage, protected: true },
+  { path: "/learning-paths/:pathId/:courseId/:missionId", component: MissionPage, protected: true },
   { path: "/course/foundation-path", component: FoundationPath, protected: true },
   { path: "/course/practical-skills", component: PracticalSkills, protected: true },
   { path: "/course/technical-developer", component: TechnicalDeveloper, protected: true },
