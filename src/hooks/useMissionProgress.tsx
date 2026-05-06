@@ -26,7 +26,7 @@ export const useMissionProgress = () => {
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("mission_progress")
       .select("*")
       .eq("user_id", user.id);
@@ -46,7 +46,7 @@ export const useMissionProgress = () => {
       output: string
     ) => {
       if (!user) return null;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("mission_progress")
         .upsert(
           {
