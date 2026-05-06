@@ -1472,6 +1472,48 @@ export type Database = {
           },
         ]
       }
+      mission_progress: {
+        Row: {
+          completed_at: string
+          course_id: string
+          created_at: string
+          id: string
+          mission_id: string
+          output: string | null
+          path_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          xp_awarded: number
+        }
+        Insert: {
+          completed_at?: string
+          course_id: string
+          created_at?: string
+          id?: string
+          mission_id: string
+          output?: string | null
+          path_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          xp_awarded?: number
+        }
+        Update: {
+          completed_at?: string
+          course_id?: string
+          created_at?: string
+          id?: string
+          mission_id?: string
+          output?: string | null
+          path_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          xp_awarded?: number
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
