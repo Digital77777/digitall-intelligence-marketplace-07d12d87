@@ -1,374 +1,154 @@
-
-import { BookOpen, Clock, Star, Users, ArrowRight, Play, Lock } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { useTier } from "@/contexts/TierContext";
+import { ArrowRight, Lock, Trophy, Sparkles } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { SEOHead } from "@/components/SEOHead";
+import { useTier } from "@/contexts/TierContext";
+import { STARTER_PATHS } from "@/data/starterMissionPaths";
+import { useMissionProgress } from "@/hooks/useMissionProgress";
+
+const LegacyPathsForUpperTiers = () => {
+  const navigate = useNavigate();
+  // For Creator/Career: keep showing existing course routes
+  const items = [
+    { id: "ai-product-design", title: "Designing Human-Centered AI", level: "Advanced" },
+    { id: "ai-entrepreneurship", title: "From Student to Founder", level: "Advanced" },
+    { id: "applied-ai-industry", title: "AI Specialist Tracks", level: "Advanced" },
+    { id: "responsible-ai", title: "Building AI for Good", level: "Advanced" },
+    { id: "advanced-technical-ai", title: "AI Research & Innovation", level: "Advanced" },
+    { id: "technical-developer", title: "Future AI Engineer", level: "Professional" },
+    { id: "business-careers", title: "AI for Work & Startups", level: "Professional" },
+  ];
+  return (
+    <section className="container mx-auto px-4 sm:px-6 py-10">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4">Premium Tier Paths</h2>
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {items.map((p) => (
+          <Card
+            key={p.id}
+            onClick={() => navigate(`/course/${p.id}`)}
+            className="p-4 cursor-pointer hover:shadow-card transition"
+          >
+            <Badge variant="secondary" className="text-xs mb-2">{p.level}</Badge>
+            <p className="font-semibold text-sm">{p.title}</p>
+          </Card>
+        ))}
+      </div>
+    </section>
+  );
+};
 
 const LearningPaths = () => {
   const navigate = useNavigate();
   const { tierName } = useTier();
-  
-  const paths = [
-    // Tier 1 Paths
-    {
-      id: "foundation-path",
-      title: "AI Basics for Everyone",
-      description: "Foundation path covering AI fundamentals, mathematics, Python programming, and industry applications",
-      duration: "8-12 weeks",
-      level: "Beginner",
-      students: 3241,
-      rating: 4.9,
-      image: "🎓",
-      lessons: 20,
-      skills: ["AI Fundamentals", "Mathematics", "Python", "Industry Applications"],
-      tier: 1,
-      tierName: "Starter"
-    },
-    {
-      id: "practical-skills",
-      title: "From Zero to Builder",
-      description: "Practical AI skills including prompt engineering, AI tools, no-code platforms, and data handling",
-      duration: "10-14 weeks",
-      level: "Beginner",
-      students: 2847,
-      rating: 4.8,
-      image: "🛠️",
-      lessons: 24,
-      skills: ["Prompt Engineering", "AI Tools", "No-Code Building", "Data Handling"],
-      tier: 1,
-      tierName: "Starter"
-    },
-    // Tier 2 Paths
-    {
-      id: "ai-product-design",
-      title: "Designing Human-Centered AI",
-      description: "Learn to design AI apps and tools that people love using with UX principles and human-AI interaction",
-      duration: "14-18 weeks",
-      level: "Advanced",
-      students: 1245,
-      rating: 4.9,
-      image: "🎨",
-      lessons: 28,
-      skills: ["AI UX Design", "Conversational Interfaces", "Visual Design", "User Testing"],
-      tier: 2,
-      tierName: "Creator"
-    },
-    {
-      id: "ai-entrepreneurship",
-      title: "From Student to Founder",
-      description: "Train to launch and lead AI-driven ventures with startup fundamentals and leadership skills",
-      duration: "14-18 weeks",
-      level: "Advanced",
-      students: 987,
-      rating: 4.8,
-      image: "💼",
-      lessons: 26,
-      skills: ["Startup Fundamentals", "Team Leadership", "Pitching", "Business Planning"],
-      tier: 2,
-      tierName: "Creator"
-    },
-    {
-      id: "applied-ai-industry",
-      title: "AI Specialist Tracks",
-      description: "Specialize in AI applications for healthcare, finance, or education with industry-specific projects",
-      duration: "16-20 weeks",
-      level: "Advanced",
-      students: 1432,
-      rating: 4.7,
-      image: "🏥",
-      lessons: 32,
-      skills: ["Healthcare AI", "Finance AI", "Education AI", "Industry Applications"],
-      tier: 2,
-      tierName: "Creator"
-    },
-    {
-      id: "responsible-ai",
-      title: "Building AI for Good",
-      description: "Handle AI bias, safety, and regulation with ethics, fairness, and policy frameworks",
-      duration: "12-16 weeks",
-      level: "Advanced",
-      students: 1156,
-      rating: 4.9,
-      image: "⚖️",
-      lessons: 24,
-      skills: ["AI Ethics", "Fairness", "Policy & Regulation", "Responsible Data"],
-      tier: 2,
-      tierName: "Creator"
-    },
-    {
-      id: "advanced-technical-ai",
-      title: "AI Research & Innovation",
-      description: "Go beyond using tools into AI research and innovation with advanced ML and cutting-edge research",
-      duration: "18-22 weeks",
-      level: "Advanced",
-      students: 876,
-      rating: 4.8,
-      image: "🔬",
-      lessons: 35,
-      skills: ["Advanced ML", "Reinforcement Learning", "LLMs", "Research Methods"],
-      tier: 2,
-      tierName: "Creator"
-    },
-    // Tier 3 Paths (existing intermediate paths)
-    {
-      id: "technical-developer",
-      title: "Future AI Engineer",
-      description: "Technical development path covering machine learning, deep learning, NLP, and computer vision",
-      duration: "16-20 weeks",
-      level: "Professional",
-      students: 1834,
-      rating: 4.7,
-      image: "⚡",
-      lessons: 30,
-      skills: ["Machine Learning", "Deep Learning", "NLP", "Computer Vision"],
-      tier: 3,
-      tierName: "Career"
-    },
-    {
-      id: "business-careers",
-      title: "AI for Work & Startups",
-      description: "Business-focused path covering productivity, marketing, product management, and entrepreneurship",
-      duration: "12-16 weeks",
-      level: "Professional",
-      students: 1487,
-      rating: 4.8,
-      image: "🚀",
-      lessons: 25,
-      skills: ["Business AI", "Marketing", "Product Management", "Entrepreneurship"],
-      tier: 3,
-      tierName: "Career"
-    }
-  ];
-
-  // Determine user's tier level
-  const getTierLevel = () => {
-    if (tierName === "starter") return 1;
-    if (tierName === "creator") return 2;
-    if (tierName === "career") return 3;
-    return 1; // Default to starter
-  };
-
-  const userTierLevel = getTierLevel();
-  const accessiblePaths = paths.filter(path => path.tier <= userTierLevel);
-  const lockedPaths = paths.filter(path => path.tier > userTierLevel);
-
-  const handleNavigate = (path: typeof paths[0]) => {
-    if (path.tier > userTierLevel) {
-      navigate("/subscription");
-    } else {
-      navigate(`/course/${path.id}`);
-    }
-  };
+  const { totalXp, pathStats, loading } = useMissionProgress();
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead 
-        title="Learning Paths - Structured AI Courses & Journeys"
-        description="Comprehensive AI learning paths from beginner to professional. Choose from Foundation, Technical Developer, Business Careers, and Practical Skills tracks."
-        keywords={["AI courses", "AI learning path", "AI training", "AI certification", "AI education programs", "machine learning courses"]}
+      <SEOHead
+        title="Learning Paths — Learn, Build, Earn"
+        description="Follow structured AI paths. Complete real missions. Build outputs. Unlock earning opportunities."
       />
-      
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 pt-16 sm:pt-20 pb-12 sm:pb-16">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6">
-              <span className="bg-gradient-ai bg-clip-text text-transparent">
-                Learning Paths
-              </span>
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-6 sm:mb-8 leading-relaxed px-2">
-              Structured journeys from complete beginner to AI professional - {tierName === "starter" ? "Starter" : tierName === "creator" ? "Creator & Starter" : "All"} tier paths available
-            </p>
-            <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 text-xs sm:text-sm text-muted-foreground">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                <span>{accessiblePaths.reduce((acc, p) => acc + p.lessons, 0)}+ Lessons</span>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Users className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                <span>{accessiblePaths.reduce((acc, p) => acc + p.students, 0).toLocaleString()}+ Students</span>
-              </div>
-              <div className="flex items-center gap-1 sm:gap-2">
-                <Star className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                <span>4.8 Average Rating</span>
+
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/10" />
+        <div className="relative container mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="max-w-2xl">
+              <Badge className="mb-3 bg-primary/15 text-primary border-primary/20">
+                <Sparkles className="h-3 w-3 mr-1" /> Mission-Based Learning
+              </Badge>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
+                Pick a path. <span className="text-primary">Complete missions.</span> Earn real outcomes.
+              </h1>
+              <p className="text-muted-foreground mt-3 text-sm sm:text-base">
+                Each mission = Learn → Do → Output → Reward. No passive watching. Build something every step.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 bg-card border rounded-lg px-4 py-3 shadow-sm">
+              <Trophy className="h-5 w-5 text-warning" />
+              <div>
+                <div className="text-xs text-muted-foreground">Total XP</div>
+                <div className="font-bold text-lg leading-none">{loading ? "—" : totalXp}</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Accessible Learning Paths Grid */}
-      {accessiblePaths.length > 0 && (
-        <section className="py-12 sm:py-16">
-          <div className="container mx-auto px-4 sm:px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center">Your Learning Paths</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-              {accessiblePaths.map((path) => (
-                <Card key={path.id} className="group hover:shadow-ai transition-all duration-300 border-border/50">
-                  <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">{path.image}</div>
-                      <Badge variant="secondary" className="text-xs">
-                        {path.level}
+      {/* 6 Paths Grid */}
+      <section className="container mx-auto px-4 sm:px-6 py-8 sm:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {STARTER_PATHS.map((path, idx) => {
+            const stats = pathStats(path.id);
+            const locked = idx > 0 && stats.completed === 0 && false; // all unlocked for now
+            return (
+              <Card
+                key={path.id}
+                onClick={() => !locked && navigate(`/learning-paths/${path.id}`)}
+                className={`group relative overflow-hidden cursor-pointer border hover:shadow-elevation transition-all ${
+                  locked ? "opacity-60" : ""
+                }`}
+              >
+                <div className={`h-1.5 bg-gradient-to-r ${path.gradient}`} />
+                <div className="p-4 sm:p-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`text-3xl w-12 h-12 rounded-lg bg-gradient-to-br ${path.gradient} flex items-center justify-center shadow-sm`}>
+                      <span className="drop-shadow">{path.emoji}</span>
+                    </div>
+                    {locked ? (
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Badge variant="outline" className="text-[10px]">
+                        {path.courses.length} courses
                       </Badge>
-                    </div>
-                    <CardTitle className="text-lg sm:text-xl group-hover:text-primary transition-colors">
-                      {path.title}
-                    </CardTitle>
-                    <CardDescription className="text-muted-foreground text-sm sm:text-base">
-                      {path.description}
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
-                    <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                      {path.skills.map((skill) => (
-                        <Badge key={skill} variant="outline" className="text-xs">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm text-muted-foreground">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>{path.duration}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span>{path.lessons} lessons</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
-                        <span>{path.rating}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 pt-2">
-                      <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground">
-                        <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>{path.students.toLocaleString()} students</span>
-                      </div>
-                      <Button 
-                        className="group/btn w-full sm:w-auto text-sm"
-                        onClick={() => handleNavigate(path)}
-                      >
-                        <Play className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                        Start Learning
-                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+                    )}
+                  </div>
+                  <h3 className="font-bold text-base sm:text-lg leading-tight mb-1">
+                    {path.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {path.description}
+                  </p>
 
-      {/* Locked Learning Paths Grid */}
-      {lockedPaths.length > 0 && tierName !== "starter" && (
-        <section className="py-12 sm:py-16 bg-muted/30">
-          <div className="container mx-auto px-4 sm:px-6">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-center">Upgrade to Unlock More</h2>
-            <p className="text-center text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">
-              Get access to advanced paths with {lockedPaths[0].tierName} tier or higher
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
-              {lockedPaths.map((path) => (
-                <div key={path.id} className="relative">
-                  <Card className="group transition-all duration-300 border-border/50 opacity-60">
-                    <CardHeader className="pb-3 sm:pb-4 p-4 sm:p-6">
-                      <div className="flex items-start justify-between">
-                        <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">{path.image}</div>
-                        <Badge variant="secondary" className="text-xs">
-                          {path.level}
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-lg sm:text-xl">
-                        {path.title}
-                      </CardTitle>
-                      <CardDescription className="text-muted-foreground text-sm sm:text-base">
-                        {path.description}
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6 pt-0">
-                      <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                        {path.skills.map((skill) => (
-                          <Badge key={skill} variant="outline" className="text-xs">
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm text-muted-foreground">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span>{path.duration}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span>{path.lessons} lessons</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
-                          <span>{path.rating}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  
-                  {/* Lock Overlay */}
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-3 sm:gap-4 p-4 sm:p-6">
-                    <Lock className="h-10 w-10 sm:h-12 sm:w-12 text-primary" />
-                    <div className="text-center">
-                      <p className="font-semibold text-base sm:text-lg mb-1 sm:mb-2">
-                        {path.tierName} Tier Required
-                      </p>
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
-                        Upgrade to access this advanced learning path
-                      </p>
-                      <Button 
-                        onClick={() => navigate("/subscription")}
-                        className="w-full sm:w-auto text-sm"
-                      >
-                        Upgrade Now
-                        <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
-                      </Button>
+                  <div className="space-y-1.5 mb-3">
+                    <div className="flex justify-between text-[11px] text-muted-foreground">
+                      <span>Progress</span>
+                      <span>{stats.completed}/{stats.total} missions</span>
                     </div>
+                    <Progress value={stats.pct} className="h-1.5" />
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-success font-medium truncate pr-2">
+                      → {path.outcome}
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-primary group-hover:translate-x-1 transition" />
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* CTA Section */}
-      <section className="py-12 sm:py-16 bg-gradient-to-r from-primary/5 to-accent/5">
-        <div className="container mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Ready to Start Your AI Journey?</h2>
-          <p className="text-muted-foreground mb-6 sm:mb-8 max-w-2xl mx-auto text-sm sm:text-base px-2">
-            Join thousands of students who are already mastering AI and building the future
-          </p>
-          <Button 
-            size="lg" 
-            className="bg-gradient-ai text-white hover:opacity-90 w-full sm:w-auto text-sm sm:text-base"
-            onClick={() => navigate(lockedPaths.length > 0 ? "/subscription" : "/")}
-          >
-            {lockedPaths.length > 0 ? "Upgrade Your Plan" : "View Subscription"}
-            <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 ml-2" />
-          </Button>
+              </Card>
+            );
+          })}
         </div>
+      </section>
+
+      {/* Premium tier paths preserved */}
+      {tierName && tierName !== "starter" && <LegacyPathsForUpperTiers />}
+
+      {/* CTA */}
+      <section className="container mx-auto px-4 sm:px-6 pb-16">
+        <Card className="p-6 sm:p-8 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/20 text-center">
+          <h3 className="text-xl sm:text-2xl font-bold mb-2">Want bigger missions?</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Unlock Creator and Career tier paths with deeper specialisations.
+          </p>
+          <Button onClick={() => navigate("/subscription")}>
+            View Subscription Tiers <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </Card>
       </section>
     </div>
   );
