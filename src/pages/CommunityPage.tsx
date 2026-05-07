@@ -396,9 +396,9 @@ const CommunityPage = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="max-w-4xl mx-auto">
           {/* Main Content Area */}
-          <div className="lg:col-span-3 max-w-4xl">
+          <div>
             {/* Search and Filters */}
             <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <div className="relative flex-1">
@@ -682,7 +682,7 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              <InstagramFeed items={filteredInsights} isLoading={insightsLoading} isFetchingMore={isFetchingNextPage} hasMore={!!hasNextPage} onLoadMore={handleLoadMoreInsights} type="insight" onLikeClick={handleLikeInsight} onViewClick={handleInsightView} onVideoTap={handleVideoTap} getInitials={getInitials} hideScrollToTop emptyState={<Card className="mx-0 sm:mx-0">
+              <InstagramFeed items={filteredInsights} isLoading={insightsLoading} isFetchingMore={isFetchingNextPage} hasMore={!!hasNextPage} onLoadMore={handleLoadMoreInsights} type="insight" onLikeClick={handleLikeInsight} onViewClick={handleInsightView} onVideoTap={handleVideoTap} getInitials={getInitials} onRefresh={handleRefreshInsights} hasNewContent={hasNewContent} newContentCount={newContentCount} emptyState={<Card className="mx-0 sm:mx-0">
                     <CardContent className="p-8 sm:p-12 text-center">
                       <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
@@ -695,51 +695,6 @@ const CommunityPage = () => {
                   </Card>} />
               </TabsContent>
             </Tabs>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Community Stats */}
-            <Card className="shadow-sm relative" ref={statsCardRef}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold">Community Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="p-1.5 bg-primary/10 rounded-md">
-                      <Users className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm font-medium">Active Members</span>
-                  </div>
-                  <span className="font-bold text-lg">{stats?.activeMembers || 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="p-1.5 bg-primary/10 rounded-md">
-                      <MessageCircle className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm font-medium">Topics</span>
-                  </div>
-                  <span className="font-bold text-lg">{stats?.topicsToday || 0}</span>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <div className="p-1.5 bg-primary/10 rounded-md">
-                      <Calendar className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm font-medium">Events</span>
-                  </div>
-                  <span className="font-bold text-lg">{stats?.eventsThisWeek || 0}</span>
-                </div>
-              </CardContent>
-              
-              {/* Scroll to Top Button positioned at bottom-right of Stats card */}
-              <div className="absolute -bottom-3 -right-3">
-                <ScrollToTopButton position="relative" onRefresh={handleRefreshInsights} hasNewContent={hasNewContent} newContentCount={newContentCount} />
-              </div>
-            </Card>
-
           </div>
         </div>
       </div>
