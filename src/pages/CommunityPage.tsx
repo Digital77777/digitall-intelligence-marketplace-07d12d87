@@ -160,7 +160,9 @@ const CommunityPage = () => {
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
-    refetch: refetchInsights
+    refetch: refetchInsights,
+    isError: insightsIsError,
+    error: insightsError
   } = useInfiniteInsights(searchQuery);
 
   // Flatten all pages of insights into a single array
@@ -395,8 +397,8 @@ const CommunityPage = () => {
       </section>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12">
-        <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-2xl mx-auto">
           {/* Main Content Area */}
           <div>
             {/* Search and Filters */}
@@ -682,7 +684,7 @@ const CommunityPage = () => {
                 </Button>
               </div>
 
-              <InstagramFeed items={filteredInsights} isLoading={insightsLoading} isFetchingMore={isFetchingNextPage} hasMore={!!hasNextPage} onLoadMore={handleLoadMoreInsights} type="insight" onLikeClick={handleLikeInsight} onViewClick={handleInsightView} onVideoTap={handleVideoTap} getInitials={getInitials} onRefresh={handleRefreshInsights} hasNewContent={hasNewContent} newContentCount={newContentCount} emptyState={<Card className="mx-0 sm:mx-0">
+              <InstagramFeed items={filteredInsights} isLoading={insightsLoading} isFetchingMore={isFetchingNextPage} hasMore={!!hasNextPage} onLoadMore={handleLoadMoreInsights} type="insight" onLikeClick={handleLikeInsight} onViewClick={handleInsightView} onVideoTap={handleVideoTap} getInitials={getInitials} onRefresh={handleRefreshInsights} hasNewContent={hasNewContent} newContentCount={newContentCount} isError={insightsIsError} errorMessage={insightsError instanceof Error ? insightsError.message : undefined} onRetry={handleLoadMoreInsights} emptyState={<Card className="mx-0 sm:mx-0">
                     <CardContent className="p-8 sm:p-12 text-center">
                       <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                       <h3 className="text-lg font-semibold mb-2">No insights yet</h3>
