@@ -740,22 +740,6 @@ const CommunityPage = () => {
               </div>
             </Card>
 
-            {/* Continuation feed that auto-loads after stats card is visible */}
-            {activeTab === "insights" && filteredInsights.length > 0 && (
-              <ContinuationFeed
-                items={filteredInsights}
-                triggerRef={statsCardRef}
-                delayMs={2000}
-                onLikeClick={handleLikeInsight}
-                onViewClick={handleInsightView}
-                onVideoTap={handleVideoTap}
-                getInitials={getInitials}
-                fetchNextPage={fetchNextPage}
-                hasNextPage={hasNextPage}
-                isFetchingNextPage={isFetchingNextPage}
-              />
-            )}
-
           </div>
         </div>
       </div>
