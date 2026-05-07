@@ -397,8 +397,8 @@ const CommunityPage = () => {
       </section>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12">
-        <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="max-w-2xl mx-auto">
           {/* Main Content Area */}
           <div>
             {/* Search and Filters */}
