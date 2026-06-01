@@ -45,6 +45,7 @@ const ReelsPage = () => {
   
   // Comments overlay state
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
   const [selectedInsightId, setSelectedInsightId] = useState<string | null>(null);
   const [commentsCounts, setCommentsCounts] = useState<Record<string, number>>({});
   
