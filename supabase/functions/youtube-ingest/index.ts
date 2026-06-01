@@ -23,6 +23,31 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require auth
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'You must be signed in to add a video' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const userClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    )
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token)
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: 'Invalid session — please sign in again' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    const userId = claimsData.claims.sub as string
+
     const { url } = await req.json().catch(() => ({ url: '' }))
     if (typeof url !== 'string' || url.length === 0 || url.length > 500) {
       return new Response(JSON.stringify({ error: 'Invalid URL' }), {
@@ -79,6 +104,7 @@ Deno.serve(async (req) => {
         thumbnail: meta.thumbnail_url ?? `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`,
         is_short: isShort,
         like_count: 0,
+        user_id: userId,
       })
       .select()
       .single()

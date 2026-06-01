@@ -133,7 +133,7 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
       return (data || []).map((v: any) => ({
         id: `yt-${v.id}`,
         insight_id: v.id,
-        user_id: v.id, // no owner — use video id as a stable placeholder
+        user_id: v.user_id || v.id,
         video_url: v.url,
         thumbnail_url: v.thumbnail,
         title: v.title || v.author || "YouTube video",
