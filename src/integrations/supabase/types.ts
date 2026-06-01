@@ -2332,6 +2332,7 @@ export type Database = {
           thumbnail: string | null
           title: string | null
           url: string
+          user_id: string | null
           youtube_id: string
         }
         Insert: {
@@ -2343,6 +2344,7 @@ export type Database = {
           thumbnail?: string | null
           title?: string | null
           url: string
+          user_id?: string | null
           youtube_id: string
         }
         Update: {
@@ -2354,6 +2356,7 @@ export type Database = {
           thumbnail?: string | null
           title?: string | null
           url?: string
+          user_id?: string | null
           youtube_id?: string
         }
         Relationships: []
