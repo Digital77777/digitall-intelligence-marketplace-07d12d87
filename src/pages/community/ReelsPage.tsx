@@ -397,6 +397,8 @@ const ReelsPage = () => {
             insightId={selectedInsightId}
           />
         )}
+
+        <YouTubeUploadModal open={youtubeModalOpen} onOpenChange={setYoutubeModalOpen} />
       </div>
     </>
   );
