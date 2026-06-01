@@ -348,6 +348,15 @@ const ReelsPage = () => {
           </div>
         </div>
 
+        {/* Floating "+" to add YouTube link - top-left of feed */}
+        <button
+          onClick={() => setYoutubeModalOpen(true)}
+          className="absolute top-24 left-4 md:top-20 md:left-6 z-30 p-3 rounded-full bg-white text-black shadow-lg hover:scale-105 active:scale-95 transition-transform"
+          aria-label="Add YouTube video"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+
         {/* Mute button - bottom left */}
         <button
           onClick={() => setIsMuted(prev => !prev)}
