@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
@@ -120,17 +120,44 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
     refetchOnWindowFocus: false,
   });
 
+  // Fetch YouTube videos shared into the videos table
+  const { data: youtubeVideos } = useQuery({
+    queryKey: ["youtube-videos-for-reels"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("videos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return (data || []).map((v: any) => ({
+        id: `yt-${v.id}`,
+        insight_id: v.id,
+        user_id: v.id, // no owner — use video id as a stable placeholder
+        video_url: v.url,
+        thumbnail_url: v.thumbnail,
+        title: v.title || v.author || "YouTube video",
+        created_at: v.created_at,
+        likes_count: v.like_count || 0,
+        views_count: 0,
+      })) as Reel[];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
   // Flatten and merge reels
   const allReels = useMemo(() => {
     const reels = reelsData?.pages.flatMap(page => page.reels) || [];
     const insightReels = insightsData?.pages.flatMap(page => page.reels) || [];
-    
+    const ytReels = youtubeVideos || [];
+
     // Deduplicate - prefer community_reels entries
     const reelUrls = new Set(reels.map(r => r.video_url));
     const uniqueInsightVideos = insightReels.filter(v => !reelUrls.has(v.video_url));
-    
-    return [...reels, ...uniqueInsightVideos];
-  }, [reelsData, insightsData]);
+
+    // YouTube videos go to the top (newest uploads first)
+    return [...ytReels, ...reels, ...uniqueInsightVideos];
+  }, [reelsData, insightsData, youtubeVideos]);
 
   // Find initial index based on video URL or reel ID
   const initialIndex = useMemo(() => {

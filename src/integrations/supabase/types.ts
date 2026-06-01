@@ -2322,6 +2322,42 @@ export type Database = {
           },
         ]
       }
+      videos: {
+        Row: {
+          author: string | null
+          created_at: string
+          id: string
+          is_short: boolean
+          like_count: number
+          thumbnail: string | null
+          title: string | null
+          url: string
+          youtube_id: string
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          id?: string
+          is_short?: boolean
+          like_count?: number
+          thumbnail?: string | null
+          title?: string | null
+          url: string
+          youtube_id: string
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          id?: string
+          is_short?: boolean
+          like_count?: number
+          thumbnail?: string | null
+          title?: string | null
+          url?: string
+          youtube_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_profiles: {

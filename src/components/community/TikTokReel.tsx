@@ -215,33 +215,61 @@ export const TikTokReel = ({
 
       {/* Player frame: full-screen on mobile, constrained 9:16 card on desktop */}
       <div className="relative w-full h-full md:w-auto md:h-[min(86vh,780px)] md:aspect-[9/16] md:rounded-2xl md:overflow-hidden md:shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] md:ring-1 md:ring-white/10">
-        {/* Full-screen video */}
-        {!videoError ? (
-          <video
-            ref={videoRef}
-            src={reel.video_url}
-            poster={reel.thumbnail_url || undefined}
-            className="absolute inset-0 w-full h-full object-cover"
-            loop
-            playsInline
-            muted={isMuted}
-            autoPlay={isActive}
-            onWaiting={() => setIsBuffering(true)}
-            onPlaying={() => setIsBuffering(false)}
-            onCanPlay={() => setIsBuffering(false)}
-            onError={handleVideoError}
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
-            <p className="text-white/70 text-sm mb-2">Video unavailable</p>
-            <button
-              onClick={(e) => { e.stopPropagation(); setVideoError(false); }}
-              className="text-white border border-white/30 px-4 py-2 rounded-lg text-sm"
-            >
-              Retry
-            </button>
-          </div>
-        )}
+        {/* Full-screen video (YouTube iframe or native <video>) */}
+        {(() => {
+          const ytMatch = reel.video_url?.match(
+            /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+          );
+          if (ytMatch) {
+            const ytId = ytMatch[1];
+            const params = new URLSearchParams({
+              autoplay: isActive ? "1" : "0",
+              mute: isMuted ? "1" : "0",
+              controls: "1",
+              rel: "0",
+              modestbranding: "1",
+              playsinline: "1",
+              loop: "1",
+              playlist: ytId,
+            });
+            return (
+              <iframe
+                key={`${ytId}-${isActive}`}
+                src={`https://www.youtube-nocookie.com/embed/${ytId}?${params.toString()}`}
+                className="absolute inset-0 w-full h-full"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                title={reel.title || "YouTube video"}
+              />
+            );
+          }
+          return !videoError ? (
+            <video
+              ref={videoRef}
+              src={reel.video_url}
+              poster={reel.thumbnail_url || undefined}
+              className="absolute inset-0 w-full h-full object-cover"
+              loop
+              playsInline
+              muted={isMuted}
+              autoPlay={isActive}
+              onWaiting={() => setIsBuffering(true)}
+              onPlaying={() => setIsBuffering(false)}
+              onCanPlay={() => setIsBuffering(false)}
+              onError={handleVideoError}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black">
+              <p className="text-white/70 text-sm mb-2">Video unavailable</p>
+              <button
+                onClick={(e) => { e.stopPropagation(); setVideoError(false); }}
+                className="text-white border border-white/30 px-4 py-2 rounded-lg text-sm"
+              >
+                Retry
+              </button>
+            </div>
+          );
+        })()}
 
       {/* Loading spinner */}
       {isBuffering && isActive && (
