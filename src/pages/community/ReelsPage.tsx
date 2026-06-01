@@ -8,6 +8,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { TikTokReelsSkeleton } from "@/components/community/TikTokReelsSkeleton";
 import { TikTokReel } from "@/components/community/TikTokReel";
 import { CommentsOverlay } from "@/components/community/CommentsOverlay";
+import { YouTubeUploadModal } from "@/components/community/YouTubeUploadModal";
 import { cn } from "@/lib/utils";
 
 const ReelsPage = () => {
