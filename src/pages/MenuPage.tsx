@@ -130,6 +130,7 @@ const MenuPage = () => {
     { icon: BookOpen, label: "Learning Paths", path: "/learning-paths", color: "text-amber-600", description: "Courses & tutorials" },
     { icon: Brain, label: "AI Tools", path: "/ai-tools", color: "text-purple-600", description: "AI-powered tools" },
     { icon: Calendar, label: "Events", path: "/community/browse-events", color: "text-red-500", description: "Upcoming events" },
+    { icon: Sparkles, label: "Growth Hub", path: "/growth", color: "text-fuchsia-500", description: "XP, quests, partner & wins" },
     { icon: Gift, label: "Programs & Rewards", path: "/referrals", color: "text-pink-500", description: "Earn rewards" },
     { icon: Heart, label: "Wishlist", path: "/marketplace/wishlist", color: "text-rose-600", description: "Saved items" },
     { icon: Trophy, label: "Challenges", path: "/challenge/1", color: "text-yellow-600", description: "Compete & win" },
