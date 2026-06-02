@@ -1554,6 +1554,7 @@ export type Database = {
           github_url: string | null
           headline: string | null
           id: string
+          level_slug: string
           linkedin_url: string | null
           location: string | null
           skills: string[] | null
@@ -1561,6 +1562,8 @@ export type Database = {
           updated_at: string
           user_id: string
           website: string | null
+          xp_total: number
+          xp_week: number
         }
         Insert: {
           avatar_url?: string | null
@@ -1571,6 +1574,7 @@ export type Database = {
           github_url?: string | null
           headline?: string | null
           id?: string
+          level_slug?: string
           linkedin_url?: string | null
           location?: string | null
           skills?: string[] | null
@@ -1578,6 +1582,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           website?: string | null
+          xp_total?: number
+          xp_week?: number
         }
         Update: {
           avatar_url?: string | null
@@ -1588,6 +1594,7 @@ export type Database = {
           github_url?: string | null
           headline?: string | null
           id?: string
+          level_slug?: string
           linkedin_url?: string | null
           location?: string | null
           skills?: string[] | null
@@ -1595,43 +1602,57 @@ export type Database = {
           updated_at?: string
           user_id?: string
           website?: string | null
+          xp_total?: number
+          xp_week?: number
         }
         Relationships: []
       }
       quests: {
         Row: {
+          badge_slug: string | null
+          career_score_points: number
           category: string
           created_at: string
           description: string
           difficulty: string | null
+          event_key: string | null
           icon: string | null
           id: string
           is_active: boolean
           points_reward: number
+          reputation_points: number
           requirements: Json | null
           title: string
         }
         Insert: {
+          badge_slug?: string | null
+          career_score_points?: number
           category: string
           created_at?: string
           description: string
           difficulty?: string | null
+          event_key?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
           points_reward?: number
+          reputation_points?: number
           requirements?: Json | null
           title: string
         }
         Update: {
+          badge_slug?: string | null
+          career_score_points?: number
           category?: string
           created_at?: string
           description?: string
           difficulty?: string | null
+          event_key?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
           points_reward?: number
+          reputation_points?: number
           requirements?: Json | null
           title?: string
         }
@@ -1691,6 +1712,36 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string | null
+          landing_path: string | null
+          referral_code: string
+          referrer_user_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_path?: string | null
+          referral_code: string
+          referrer_user_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          landing_path?: string | null
+          referral_code?: string
+          referrer_user_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       referral_contests: {
         Row: {
           contest_entry_date: string | null
@@ -1729,33 +1780,45 @@ export type Database = {
       }
       referrals: {
         Row: {
+          activated_at: string | null
+          click_count: number
           completed_at: string | null
           created_at: string
+          first_clicked_at: string | null
           id: string
           referral_code: string
           referred_email: string
           referred_user_id: string | null
           referrer_id: string
+          revenue_attributed: number
           status: string
         }
         Insert: {
+          activated_at?: string | null
+          click_count?: number
           completed_at?: string | null
           created_at?: string
+          first_clicked_at?: string | null
           id?: string
           referral_code: string
           referred_email: string
           referred_user_id?: string | null
           referrer_id: string
+          revenue_attributed?: number
           status?: string
         }
         Update: {
+          activated_at?: string | null
+          click_count?: number
           completed_at?: string | null
           created_at?: string
+          first_clicked_at?: string | null
           id?: string
           referral_code?: string
           referred_email?: string
           referred_user_id?: string | null
           referrer_id?: string
+          revenue_attributed?: number
           status?: string
         }
         Relationships: []
@@ -2020,6 +2083,54 @@ export type Database = {
           name?: string
           price?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      success_stories: {
+        Row: {
+          amount: number | null
+          body: string | null
+          created_at: string
+          currency: string | null
+          id: string
+          likes_count: number
+          linked_id: string | null
+          media_url: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          body?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          likes_count?: number
+          linked_id?: string | null
+          media_url?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          body?: string | null
+          created_at?: string
+          currency?: string | null
+          id?: string
+          likes_count?: number
+          linked_id?: string | null
+          media_url?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -2361,6 +2472,36 @@ export type Database = {
         }
         Relationships: []
       }
+      xp_events: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          metadata: Json
+          source: string
+          source_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          source: string
+          source_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          metadata?: Json
+          source?: string
+          source_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       public_profiles: {
@@ -2416,6 +2557,20 @@ export type Database = {
       }
     }
     Functions: {
+      award_quest_event: {
+        Args: { p_event_key: string; p_metadata?: Json; p_user: string }
+        Returns: undefined
+      }
+      award_xp: {
+        Args: {
+          p_amount: number
+          p_metadata?: Json
+          p_source: string
+          p_source_id?: string
+          p_user: string
+        }
+        Returns: string
+      }
       check_current_user_admin_status: {
         Args: never
         Returns: {
