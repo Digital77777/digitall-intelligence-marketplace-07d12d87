@@ -99,7 +99,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Earn points and perks for every friend who signs up and activates their account. Grow the community, grow your rewards.',
       badge: 'Active',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/programs/referral-rewards')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/growth/partner')}>
           Share Link
         </Button>
       )
@@ -121,7 +121,7 @@ export const LoyaltyProgramsSection = () => {
       description: 'Complete gamified tasks like "Upload first project," "Invite 3 friends," or "Complete 3 lessons" to unlock special rewards.',
       badge: 'New',
       action: (
-        <Button variant="outline" size="sm" onClick={() => navigate('/programs/quests')}>
+        <Button variant="outline" size="sm" onClick={() => navigate('/growth/quests')}>
           View Quests
         </Button>
       )

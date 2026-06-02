@@ -32,6 +32,7 @@ import { ScrollToTopButton } from "@/components/community/ScrollToTopButton";
 import { ContinuationFeed } from "@/components/community/ContinuationFeed";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
+import { SuccessWallStrip } from "@/components/growth/SuccessWallStrip";
 
 // Event category configuration matching BrowseEventsPage
 const EVENT_CATEGORIES = [{
@@ -399,6 +400,9 @@ const CommunityPage = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="max-w-2xl mx-auto">
+          <div className="mb-6">
+            <SuccessWallStrip />
+          </div>
           {/* Main Content Area */}
           <div>
             {/* Search and Filters */}

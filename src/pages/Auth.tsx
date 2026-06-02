@@ -28,6 +28,23 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const isRecoveryFromUrl = searchParams.get('type') === 'recovery';
   const isRecovery = isRecoveryFromUrl || isPasswordRecovery;
+  const refCode = searchParams.get('ref');
+
+  // Track referral click once per session
+  useEffect(() => {
+    if (!refCode) return;
+    const key = `dim_ref_click_${refCode}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+    try { sessionStorage.setItem('dim_pending_ref', refCode); } catch {}
+    import('@/integrations/supabase/client').then(({ supabase }) => {
+      supabase.functions
+        .invoke('referral-track', {
+          body: { referral_code: refCode, landing_path: window.location.pathname + window.location.search },
+        })
+        .catch(() => {});
+    });
+  }, [refCode]);
 
   // Redirect if already authenticated and NOT in recovery mode
   useEffect(() => {

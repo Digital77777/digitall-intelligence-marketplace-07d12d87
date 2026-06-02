@@ -115,6 +115,12 @@ const CommunityHeroPage = lazy(() => import("./pages/programs/CommunityHeroPage"
 const QuestsPage = lazy(() => import("./pages/programs/QuestsPage"));
 const AmbassadorPage = lazy(() => import("./pages/programs/AmbassadorPage"));
 
+// Growth Hub - Lazy loaded
+const GrowthHubPage = lazy(() => import("./pages/growth/GrowthHubPage"));
+const QuestsBoardPage = lazy(() => import("./pages/growth/QuestsBoardPage"));
+const PartnerDashboardPage = lazy(() => import("./pages/growth/PartnerDashboardPage"));
+const SuccessWallPage = lazy(() => import("./pages/growth/SuccessWallPage"));
+
 // Optimized QueryClient with aggressive caching for instant data access
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -294,6 +300,12 @@ const routeGroups: AppRoute[] = [
   { path: "/programs/community-hero", component: CommunityHeroPage, protected: true },
   { path: "/programs/quests", component: QuestsPage, protected: true },
   { path: "/programs/ambassador", component: AmbassadorPage, protected: true },
+
+  // Growth Hub
+  { path: "/growth", component: GrowthHubPage, protected: true },
+  { path: "/growth/quests", component: QuestsBoardPage, protected: true },
+  { path: "/growth/partner", component: PartnerDashboardPage, protected: true },
+  { path: "/growth/success", component: SuccessWallPage, protected: true },
 ];
 
 const App = () => {

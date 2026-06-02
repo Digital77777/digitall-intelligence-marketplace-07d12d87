@@ -1,4 +1,5 @@
-import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, ArrowRight } from "lucide-react";
+import { BookOpen, Brain, Store, Home, User, LogOut, Menu, Users, Gift, ArrowRight, Sparkles } from "lucide-react";
+import { XPBadge } from "@/components/growth/XPBadge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
@@ -41,6 +42,10 @@ const Navigation = () => {
     icon: Users,
     label: "Community",
     path: "/community"
+  }, {
+    icon: Sparkles,
+    label: "Growth",
+    path: "/growth"
   }, {
     icon: Gift,
     label: "Programs",
@@ -145,6 +150,7 @@ const Navigation = () => {
             </Sheet>
             {loading ? <div className="w-20 h-8 animate-pulse bg-muted rounded" /> : user ? (
               <>
+                {!isMobile && <XPBadge compact />}
                 <Link to="/notifications" aria-label="Notifications">
                   <Button variant="ghost" size="icon" className="h-9 w-9">
                     <Bell className="h-5 w-5" />
