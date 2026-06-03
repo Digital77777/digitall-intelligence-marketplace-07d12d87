@@ -253,26 +253,18 @@ export const SellWizard: React.FC<SellWizardProps> = ({ initialData }) => {
 
         <Card className="border-border/60 shadow-sm">
           <CardContent className="p-5 md:p-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={step}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
-              >
-                {step === 1 && <Step1 data={data} update={update} />}
-                {step === 2 && <Step2 data={data} update={update} />}
-                {step === 3 && <Step3 data={data} update={update} />}
-                {step === 4 && <Step4 data={data} update={update} />}
-                {step === 5 && <Step5 data={data} update={update} />}
-                {step === 6 && <Step6 data={data} update={update} />}
-                {step === 7 && <Step7 data={data} update={update} />}
-                {step === 8 && <Step8 data={data} update={update} />}
-                {step === 9 && <Step9 data={data} update={update} />}
-                {step === 10 && <Step10 data={data} goToStep={setStep} />}
-              </motion.div>
-            </AnimatePresence>
+            <div key={step} className="animate-in fade-in slide-in-from-bottom-2 duration-200">
+              {step === 1 && <Step1 data={data} update={update} />}
+              {step === 2 && <Step2 data={data} update={update} />}
+              {step === 3 && <Step3 data={data} update={update} />}
+              {step === 4 && <Step4 data={data} update={update} />}
+              {step === 5 && <Step5 data={data} update={update} />}
+              {step === 6 && <Step6 data={data} update={update} />}
+              {step === 7 && <Step7 data={data} update={update} />}
+              {step === 8 && <Step8 data={data} update={update} />}
+              {step === 9 && <Step9 data={data} update={update} />}
+              {step === 10 && <Step10 data={data} goToStep={setStep} />}
+            </div>
 
             <Separator className="my-6" />
 
