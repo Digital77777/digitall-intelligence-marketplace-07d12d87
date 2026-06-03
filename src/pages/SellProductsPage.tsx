@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { Store, Upload, DollarSign, Users, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { SellingModal } from "@/components/marketplace/selling/SellingModal";
 
 const SellProductsPage = () => {
-  const [showSellingModal, setShowSellingModal] = useState(false);
+  const navigate = useNavigate();
+  const startSelling = () => navigate('/marketplace/create');
   const benefits = [
     {
       icon: <DollarSign className="h-6 w-6" />,
@@ -139,7 +139,7 @@ const SellProductsPage = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-earn text-white hover:opacity-90"
-                onClick={() => setShowSellingModal(true)}
+                onClick={startSelling}
               >
                 <Store className="h-5 w-5 mr-2" />
                 Start Selling Now
@@ -278,7 +278,7 @@ const SellProductsPage = () => {
             <Button 
               size="lg" 
               className="bg-gradient-earn text-white hover:opacity-90"
-              onClick={() => setShowSellingModal(true)}
+              onClick={startSelling}
             >
               <Upload className="h-5 w-5 mr-2" />
               Create Your Store
@@ -287,11 +287,6 @@ const SellProductsPage = () => {
         </div>
       </section>
 
-      {/* Selling Modal */}
-      <SellingModal 
-        isOpen={showSellingModal} 
-        onClose={() => setShowSellingModal(false)} 
-      />
     </div>
   );
 };
