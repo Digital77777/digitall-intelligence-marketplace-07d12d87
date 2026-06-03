@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Upload, Store, Image as ImageIcon,
   Video, FileText, Globe, Briefcase, Heart, Mail, MessageCircle, DollarSign, Cpu,
