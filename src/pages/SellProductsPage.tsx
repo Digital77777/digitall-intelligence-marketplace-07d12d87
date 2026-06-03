@@ -278,7 +278,7 @@ const SellProductsPage = () => {
             <Button 
               size="lg" 
               className="bg-gradient-earn text-white hover:opacity-90"
-              onClick={() => setShowSellingModal(true)}
+              onClick={startSelling}
             >
               <Upload className="h-5 w-5 mr-2" />
               Create Your Store
@@ -287,11 +287,6 @@ const SellProductsPage = () => {
         </div>
       </section>
 
-      {/* Selling Modal */}
-      <SellingModal 
-        isOpen={showSellingModal} 
-        onClose={() => setShowSellingModal(false)} 
-      />
     </div>
   );
 };
