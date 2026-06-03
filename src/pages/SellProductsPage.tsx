@@ -139,7 +139,7 @@ const SellProductsPage = () => {
               <Button 
                 size="lg" 
                 className="bg-gradient-earn text-white hover:opacity-90"
-                onClick={() => setShowSellingModal(true)}
+                onClick={startSelling}
               >
                 <Store className="h-5 w-5 mr-2" />
                 Start Selling Now
