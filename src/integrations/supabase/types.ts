@@ -1358,12 +1358,15 @@ export type Database = {
           description: string
           id: string
           images: string[] | null
+          industry: string | null
           is_featured: boolean | null
           listing_type: string
+          metadata: Json
           price: number | null
           pricing_tiers: Json | null
           requirements: string | null
           status: string
+          tagline: string | null
           tags: string[] | null
           title: string
           updated_at: string
@@ -1379,12 +1382,15 @@ export type Database = {
           description: string
           id?: string
           images?: string[] | null
+          industry?: string | null
           is_featured?: boolean | null
           listing_type: string
+          metadata?: Json
           price?: number | null
           pricing_tiers?: Json | null
           requirements?: string | null
           status?: string
+          tagline?: string | null
           tags?: string[] | null
           title: string
           updated_at?: string
@@ -1400,12 +1406,15 @@ export type Database = {
           description?: string
           id?: string
           images?: string[] | null
+          industry?: string | null
           is_featured?: boolean | null
           listing_type?: string
+          metadata?: Json
           price?: number | null
           pricing_tiers?: Json | null
           requirements?: string | null
           status?: string
+          tagline?: string | null
           tags?: string[] | null
           title?: string
           updated_at?: string
