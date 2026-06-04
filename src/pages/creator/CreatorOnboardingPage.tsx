@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useTier } from '@/contexts/TierContext';
@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Sparkles, ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Sparkles, ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, RefreshCw, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { SEOHead } from '@/components/SEOHead';
 
@@ -31,13 +32,23 @@ type Recs = {
   dashboard_config: { primary_focus: string; widgets: string[]; next_action: string };
 };
 
+type AIState = 'idle' | 'loading' | 'success' | 'error';
+
+const AI_TIMEOUT_MS = 30000;
+
 export default function CreatorOnboardingPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { user } = useAuth();
   const { tierName, loading: tierLoading } = useTier();
+  const editMode = params.get('edit') === '1';
+
   const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const [aiState, setAiState] = useState<AIState>('idle');
+  const [aiError, setAiError] = useState<string | null>(null);
   const [recs, setRecs] = useState<Recs | null>(null);
+  const [bootstrapped, setBootstrapped] = useState(false);
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
 
   const [creatorType, setCreatorType] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -48,21 +59,37 @@ export default function CreatorOnboardingPage() {
   const [revenueStage, setRevenueStage] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
 
-  // Redirect non-creator users away
+  // Subscription gate: Creator Tier (R95/month) or Career required
   useEffect(() => {
     if (!tierLoading && tierName && tierName !== 'creator' && tierName !== 'career') {
+      toast.error('Creator Tier subscription required (R95/month)');
       navigate('/subscription');
     }
   }, [tierName, tierLoading, navigate]);
 
-  // If already completed, send to dashboard
+  // Prefill from existing profile; redirect away only if already done AND not in edit mode
   useEffect(() => {
     (async () => {
       if (!user) return;
-      const { data } = await supabase.from('creator_profiles').select('onboarding_completed').eq('user_id', user.id).maybeSingle();
-      if (data?.onboarding_completed) navigate('/dashboard');
+      const { data } = await (supabase as any).from('creator_profiles').select('*').eq('user_id', user.id).maybeSingle();
+      if (data) {
+        setHasExistingProfile(true);
+        setCreatorType(data.creator_type || '');
+        setProjectName(data.project_details?.name || '');
+        setProjectDescription(data.project_details?.description || '');
+        setProjectUrl(data.project_details?.url || '');
+        setGoals(Array.isArray(data.goals) ? data.goals : []);
+        setBusinessStage(data.business_stage || '');
+        setRevenueStage(data.revenue_stage || '');
+        setSkills(Array.isArray(data.skills) ? data.skills : []);
+        if (data.onboarding_completed && !editMode) {
+          navigate('/dashboard');
+          return;
+        }
+      }
+      setBootstrapped(true);
     })();
-  }, [user, navigate]);
+  }, [user, editMode, navigate]);
 
   const steps = [
     { title: 'Creator Type', desc: 'Which best describes you?' },
@@ -89,25 +116,41 @@ export default function CreatorOnboardingPage() {
     }
   };
 
+  const runAI = async (): Promise<Recs> => {
+    const payload = {
+      creator_type: creatorType,
+      project_details: { name: projectName, description: projectDescription, url: projectUrl },
+      goals, business_stage: businessStage, revenue_stage: revenueStage, skills,
+    };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+    try {
+      const { data: ai, error: aiErr } = await supabase.functions.invoke('creator-onboarding-ai', {
+        body: payload,
+      });
+      clearTimeout(timer);
+      if (aiErr) throw new Error(aiErr.message || 'AI request failed');
+      if (!ai || (ai as any).error) throw new Error((ai as any)?.error || 'AI returned no data');
+      return ai as Recs;
+    } catch (e: any) {
+      clearTimeout(timer);
+      if (e?.name === 'AbortError') throw new Error('AI request timed out. Please try again.');
+      throw e;
+    }
+  };
+
   const submit = async () => {
     if (!user) { toast.error('Please sign in'); return; }
-    setSubmitting(true);
+    setAiState('loading');
+    setAiError(null);
     try {
+      const recommendations = await runAI();
       const payload = {
         creator_type: creatorType,
         project_details: { name: projectName, description: projectDescription, url: projectUrl },
-        goals,
-        business_stage: businessStage,
-        revenue_stage: revenueStage,
-        skills,
+        goals, business_stage: businessStage, revenue_stage: revenueStage, skills,
       };
-
-      const { data: ai, error: aiErr } = await supabase.functions.invoke('creator-onboarding-ai', { body: payload });
-      if (aiErr || !ai || ai.error) throw new Error(ai?.error || aiErr?.message || 'AI failed');
-
-      const recommendations = ai as Recs;
-
-      const { error: upErr } = await supabase.from('creator_profiles').upsert({
+      const { error: upErr } = await (supabase as any).from('creator_profiles').upsert({
         user_id: user.id,
         ...payload,
         creator_category: recommendations.creator_category,
@@ -123,13 +166,23 @@ export default function CreatorOnboardingPage() {
       if (upErr) throw upErr;
 
       setRecs(recommendations);
-      toast.success('Creator Tier unlocked!');
+      setAiState('success');
+      toast.success(editMode ? 'Profile updated!' : 'Creator Tier unlocked!');
     } catch (e: any) {
-      toast.error(e?.message || 'Something went wrong');
-    } finally {
-      setSubmitting(false);
+      const msg = e?.message || 'Something went wrong';
+      setAiError(msg);
+      setAiState('error');
+      toast.error(msg);
     }
   };
+
+  if (tierLoading || !bootstrapped) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (recs) {
     return (
@@ -208,6 +261,12 @@ export default function CreatorOnboardingPage() {
     <div className="min-h-screen bg-background py-12 animate-fade-in">
       <SEOHead title="Creator Onboarding" description="Set up your DIM Creator Tier profile" />
       <div className="container mx-auto px-6 max-w-2xl">
+        {editMode && hasExistingProfile && (
+          <Alert className="mb-4">
+            <Sparkles className="h-4 w-4" />
+            <AlertDescription>Editing your Creator Profile. Saving will regenerate your AI recommendations.</AlertDescription>
+          </Alert>
+        )}
         <div className="mb-6 space-y-2">
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>Step {step + 1} of {steps.length}</span>
@@ -265,20 +324,46 @@ export default function CreatorOnboardingPage() {
               </div>
             )}
             {step === 6 && (
-              <div className="space-y-2 text-sm">
+              <div className="space-y-3 text-sm">
                 <div><strong>Type:</strong> {creatorType}</div>
                 <div><strong>Project:</strong> {projectName}</div>
                 <div><strong>Goals:</strong> {goals.join(', ')}</div>
                 <div><strong>Stage:</strong> {businessStage} · {revenueStage}</div>
                 <div><strong>Skills:</strong> {skills.join(', ')}</div>
-                <p className="pt-2 text-muted-foreground">Submit to generate your personalized Creator Dashboard with AI.</p>
+
+                {aiState === 'loading' && (
+                  <div className="border rounded p-4 space-y-2 bg-muted/30">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      Generating your personalized AI recommendations…
+                    </div>
+                    <Progress value={66} className="h-1.5" />
+                    <p className="text-xs text-muted-foreground">This usually takes 5-15 seconds.</p>
+                  </div>
+                )}
+
+                {aiState === 'error' && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between gap-2">
+                      <span>{aiError || 'AI failed to generate recommendations.'}</span>
+                      <Button size="sm" variant="outline" onClick={submit}>
+                        <RefreshCw className="h-3 w-3 mr-1" /> Retry
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {aiState === 'idle' && (
+                  <p className="pt-2 text-muted-foreground">Submit to generate your personalized Creator Dashboard with AI.</p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
         <div className="flex justify-between mt-6">
-          <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || submitting}>
+          <Button variant="ghost" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0 || aiState === 'loading'}>
             <ArrowLeft className="h-4 w-4 mr-1" /> Back
           </Button>
           {step < steps.length - 1 ? (
@@ -286,11 +371,23 @@ export default function CreatorOnboardingPage() {
               Next <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={submit} disabled={submitting}>
-              {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Personalizing…</> : <><Sparkles className="h-4 w-4 mr-2" /> Unlock Creator Tier</>}
+            <Button onClick={submit} disabled={aiState === 'loading'}>
+              {aiState === 'loading' ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Personalizing…</>
+              ) : aiState === 'error' ? (
+                <><RefreshCw className="h-4 w-4 mr-2" /> Retry AI</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" /> {editMode ? 'Save & Regenerate' : 'Unlock Creator Tier'}</>
+              )}
             </Button>
           )}
         </div>
+
+        {tierName !== 'creator' && tierName !== 'career' && (
+          <div className="mt-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-1">
+            <Lock className="h-3 w-3" /> Requires active Creator Tier subscription (R95/month)
+          </div>
+        )}
       </div>
     </div>
   );
