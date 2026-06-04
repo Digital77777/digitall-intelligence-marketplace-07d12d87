@@ -13,6 +13,35 @@ import { useAuth } from '@/hooks/useAuth';
 
 export const CreatorDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<any | null>(null);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      if (!user) { setChecked(true); return; }
+      const { data } = await (supabase as any).from('creator_profiles').select('*').eq('user_id', user.id).maybeSingle();
+      setProfile(data);
+      setChecked(true);
+    })();
+  }, [user]);
+
+  if (checked && !profile?.onboarding_completed) {
+    return (
+      <Card className="bg-gradient-to-br from-primary/10 to-accent/10 border-primary/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5" /> Welcome to Creator Tier</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">Complete your 2-minute Creator Profile to unlock your personalized dashboard, AI recommendations, and Creator Tier features.</p>
+          <Button size="lg" onClick={() => navigate('/creator/onboarding')}>
+            Start Creator Onboarding <Sparkles className="h-4 w-4 ml-2" />
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
 
   const benefits = [
     "Access to 7 advanced AI creation tools",
