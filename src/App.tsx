@@ -107,6 +107,7 @@ const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
 const ListingPreviewFeedPage = lazy(() => import("./pages/ListingPreviewFeedPage"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 const UpdateAppPage = lazy(() => import("./pages/UpdateAppPage"));
+const CreatorOnboardingPage = lazy(() => import("./pages/creator/CreatorOnboardingPage"));
 
 // Programs - Lazy loaded
 const ComingSoonPage = lazy(() => import("./pages/programs/ComingSoonPage"));
