@@ -107,6 +107,7 @@ const ListingDetailPage = lazy(() => import("./pages/ListingDetailPage"));
 const ListingPreviewFeedPage = lazy(() => import("./pages/ListingPreviewFeedPage"));
 const FeedbackPage = lazy(() => import("./pages/FeedbackPage"));
 const UpdateAppPage = lazy(() => import("./pages/UpdateAppPage"));
+const CreatorOnboardingPage = lazy(() => import("./pages/creator/CreatorOnboardingPage"));
 
 // Programs - Lazy loaded
 const ComingSoonPage = lazy(() => import("./pages/programs/ComingSoonPage"));
@@ -285,6 +286,7 @@ const routeGroups: AppRoute[] = [
   { path: "/analytics", component: AnalyticsPage, protected: true },
   { path: "/support", component: SupportPage, protected: true },
   { path: "/subscription", component: SubscriptionPage, protected: true },
+  { path: "/creator/onboarding", component: CreatorOnboardingPage, protected: true },
   { path: "/payment-success", component: PaymentSuccessPage, protected: true },
   { path: "/referrals", component: ReferralPage, protected: true },
   { path: "/notification-settings", component: NotificationSettingsPage, protected: true },

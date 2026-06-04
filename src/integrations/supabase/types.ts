@@ -746,6 +746,72 @@ export type Database = {
           },
         ]
       }
+      creator_profiles: {
+        Row: {
+          ai_summary: string | null
+          business_stage: string | null
+          created_at: string
+          creator_category: string | null
+          creator_score: number | null
+          creator_type: string | null
+          dashboard_config: Json
+          goals: Json
+          growth_opportunities: Json
+          id: string
+          onboarding_completed: boolean
+          project_details: Json
+          recommended_communities: Json
+          recommended_marketplace: Json
+          recommended_paths: Json
+          revenue_stage: string | null
+          skills: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          business_stage?: string | null
+          created_at?: string
+          creator_category?: string | null
+          creator_score?: number | null
+          creator_type?: string | null
+          dashboard_config?: Json
+          goals?: Json
+          growth_opportunities?: Json
+          id?: string
+          onboarding_completed?: boolean
+          project_details?: Json
+          recommended_communities?: Json
+          recommended_marketplace?: Json
+          recommended_paths?: Json
+          revenue_stage?: string | null
+          skills?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_summary?: string | null
+          business_stage?: string | null
+          created_at?: string
+          creator_category?: string | null
+          creator_score?: number | null
+          creator_type?: string | null
+          dashboard_config?: Json
+          goals?: Json
+          growth_opportunities?: Json
+          id?: string
+          onboarding_completed?: boolean
+          project_details?: Json
+          recommended_communities?: Json
+          recommended_marketplace?: Json
+          recommended_paths?: Json
+          revenue_stage?: string | null
+          skills?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       error_log: {
         Row: {
           error_context: Json | null
