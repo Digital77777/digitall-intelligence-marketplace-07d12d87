@@ -69,7 +69,38 @@ export const CreatorDashboard = () => {
         gradient="ai"
       />
 
+      {profile?.onboarding_completed && (
+        <Card className="border-primary/30">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center justify-between">
+              <span className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Your Personalized Plan</span>
+              <Badge variant="secondary">{profile.creator_category} · {profile.creator_score}/100</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {profile.ai_summary && <p className="text-sm text-muted-foreground">{profile.ai_summary}</p>}
+            {Array.isArray(profile.recommended_paths) && profile.recommended_paths.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold mb-1 text-muted-foreground">Recommended Learning Paths</div>
+                <div className="flex flex-wrap gap-2">
+                  {profile.recommended_paths.slice(0, 4).map((p: any, i: number) => <Badge key={i} variant="outline">{p.title}</Badge>)}
+                </div>
+              </div>
+            )}
+            {Array.isArray(profile.growth_opportunities) && profile.growth_opportunities.length > 0 && (
+              <div>
+                <div className="text-xs font-semibold mb-1 text-muted-foreground">Growth Opportunities</div>
+                <div className="flex flex-wrap gap-2">
+                  {profile.growth_opportunities.slice(0, 4).map((g: any, i: number) => <Badge key={i} variant="outline">{g.name}</Badge>)}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <QuickStats stats={stats} />
+
 
       <div className="space-y-4">
         <h2 className="text-2xl font-bold text-center">Creator Benefits</h2>
