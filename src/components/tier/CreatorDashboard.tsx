@@ -1,10 +1,15 @@
 import { Brain, Store, Gift, TrendingUp, Sparkles, Hammer, Rocket, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { TierHero } from './shared/TierHero';
 import { FeatureCard } from './shared/FeatureCard';
 import { BenefitsList } from './shared/BenefitsList';
 import { QuickStats } from './shared/QuickStats';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export const CreatorDashboard = () => {
   const navigate = useNavigate();
