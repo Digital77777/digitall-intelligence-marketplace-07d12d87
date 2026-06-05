@@ -1,282 +1,186 @@
-import { Award, BookOpen, CheckCircle, Clock, Download, FileText, Trophy, Target, Star, Zap } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
+import { TierGate } from '@/components/tier/TierGate';
+import { SEOHead } from '@/components/SEOHead';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/useAuth';
+import { useCertificationProgress } from '@/hooks/useCertificationProgress';
+import { CERT_CATEGORIES, CERTIFICATIONS, getCertsByCategory } from '@/data/certifications';
+import { CertificationCard } from '@/components/certification/CertificationCard';
+import { Flame, Sparkles, Trophy, Target, Zap, GraduationCap, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
+const ranks = [
+  { min: 0, name: 'AI Explorer' },
+  { min: 500, name: 'AI Builder' },
+  { min: 1500, name: 'AI Specialist' },
+  { min: 3000, name: 'AI Professional' },
+  { min: 6000, name: 'AI Leader' },
+];
+
 const CareerCertificationPage = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+  const { items, stats, start, loading } = useCertificationProgress();
 
-  const certifications = [
-    {
-      id: 1,
-      title: "AI Fundamentals Specialist",
-      level: "Foundation",
-      progress: 100,
-      status: "completed",
-      topics: ["AI Basics", "Machine Learning", "Neural Networks", "Data Science"],
-      duration: "20 hours",
-      earnedDate: "2024-12-15"
-    },
-    {
-      id: 2,
-      title: "AI Developer Professional",
-      level: "Intermediate",
-      progress: 65,
-      status: "in-progress",
-      topics: ["Deep Learning", "NLP", "Computer Vision", "AI APIs"],
-      duration: "40 hours",
-      earnedDate: null
-    },
-    {
-      id: 3,
-      title: "AI Solutions Architect",
-      level: "Advanced",
-      progress: 0,
-      status: "locked",
-      topics: ["AI Strategy", "System Design", "MLOps", "AI Ethics"],
-      duration: "60 hours",
-      earnedDate: null
-    },
-    {
-      id: 4,
-      title: "AI Business Leader",
-      level: "Expert",
-      progress: 0,
-      status: "locked",
-      topics: ["AI Transformation", "Team Leadership", "ROI Analysis", "Innovation"],
-      duration: "50 hours",
-      earnedDate: null
-    }
-  ];
+  const firstName = (user?.user_metadata?.full_name || user?.email || 'there').toString().split(' ')[0].split('@')[0];
 
-  const benefits = [
-    "Industry-recognized credentials",
-    "Career advancement opportunities",
-    "Higher earning potential",
-    "Professional networking access",
-    "Lifetime certificate validity",
-    "Digital badge for LinkedIn"
-  ];
+  const rank = useMemo(
+    () => [...ranks].reverse().find((r) => stats.xp >= r.min) || ranks[0],
+    [stats.xp]
+  );
+  const nextRank = useMemo(
+    () => ranks.find((r) => stats.xp < r.min),
+    [stats.xp]
+  );
+  const xpToNext = nextRank ? nextRank.min - stats.xp : 0;
+  const xpPct = nextRank
+    ? Math.round(((stats.xp - rank.min) / (nextRank.min - rank.min)) * 100)
+    : 100;
+
+  const inProgressCert = CERTIFICATIONS.find((c) => items[c.slug]?.status === 'in_progress');
+  const overallPct = Math.round((stats.completed / stats.total) * 100);
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4 md:px-6 max-w-7xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
-            <Trophy className="h-5 w-5 text-primary" />
-            <span className="text-sm font-medium text-primary">Career Certification Program</span>
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Earn Professional <span className="text-primary">AI Certifications</span>
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Validate your AI expertise with industry-recognized certifications that accelerate your career
-          </p>
-        </div>
+    <TierGate feature="career_certification">
+      <SEOHead
+        title="Career Certification — AI Career Operating System | DIM"
+        description="AI-powered career certification hub. Track your prep across AWS, Microsoft, Google, Salesforce and DIM credentials, earn XP, and unlock career roles."
+        canonicalUrl="/career-certification"
+      />
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-12">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center">
-                <Award className="h-8 w-8 text-primary mb-2" />
-                <div className="text-3xl font-bold">1</div>
-                <div className="text-sm text-muted-foreground">Earned</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center">
-                <Target className="h-8 w-8 text-accent-foreground mb-2" />
-                <div className="text-3xl font-bold">1</div>
-                <div className="text-sm text-muted-foreground">In Progress</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center">
-                <Star className="h-8 w-8 text-primary mb-2" />
-                <div className="text-3xl font-bold">65%</div>
-                <div className="text-sm text-muted-foreground">Overall Progress</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col items-center text-center">
-                <Zap className="h-8 w-8 text-accent-foreground mb-2" />
-                <div className="text-3xl font-bold">20</div>
-                <div className="text-sm text-muted-foreground">Hours Completed</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/[0.02]">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-6">
 
-        <Tabs defaultValue="all" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 max-w-3xl mx-auto">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="completed">Completed</TabsTrigger>
-            <TabsTrigger value="progress">In Progress</TabsTrigger>
-            <TabsTrigger value="available">Available</TabsTrigger>
-          </TabsList>
+          {/* HERO */}
+          <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent p-4 sm:p-6">
+            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
+            <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none" />
 
-          <TabsContent value="all" className="space-y-6">
-            {certifications.map((cert) => (
-              <Card key={cert.id} className="overflow-hidden">
-                <CardHeader className="pb-4">
-                  <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <CardTitle className="text-xl md:text-2xl">{cert.title}</CardTitle>
-                        <Badge variant={cert.status === 'completed' ? 'default' : cert.status === 'in-progress' ? 'secondary' : 'outline'}>
-                          {cert.level}
-                        </Badge>
-                      </div>
-                      <CardDescription className="flex items-center gap-4 flex-wrap">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {cert.duration}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <BookOpen className="h-4 w-4" />
-                          {cert.topics.length} Topics
-                        </span>
-                      </CardDescription>
-                    </div>
-                    {cert.status === 'completed' && (
-                      <Button variant="outline" size="sm" className="gap-2 w-full md:w-auto">
-                        <Download className="h-4 w-4" />
-                        Download Certificate
-                      </Button>
-                    )}
+            <div className="relative grid sm:grid-cols-3 gap-4 items-start">
+              <div className="sm:col-span-2 space-y-2">
+                <Badge variant="outline" className="border-primary/30 bg-background/50 backdrop-blur text-[10px] gap-1">
+                  <Sparkles className="h-3 w-3" /> Career Tier
+                </Badge>
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                  Welcome back, {firstName} 👋
+                </h1>
+                <p className="text-sm text-muted-foreground max-w-lg">
+                  {inProgressCert
+                    ? `You're ${items[inProgressCert.slug].progress_pct}% through ${inProgressCert.title}. Keep the streak alive.`
+                    : 'Pick a certification to begin building your AI career roadmap.'}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <div className="inline-flex items-center gap-1.5 text-sm">
+                    <Trophy className="h-4 w-4 text-amber-500" />
+                    <span className="font-semibold">{rank.name}</span>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-medium">{cert.progress}%</span>
-                    </div>
-                    <Progress value={cert.progress} className="h-2" />
+                  <div className="inline-flex items-center gap-1.5 text-sm">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <span className="font-semibold">{stats.xp.toLocaleString()} XP</span>
                   </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {cert.topics.map((topic, idx) => (
-                      <Badge key={idx} variant="outline" className="text-xs">
-                        {topic}
-                      </Badge>
-                    ))}
+                  <div className="inline-flex items-center gap-1.5 text-sm">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span className="font-semibold">{stats.started} active</span>
                   </div>
-
-                  {cert.earnedDate && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      Completed on {new Date(cert.earnedDate).toLocaleDateString()}
-                    </div>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                    {cert.status === 'in-progress' && (
-                      <Button className="flex-1">Continue Learning</Button>
-                    )}
-                    {cert.status === 'locked' && (
-                      <Button variant="outline" className="flex-1" disabled>
-                        Complete Previous Certification
-                      </Button>
-                    )}
-                    {cert.status === 'completed' && (
-                      <Button variant="secondary" className="flex-1 gap-2">
-                        <FileText className="h-4 w-4" />
-                        View Certificate
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-
-          <TabsContent value="completed">
-            <div className="space-y-6">
-              {certifications.filter(c => c.status === 'completed').map((cert) => (
-                <Card key={cert.id}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckCircle className="h-5 w-5 text-primary" />
-                      {cert.title}
-                    </CardTitle>
-                    <CardDescription>Completed on {cert.earnedDate && new Date(cert.earnedDate).toLocaleDateString()}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button className="gap-2">
-                      <Download className="h-4 w-4" />
-                      Download Certificate
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="progress">
-            <div className="space-y-6">
-              {certifications.filter(c => c.status === 'in-progress').map((cert) => (
-                <Card key={cert.id}>
-                  <CardHeader>
-                    <CardTitle>{cert.title}</CardTitle>
-                    <CardDescription>{cert.progress}% Complete</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Progress value={cert.progress} className="mb-4" />
-                    <Button>Continue Learning</Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="available">
-            <div className="space-y-6">
-              {certifications.filter(c => c.status === 'locked').map((cert) => (
-                <Card key={cert.id}>
-                  <CardHeader>
-                    <CardTitle>{cert.title}</CardTitle>
-                    <CardDescription>{cert.duration} of learning</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button variant="outline" disabled>Unlock by completing prerequisites</Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Benefits Section */}
-        <Card className="mt-12 bg-gradient-to-br from-primary/5 to-accent/5">
-          <CardHeader>
-            <CardTitle className="text-2xl">Certification Benefits</CardTitle>
-            <CardDescription>Why our certifications matter for your career</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {benefits.map((benefit, idx) => (
-                <div key={idx} className="flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">{benefit}</span>
                 </div>
-              ))}
+
+                {nextRank && (
+                  <div className="pt-3 space-y-1 max-w-sm">
+                    <div className="flex justify-between text-[11px] text-muted-foreground">
+                      <span>{rank.name}</span>
+                      <span>{xpToNext} XP to {nextRank.name}</span>
+                    </div>
+                    <Progress value={xpPct} className="h-1.5" />
+                  </div>
+                )}
+              </div>
+
+              {/* Overall ring */}
+              <div className="bg-background/60 backdrop-blur border rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Overall progress</span>
+                  <Target className="h-4 w-4 text-primary" />
+                </div>
+                <div className="text-3xl font-bold">{overallPct}%</div>
+                <Progress value={overallPct} className="h-2" />
+                <div className="grid grid-cols-3 gap-2 text-center pt-1">
+                  <div>
+                    <div className="text-sm font-bold">{stats.completed}</div>
+                    <div className="text-[10px] text-muted-foreground">Done</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold">{stats.started - stats.completed}</div>
+                    <div className="text-[10px] text-muted-foreground">Active</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold">{stats.total}</div>
+                    <div className="text-[10px] text-muted-foreground">Total</div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </section>
+
+          {/* JOB PLACEMENT CTA */}
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-accent/5 to-primary/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm">AI Job Matching</div>
+                <div className="text-xs text-muted-foreground line-clamp-1">
+                  {stats.completed > 0
+                    ? `Based on ${stats.completed} cert${stats.completed > 1 ? 's' : ''}, we've matched roles for you.`
+                    : 'Complete certifications to unlock personalized role matches.'}
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => navigate('/job-placement')}>
+                Open
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* CATEGORIES */}
+          {CERT_CATEGORIES.map((cat) => {
+            const certs = getCertsByCategory(cat.id);
+            return (
+              <section key={cat.id} className="space-y-3">
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5 text-primary" />
+                      {cat.label}
+                    </h2>
+                    <p className="text-xs text-muted-foreground">{cat.description}</p>
+                  </div>
+                  <span className="text-[11px] text-muted-foreground whitespace-nowrap">{certs.length} certs</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {certs.map((c) => (
+                    <CertificationCard
+                      key={c.slug}
+                      cert={c}
+                      progress={items[c.slug]}
+                      onStart={() => start(c.slug)}
+                    />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+
+          {loading && (
+            <div className="text-center text-xs text-muted-foreground py-4">Loading your progress…</div>
+          )}
+        </div>
       </div>
-    </div>
+    </TierGate>
   );
 };
 

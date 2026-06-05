@@ -259,6 +259,45 @@ export type Database = {
         }
         Relationships: []
       }
+      certification_progress: {
+        Row: {
+          cert_slug: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          prep_notes: string | null
+          progress_pct: number
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cert_slug: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prep_notes?: string | null
+          progress_pct?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cert_slug?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          prep_notes?: string | null
+          progress_pct?: number
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_submissions: {
         Row: {
           challenge_id: number
