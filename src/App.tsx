@@ -92,6 +92,7 @@ const MyNetworkPage = lazy(() => import("./pages/community/MyNetworkPage"));
 
 // Career & Professional - Lazy loaded
 const CareerCertificationPage = lazy(() => import("./pages/CareerCertificationPage"));
+const CertificationDetailPage = lazy(() => import("./pages/career/CertificationDetailPage"));
 const JobPlacementPage = lazy(() => import("./pages/JobPlacementPage"));
 const StrategySessionsPage = lazy(() => import("./pages/StrategySessionsPage"));
 const PersonalAITutorPage = lazy(() => import("./pages/PersonalAITutorPage"));
