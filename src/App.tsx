@@ -279,6 +279,7 @@ const routeGroups: AppRoute[] = [
 
   // Career & Professional
   { path: "/career-certification", component: CareerCertificationPage, protected: true },
+  { path: "/career-certification/:slug", component: CertificationDetailPage, protected: true },
   { path: "/job-placement", component: JobPlacementPage, protected: true },
   { path: "/strategy-sessions", component: StrategySessionsPage, protected: true },
   { path: "/personal-ai-tutor", component: PersonalAITutorPage, protected: true },
