@@ -78,40 +78,39 @@ export default function ListingPreviewFeedPage() {
         canonicalUrl={`/marketplace/preview/${id}`}
       />
 
-      {/* Black background mimics Alibaba inter-card gap */}
-      <div className="min-h-screen bg-black">
-        {primaryLoading || !primary ? (
-          <AlibabaPreviewCardSkeleton />
-        ) : (
-          <AlibabaPreviewCard listing={primary} showTopBar onBack={() => navigate(-1)} />
-        )}
+      {/* Centered, phone-width column on desktop; full-bleed on mobile */}
+      <div className="min-h-screen bg-neutral-950 md:bg-neutral-900">
+        <div className="mx-auto w-full max-w-[480px] bg-black md:my-6 md:rounded-2xl md:overflow-hidden md:shadow-2xl md:ring-1 md:ring-white/10">
+          {primaryLoading || !primary ? (
+            <AlibabaPreviewCardSkeleton />
+          ) : (
+            <AlibabaPreviewCard listing={primary} showTopBar onBack={() => navigate(-1)} />
+          )}
 
-        {/* Following cards */}
-        {feed.map((listing) => (
-          <div key={listing.id} className="mt-2">
-            <AlibabaPreviewCard listing={listing} />
-          </div>
-        ))}
+          {feed.map((listing) => (
+            <div key={listing.id} className="mt-2">
+              <AlibabaPreviewCard listing={listing} />
+            </div>
+          ))}
 
-        {/* Initial feed skeleton (no related cards loaded yet) */}
-        {feed.length === 0 && loading && !primaryLoading && (
-          <div className="mt-2">
-            <AlibabaPreviewFeedSkeleton count={3} />
-          </div>
-        )}
+          {feed.length === 0 && loading && !primaryLoading && (
+            <div className="mt-2">
+              <AlibabaPreviewFeedSkeleton count={3} />
+            </div>
+          )}
 
-        {/* Sentinel + load-more skeleton */}
-        <div ref={sentinelRef} className="h-4" />
-        {loading && feed.length > 0 && (
-          <div className="mt-2">
-            <AlibabaPreviewFeedSkeleton count={2} />
-          </div>
-        )}
-        {!hasMore && feed.length > 0 && (
-          <div className="text-center py-8 text-white/50 text-xs">
-            You've reached the end
-          </div>
-        )}
+          <div ref={sentinelRef} className="h-4" />
+          {loading && feed.length > 0 && (
+            <div className="mt-2">
+              <AlibabaPreviewFeedSkeleton count={2} />
+            </div>
+          )}
+          {!hasMore && feed.length > 0 && (
+            <div className="text-center py-8 text-white/50 text-xs">
+              You've reached the end
+            </div>
+          )}
+        </div>
       </div>
     </TierGate>
   );
