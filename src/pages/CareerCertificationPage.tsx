@@ -11,6 +11,8 @@ import { CERT_CATEGORIES, CERTIFICATIONS, getCertsByCategory } from '@/data/cert
 import { CertificationCard } from '@/components/certification/CertificationCard';
 import { Flame, Sparkles, Trophy, Target, Zap, GraduationCap, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SkillsGraph } from '@/components/career/SkillsGraph';
+import { AchievementsStrip } from '@/components/career/AchievementsStrip';
 
 const ranks = [
   { min: 0, name: 'AI Explorer' },
@@ -139,11 +141,17 @@ const CareerCertificationPage = () => {
                     : 'Complete certifications to unlock personalized role matches.'}
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="h-8 text-xs" onClick={() => navigate('/job-placement')}>
-                Open
+              <Button size="sm" className="h-8 text-xs" onClick={() => navigate('/career/job-matches')}>
+                View matches
               </Button>
             </CardContent>
           </Card>
+
+          {/* SKILLS GRAPH + ACHIEVEMENTS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <SkillsGraph />
+            <AchievementsStrip />
+          </div>
 
           {/* CATEGORIES */}
           {CERT_CATEGORIES.map((cat) => {

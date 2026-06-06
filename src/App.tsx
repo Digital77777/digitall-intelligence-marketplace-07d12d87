@@ -93,6 +93,8 @@ const MyNetworkPage = lazy(() => import("./pages/community/MyNetworkPage"));
 // Career & Professional - Lazy loaded
 const CareerCertificationPage = lazy(() => import("./pages/CareerCertificationPage"));
 const CertificationDetailPage = lazy(() => import("./pages/career/CertificationDetailPage"));
+const JobMatchesPage = lazy(() => import("./pages/career/JobMatchesPage"));
+const RecruiterDashboardPage = lazy(() => import("./pages/career/RecruiterDashboardPage"));
 const JobPlacementPage = lazy(() => import("./pages/JobPlacementPage"));
 const StrategySessionsPage = lazy(() => import("./pages/StrategySessionsPage"));
 const PersonalAITutorPage = lazy(() => import("./pages/PersonalAITutorPage"));
@@ -280,6 +282,8 @@ const routeGroups: AppRoute[] = [
   // Career & Professional
   { path: "/career-certification", component: CareerCertificationPage, protected: true },
   { path: "/career-certification/:slug", component: CertificationDetailPage, protected: true },
+  { path: "/career/job-matches", component: JobMatchesPage, protected: true },
+  { path: "/career/recruiter", component: RecruiterDashboardPage, protected: true },
   { path: "/job-placement", component: JobPlacementPage, protected: true },
   { path: "/strategy-sessions", component: StrategySessionsPage, protected: true },
   { path: "/personal-ai-tutor", component: PersonalAITutorPage, protected: true },
