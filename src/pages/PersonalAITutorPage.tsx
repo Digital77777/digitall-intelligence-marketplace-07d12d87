@@ -13,7 +13,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { exportToMarkdown, exportToPDF } from '@/lib/conversationExport';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-const CHAT_URL = 'https://uegujjkjkoohucpbdjwj.supabase.co/functions/v1/ai-tutor';
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-tutor`;
 
 const PersonalAITutorPage = () => {
   const { user } = useAuth();
@@ -84,7 +84,7 @@ const PersonalAITutorPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVlZ3Vqamtqa29vaHVjcGJkandqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MzkxNzIsImV4cCI6MjA2ODAxNTE3Mn0.tIR1Pldwu-Ncp0W43vIwsjf3RvrDF3PNKOJ4r0x5Nf8`,
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({ messages: [...messages, userMsg] }),
       });

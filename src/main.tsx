@@ -4,6 +4,10 @@ import App from './App.tsx';
 import './index.css';
 import { initMonitoring } from './lib/monitoring';
 import { initWebVitals } from './lib/webVitals';
+import { validateEnv } from './utils/envValidation';
+
+// Validate environment variables before startup
+validateEnv();
 
 // Initialize monitoring and performance tracking
 initMonitoring();

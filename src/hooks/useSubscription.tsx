@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export interface SubscriptionTier {
   id: string;
@@ -27,54 +27,39 @@ export interface UserSubscription {
 
 export const useSubscription = () => {
   const { user } = useAuth();
-  const [subscription, setSubscription] = useState<UserSubscription | null>(null);
-  const [tiers, setTiers] = useState<SubscriptionTier[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAdminEmail, setIsAdminEmail] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (user) {
-      fetchSubscriptionData();
-      checkAdminStatus();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  const checkAdminStatus = async () => {
-    try {
+  const { data: isAdminEmail = false } = useQuery({
+    queryKey: ['admin-status', user?.id],
+    queryFn: async () => {
       const { data, error } = await supabase.rpc('is_admin_email');
-      if (!error) {
-        setIsAdminEmail(data || false);
-      }
-    } catch (error) {
-      console.error('Error checking admin status:', error);
-    }
-  };
+      if (error) throw error;
+      return data || false;
+    },
+    enabled: !!user,
+  });
 
-  const fetchSubscriptionData = async () => {
-    try {
-      setLoading(true);
-
-      // Fetch available tiers
-      const { data: tiersData, error: tiersError } = await supabase
+  const { data: tiers = [] } = useQuery({
+    queryKey: ['subscription-tiers'],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('subscription_tiers')
         .select('*')
         .eq('is_active', true)
         .order('price', { ascending: true });
 
-      if (tiersError) throw tiersError;
-      
-      // Parse features from JSON
-      const parsedTiers = (tiersData || []).map(tier => ({
+      if (error) throw error;
+      return (data || []).map(tier => ({
         ...tier,
         features: Array.isArray(tier.features) ? tier.features : []
       })) as SubscriptionTier[];
-      
-      setTiers(parsedTiers);
+    },
+  });
 
-      // Fetch user's subscription
-      const { data: subData, error: subError } = await supabase
+  const { data: subscription = null, isLoading: loadingSubscription } = useQuery({
+    queryKey: ['user-subscription', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from('user_subscriptions')
         .select(`
           *,
@@ -84,30 +69,23 @@ export const useSubscription = () => {
         .eq('status', 'active')
         .maybeSingle();
 
-      if (subError && subError.code !== 'PGRST116') throw subError;
+      if (error && error.code !== 'PGRST116') throw error;
       
-      if (subData) {
-        setSubscription({
-          ...subData,
-          tier: subData.tier as SubscriptionTier
-        });
-      } else {
-        // Auto-assign starter tier if no subscription
-        await assignStarterTier();
+      if (data) {
+        return {
+          ...data,
+          tier: data.tier as SubscriptionTier
+        } as UserSubscription;
       }
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error fetching subscription:', error);
-      }
-      toast.error('Failed to load subscription data');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const assignStarterTier = async () => {
+      // If no subscription, assign starter tier
+      return await assignStarterTier();
+    },
+    enabled: !!user && tiers.length > 0,
+  });
+
+  const assignStarterTier = async (): Promise<UserSubscription | null> => {
     try {
-      // Fetch starter tier directly if not in state yet (race condition fix)
       let starterTier = tiers.find(t => t.name === 'starter');
       
       if (!starterTier) {
@@ -117,10 +95,7 @@ export const useSubscription = () => {
           .eq('name', 'starter')
           .single();
         
-        if (!tierData) {
-          console.error('Starter tier not found in database');
-          return;
-        }
+        if (!tierData) return null;
         starterTier = tierData as SubscriptionTier;
       }
 
@@ -138,41 +113,33 @@ export const useSubscription = () => {
         .single();
 
       if (error) {
-        // Handle duplicate key error gracefully (user already has subscription)
         if (error.code === '23505') {
-          await fetchSubscriptionData();
-          return;
+          const { data: existing } = await supabase
+            .from('user_subscriptions')
+            .select('*, tier:subscription_tiers(*)')
+            .eq('user_id', user!.id)
+            .single();
+          return existing as UserSubscription;
         }
         throw error;
       }
       
-      setSubscription({
-        ...data,
-        tier: data.tier as SubscriptionTier
-      });
+      return data as UserSubscription;
     } catch (error) {
       console.error('Error assigning starter tier:', error);
+      return null;
     }
   };
 
-  const changeTier = async (tierId: string) => {
-    if (!user) {
-      toast.error('Please sign in to change tiers');
-      return false;
-    }
+  const changeTierMutation = useMutation({
+    mutationFn: async (tierId: string) => {
+      if (!user) throw new Error('Please sign in to change tiers');
 
-    try {
       const newTier = tiers.find(t => t.id === tierId);
-      if (!newTier) {
-        toast.error('Invalid tier selected');
-        return false;
-      }
+      if (!newTier) throw new Error('Invalid tier selected');
 
-      // Admin email can change tiers freely
       if (!isAdminEmail && newTier.price > 0) {
-        toast.info('Payment processing would happen here');
-        // In production, integrate with payment gateway
-        return false;
+        throw new Error('PAYMENT_REQUIRED');
       }
 
       const { error } = await supabase
@@ -187,25 +154,34 @@ export const useSubscription = () => {
         });
 
       if (error) throw error;
-
+      return newTier;
+    },
+    onSuccess: (newTier) => {
       toast.success(`Successfully switched to ${newTier.display_name} tier!`);
-      await fetchSubscriptionData();
-      return true;
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error changing tier:', error);
+      queryClient.invalidateQueries({ queryKey: ['user-subscription', user?.id] });
+    },
+    onError: (error: any) => {
+      if (error.message === 'PAYMENT_REQUIRED') {
+        toast.info('Payment processing would happen here');
+      } else {
+        toast.error(error.message || 'Failed to change tier');
       }
-      toast.error('Failed to change tier');
-      return false;
     }
-  };
+  });
 
   return {
     subscription,
     tiers,
-    loading,
+    loading: loadingSubscription,
     isAdminEmail,
-    changeTier,
-    refreshSubscription: fetchSubscriptionData
+    changeTier: async (tierId: string) => {
+      try {
+        await changeTierMutation.mutateAsync(tierId);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    refreshSubscription: () => queryClient.invalidateQueries({ queryKey: ['user-subscription', user?.id] })
   };
 };
