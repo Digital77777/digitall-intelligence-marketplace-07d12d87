@@ -55,7 +55,12 @@ const Navigation = () => {
       <div className="container mx-auto px-4 py-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Link to="/" aria-label="Home">
+                <Link
+                  to="/"
+                  aria-label="Home"
+                  onMouseEnter={() => handleMouseEnter("/")}
+                  onTouchStart={() => handleTouchStart("/")}
+                >
               <span className="text-xl font-bold bg-gradient-ai bg-clip-text text-transparent">
                 Digital Intelligence Marketplace
               </span>
@@ -151,12 +156,22 @@ const Navigation = () => {
             {loading ? <div className="w-20 h-8 animate-pulse bg-muted rounded" /> : user ? (
               <>
                 {!isMobile && <XPBadge compact />}
-                <Link to="/notifications" aria-label="Notifications">
+                <Link
+                  to="/notifications"
+                  aria-label="Notifications"
+                  onMouseEnter={() => handleMouseEnter("/notifications")}
+                  onTouchStart={() => handleTouchStart("/notifications")}
+                >
                   <Button variant="ghost" size="icon" className="h-9 w-9">
                     <Bell className="h-5 w-5" />
                   </Button>
                 </Link>
-                <Link to="/menu" aria-label="Open menu">
+                <Link
+                  to="/menu"
+                  aria-label="Open menu"
+                  onMouseEnter={() => handleMouseEnter("/menu")}
+                  onTouchStart={() => handleTouchStart("/menu")}
+                >
                   <Button variant="ghost" size="sm" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
                     {!isMobile && <span>Account</span>}
@@ -164,13 +179,21 @@ const Navigation = () => {
                 </Link>
               </>
             ) : <>
-                <Link to="/auth">
+                <Link
+                  to="/auth"
+                  onMouseEnter={() => handleMouseEnter("/auth")}
+                  onTouchStart={() => handleTouchStart("/auth")}
+                >
                   <Button variant="outline" size="sm" aria-label="Sign in">
                     <User className="h-4 w-4" />
                     {!isMobile && <span className="ml-2">Sign In</span>}
                   </Button>
                 </Link>
-                <Link to="/auth">
+                <Link
+                  to="/auth"
+                  onMouseEnter={() => handleMouseEnter("/auth")}
+                  onTouchStart={() => handleTouchStart("/auth")}
+                >
                   <Button variant="ai" size="sm" className="min-h-[44px] min-w-[44px] px-4" aria-label="Get started free">
                     <ArrowRight className="h-4 w-4" />
                     {!isMobile && <span className="ml-2">Get Started Free</span>}

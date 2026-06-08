@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense, startTransition } from "react";
+import React, { useEffect, lazy, Suspense, startTransition, useState, useTransition } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -129,12 +129,14 @@ const SuccessWallPage = lazy(() => import("./pages/growth/SuccessWallPage"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10 * 60 * 1000, // 10 minutes - data stays fresh longer
-      gcTime: 30 * 60 * 1000, // 30 minutes - cache persists much longer
+      staleTime: 30 * 60 * 1000, // 30 minutes - data stays fresh much longer
+      gcTime: 60 * 60 * 1000, // 60 minutes - cache persists longer
       retry: 1,
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       refetchOnMount: false, // Don't refetch if data is in cache
+      // Ensure we always prefer cache even if stale for instant feel
+      placeholderData: (previousData: any) => previousData,
     },
   },
 });
@@ -306,7 +308,19 @@ const routeGroups: AppRoute[] = [
   { path: "/growth/success", component: SuccessWallPage, protected: true },
 ];
 
-const App = () => {
+const AppContent = () => {
+  const location = useLocation();
+  const [displayLocation, setDisplayLocation] = useState(location);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (location.pathname !== displayLocation.pathname) {
+      startTransition(() => {
+        setDisplayLocation(location);
+      });
+    }
+  }, [location, displayLocation]);
+
   const renderRoute = ({ path, component: Component, protected: isProtected }: AppRoute) => (
     <Route
       key={path}
@@ -315,6 +329,22 @@ const App = () => {
     />
   );
 
+  return (
+    <AppLayout>
+      <div className={isPending ? "opacity-95 transition-opacity duration-300" : "opacity-100"}>
+        {/* Invisible suspense fallback - pages load instantly or show their own skeleton */}
+        <Suspense fallback={<div className="min-h-screen bg-background" aria-busy="true" />}>
+          <Routes location={displayLocation}>
+            {routeGroups.map(renderRoute)}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </div>
+    </AppLayout>
+  );
+};
+
+const App = () => {
   return (
     <ErrorBoundary>
       <HelmetProvider>
@@ -325,18 +355,9 @@ const App = () => {
                 <BackgroundUploadProvider>
                   <TooltipProvider>
                     <DeploymentDiagnostics />
-                    
                     <Toaster position="top-right" />
                     <BrowserRouter>
-                      <AppLayout>
-                        {/* Invisible suspense fallback - pages load instantly or show their own skeleton */}
-                        <Suspense fallback={<div className="min-h-screen bg-background" aria-busy="true" />}>
-                          <Routes>
-                            {routeGroups.map(renderRoute)}
-                            <Route path="*" element={<NotFound />} />
-                          </Routes>
-                        </Suspense>
-                      </AppLayout>
+                      <AppContent />
                       <FloatingUploadIndicator />
                     </BrowserRouter>
                   </TooltipProvider>
