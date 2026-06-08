@@ -9,6 +9,7 @@ vi.mock('@/hooks/useAuth', () => ({
     loading: false,
     signOut: vi.fn(),
   }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 describe('Navigation', () => {
@@ -20,7 +21,7 @@ describe('Navigation', () => {
 
   it('displays the logo/brand name', () => {
     const { getByText } = render(<Navigation />);
-    expect(getByText(/AI Learning/i)).toBeTruthy();
+    expect(getByText(/Digital Intelligence Marketplace/i)).toBeTruthy();
   });
 
   it('shows sign in button when user is not authenticated', () => {

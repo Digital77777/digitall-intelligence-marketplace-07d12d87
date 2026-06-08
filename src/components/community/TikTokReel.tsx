@@ -19,6 +19,7 @@ interface TikTokReelProps {
     views_count: number;
   };
   isActive: boolean;
+  isNearActive?: boolean;
   isMuted: boolean;
   onOpenComments: () => void;
   commentsCount: number;
@@ -27,6 +28,7 @@ interface TikTokReelProps {
 export const TikTokReel = ({ 
   reel, 
   isActive, 
+  isNearActive = true,
   isMuted, 
   onOpenComments, 
   commentsCount 
@@ -41,6 +43,11 @@ export const TikTokReel = ({
   const [videoError, setVideoError] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showSeekIndicator, setShowSeekIndicator] = useState<{ direction: 'forward' | 'backward', visible: boolean }>({ direction: 'forward', visible: false });
+  const [isSpeedBoosted, setIsSpeedBoosted] = useState(false);
+  const [isUiVisible, setIsUiVisible] = useState(true);
   const [authorProfile, setAuthorProfile] = useState<{ 
     full_name: string | null; 
     avatar_url: string | null 
@@ -50,6 +57,8 @@ export const TikTokReel = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const lastTapRef = useRef<number>(0);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const uiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch author profile
   useEffect(() => {
@@ -93,24 +102,100 @@ export const TikTokReel = ({
     }
   }, [isActive, isMuted, isPaused]);
 
+  // UI Visibility Timeout
+  useEffect(() => {
+    if (!isActive) return;
+
+    const hideUi = () => {
+      if (!isPaused) {
+        setIsUiVisible(false);
+      }
+    };
+
+    if (isUiVisible && !isPaused) {
+      uiTimeoutRef.current = setTimeout(hideUi, 2000);
+    }
+
+    return () => {
+      if (uiTimeoutRef.current) clearTimeout(uiTimeoutRef.current);
+    };
+  }, [isUiVisible, isPaused, isActive]);
+
+  const showUiTemporarily = useCallback(() => {
+    setIsUiVisible(true);
+    if (uiTimeoutRef.current) clearTimeout(uiTimeoutRef.current);
+  }, []);
+
   const handleTap = useCallback((e: React.MouseEvent | React.TouchEvent) => {
     // Don't trigger on button clicks
     if ((e.target as HTMLElement).closest('button')) return;
     
     const now = Date.now();
+    const isTouchEvent = 'touches' in e;
+    const clientX = isTouchEvent ? (e as React.TouchEvent).touches[0]?.clientX : (e as React.MouseEvent).clientX;
+    const containerWidth = window.innerWidth;
+
+    // Check for edge taps (15% of width)
+    const isLeftEdge = clientX < containerWidth * 0.15;
+    const isRightEdge = clientX > containerWidth * 0.85;
+
     if (now - lastTapRef.current < 300) {
-      // Double tap - like
+      // Double tap logic
+      if (isRightEdge || isLeftEdge) {
+        // Double tap on edges is handled like a normal double tap (like) unless we want to seek
+        // For TikTok style, double tap anywhere is like.
+      }
+
       if (!isLiked) {
         handleLike();
       }
       setShowLikeAnimation(true);
       setTimeout(() => setShowLikeAnimation(false), 800);
+      lastTapRef.current = 0; // Reset to prevent triple-tap issues
+      return;
+    }
+
+    // Single tap logic
+    if (isLeftEdge || isRightEdge) {
+      // Edge tap - Seek
+      const video = videoRef.current;
+      if (video) {
+        const seekAmount = isLeftEdge ? -5 : 5;
+        video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + seekAmount));
+
+        setShowSeekIndicator({
+          direction: isLeftEdge ? 'backward' : 'forward',
+          visible: true
+        });
+        setTimeout(() => setShowSeekIndicator(prev => ({ ...prev, visible: false })), 500);
+      }
     } else {
-      // Single tap - pause/play
+      // Center tap - Pause/Play
       setIsPaused(prev => !prev);
     }
+
+    showUiTemporarily();
     lastTapRef.current = now;
-  }, [isLiked]);
+  }, [isLiked, isMuted, videoRef.current, showUiTemporarily]);
+
+  const handleLongPressStart = useCallback(() => {
+    longPressTimerRef.current = setTimeout(() => {
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.playbackRate = 2.0;
+        setIsSpeedBoosted(true);
+      }
+    }, 500);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+    if (videoRef.current) {
+      videoRef.current.playbackRate = 1.0;
+      setIsSpeedBoosted(false);
+    }
+  }, []);
 
   const handleLike = async () => {
     if (!user) {
@@ -198,10 +283,19 @@ export const TikTokReel = ({
 
   const username = authorProfile?.full_name?.toLowerCase().replace(/\s+/g, "_") || "user";
 
+  if (!isNearActive) {
+    return (
+      <div className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden md:flex md:items-center md:justify-center">
+        {reel.thumbnail_url && (
+          <img src={reel.thumbnail_url} className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm" alt="" />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative w-full h-screen snap-start snap-always bg-black overflow-hidden md:flex md:items-center md:justify-center"
-      onClick={handleTap}
     >
       {/* Desktop: blurred backdrop using thumbnail for cinematic feel */}
       {reel.thumbnail_url && (
@@ -250,12 +344,15 @@ export const TikTokReel = ({
               poster={reel.thumbnail_url || undefined}
               className="absolute inset-0 w-full h-full object-cover"
               loop
+              preload="auto"
               playsInline
               muted={isMuted}
               autoPlay={isActive}
               onWaiting={() => setIsBuffering(true)}
               onPlaying={() => setIsBuffering(false)}
               onCanPlay={() => setIsBuffering(false)}
+              onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+              onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
               onError={handleVideoError}
             />
           ) : (
@@ -278,10 +375,50 @@ export const TikTokReel = ({
         </div>
       )}
 
+      {/* Gesture Overlay */}
+      <div
+        className="absolute inset-0 z-20 cursor-pointer"
+        onClick={handleTap}
+        onMouseDown={handleLongPressStart}
+        onMouseUp={handleLongPressEnd}
+        onMouseLeave={handleLongPressEnd}
+        onTouchStart={handleLongPressStart}
+        onTouchEnd={handleLongPressEnd}
+        onContextMenu={(e) => e.preventDefault()}
+      />
+
+      {/* Speed Boost Indicator */}
+      {isSpeedBoosted && (
+        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-30 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 border border-white/10 animate-in fade-in zoom-in-95">
+          <Music2 className="w-4 h-4 text-white animate-pulse" />
+          <span className="text-white font-bold text-sm tracking-wider">2X SPEED</span>
+        </div>
+      )}
+
+      {/* Seek Indicator */}
+      {showSeekIndicator.visible && (
+        <div className={cn(
+          "absolute top-1/2 -translate-y-1/2 z-30 pointer-events-none flex flex-col items-center gap-2",
+          showSeekIndicator.direction === 'backward' ? "left-12" : "right-12"
+        )}>
+          <div className="bg-black/40 backdrop-blur-md rounded-full p-4">
+            {showSeekIndicator.direction === 'backward' ? (
+              <div className="flex flex-col items-center">
+                <span className="text-white font-bold text-lg">-5s</span>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <span className="text-white font-bold text-lg">+5s</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Pause indicator */}
       {isPaused && isActive && !isBuffering && (
-        <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-          <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <div className="w-20 h-20 rounded-full bg-black/40 flex items-center justify-center backdrop-blur-sm transition-all duration-300 scale-110">
             <div className="w-0 h-0 border-l-[24px] border-l-white border-y-[14px] border-y-transparent ml-2" />
           </div>
         </div>
@@ -289,13 +426,18 @@ export const TikTokReel = ({
 
       {/* Double-tap like animation */}
       {showLikeAnimation && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <Heart 
-            className="w-32 h-32 text-white fill-white animate-in zoom-in-50 fade-in duration-200" 
-            style={{ 
-              filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.5))',
-            }} 
-          />
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[60]">
+          <div className="relative animate-in zoom-in-50 duration-300">
+            <Heart
+              className="w-32 h-32 text-red-500 fill-red-500"
+              style={{
+                filter: 'drop-shadow(0 0 30px rgba(239,68,68,0.8))',
+              }}
+            />
+            <div className="absolute inset-0 animate-ping opacity-75">
+              <Heart className="w-32 h-32 text-red-400 fill-red-400" />
+            </div>
+          </div>
         </div>
       )}
 
@@ -306,7 +448,10 @@ export const TikTokReel = ({
       <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 pointer-events-none" />
 
       {/* Right side actions - TikTok style */}
-      <div className="absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20">
+      <div className={cn(
+        "absolute right-3 bottom-32 flex flex-col items-center gap-5 z-20 transition-opacity duration-500",
+        isUiVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
         {/* Author avatar with follow button */}
         <div className="relative mb-2">
           <button 
@@ -425,8 +570,19 @@ export const TikTokReel = ({
         </div>
       </div>
 
+      {/* Progress Bar - TikTok style */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20 z-30 overflow-hidden">
+        <div
+          className="h-full bg-white transition-all duration-100 ease-linear shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+          style={{ width: `${(currentTime / duration) * 100}%` }}
+        />
+      </div>
+
       {/* Bottom info - TikTok style */}
-      <div className="absolute bottom-6 left-4 right-20 z-20">
+      <div className={cn(
+        "absolute bottom-6 left-4 right-20 z-20 transition-opacity duration-500",
+        isUiVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
         {/* Username */}
         <button 
           onClick={(e) => { e.stopPropagation(); navigate(`/profile/${reel.user_id}`); }} 

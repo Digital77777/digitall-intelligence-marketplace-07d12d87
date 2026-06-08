@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
@@ -29,6 +29,7 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
     : options || {};
   
   const { initialReelId, initialVideoUrl, initialInsightId } = opts;
+  const queryClient = useQueryClient();
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [initializedForReel, setInitializedForReel] = useState<string | null>(null);
@@ -264,6 +265,13 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
     fetchNextPage: () => {
       if (hasNextReelsPage) fetchNextReelsPage();
       if (hasNextInsightsPage) fetchNextInsightsPage();
+    },
+    refetch: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["community-reels-infinite"] }),
+        queryClient.invalidateQueries({ queryKey: ["insight-videos-for-reels-infinite"] }),
+        queryClient.invalidateQueries({ queryKey: ["youtube-videos-for-reels"] }),
+      ]);
     },
   };
 };
