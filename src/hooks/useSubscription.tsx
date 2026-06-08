@@ -91,9 +91,9 @@ export const useSubscription = () => {
           ...subData,
           tier: subData.tier as SubscriptionTier
         });
-      } else {
+      } else if (user?.id) {
         // Auto-assign starter tier if no subscription
-        await assignStarterTier();
+        await assignStarterTier(user.id);
       }
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
@@ -105,29 +105,25 @@ export const useSubscription = () => {
     }
   };
 
-  const assignStarterTier = async () => {
+  const assignStarterTier = async (userId: string) => {
     try {
-      // Fetch starter tier directly if not in state yet (race condition fix)
-      let starterTier = tiers.find(t => t.name === 'starter');
+      // Fetch starter tier
+      const { data: tierData, error: tierError } = await supabase
+        .from('subscription_tiers')
+        .select('*')
+        .eq('name', 'starter')
+        .single();
       
-      if (!starterTier) {
-        const { data: tierData } = await supabase
-          .from('subscription_tiers')
-          .select('*')
-          .eq('name', 'starter')
-          .single();
-        
-        if (!tierData) {
-          console.error('Starter tier not found in database');
-          return;
-        }
-        starterTier = tierData as SubscriptionTier;
+      if (tierError || !tierData) {
+        console.error('Starter tier not found in database', tierError);
+        return;
       }
+      const starterTier = tierData as SubscriptionTier;
 
       const { data, error } = await supabase
         .from('user_subscriptions')
         .insert({
-          user_id: user!.id,
+          user_id: userId,
           tier_id: starterTier.id,
           status: 'active'
         })

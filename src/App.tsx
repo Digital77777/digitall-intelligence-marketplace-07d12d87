@@ -147,20 +147,10 @@ const PrivateRoute = ({ children }: { children: JSX.Element }) => {
   return user ? children : <Navigate to="/auth" replace />;
 };
 
-// Scroll + volume key handling
+// Scroll handling
 const ScrollToTop = () => {
   const location = useLocation();
   useEffect(() => window.scrollTo(0, 0), [location.pathname]);
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (["VolumeUp", "VolumeDown", "VolumeMute"].includes(e.key)) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () => document.removeEventListener("keydown", handleKeyDown, { capture: true });
-  }, []);
   return null;
 };
 
