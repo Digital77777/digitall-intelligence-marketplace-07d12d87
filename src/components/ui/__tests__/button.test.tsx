@@ -33,12 +33,12 @@ describe('Button', () => {
 
   it('applies different sizes', () => {
     const { rerender, getByRole } = render(<Button size="default">Default</Button>);
-    expect(getByRole('button')).toHaveClass('h-10');
+    expect(getByRole('button')).toHaveClass('h-8');
     
     rerender(<Button size="sm">Small</Button>);
-    expect(getByRole('button')).toHaveClass('h-9');
+    expect(getByRole('button')).toHaveClass('h-7');
     
     rerender(<Button size="lg">Large</Button>);
-    expect(getByRole('button')).toHaveClass('h-11');
+    expect(getByRole('button')).toHaveClass('h-9');
   });
 });

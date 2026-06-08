@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useCallback, useEffect, useMemo } from "react";
 
@@ -29,6 +29,7 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
     : options || {};
   
   const { initialReelId, initialVideoUrl, initialInsightId } = opts;
+  const queryClient = useQueryClient();
   
   const [currentIndex, setCurrentIndex] = useState(0);
   const [initializedForReel, setInitializedForReel] = useState<string | null>(null);
@@ -130,12 +131,12 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return (data || []).map((v: any) => ({
+      return (data || []).map((v: { id: string; user_id?: string; url: string; thumbnail?: string; title?: string; author?: string; created_at: string; like_count?: number }) => ({
         id: `yt-${v.id}`,
         insight_id: v.id,
         user_id: v.user_id || v.id,
         video_url: v.url,
-        thumbnail_url: v.thumbnail,
+        thumbnail_url: v.thumbnail || null,
         title: v.title || v.author || "YouTube video",
         created_at: v.created_at,
         likes_count: v.like_count || 0,
@@ -264,6 +265,13 @@ export const useInfiniteReels = (options?: UseInfiniteReelsOptions | string) => 
     fetchNextPage: () => {
       if (hasNextReelsPage) fetchNextReelsPage();
       if (hasNextInsightsPage) fetchNextInsightsPage();
+    },
+    refetch: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["community-reels-infinite"] }),
+        queryClient.invalidateQueries({ queryKey: ["insight-videos-for-reels-infinite"] }),
+        queryClient.invalidateQueries({ queryKey: ["youtube-videos-for-reels"] }),
+      ]);
     },
   };
 };

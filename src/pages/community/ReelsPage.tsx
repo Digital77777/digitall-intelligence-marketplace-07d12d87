@@ -32,6 +32,7 @@ const ReelsPage = () => {
     hasMore,
     isFetchingMore,
     loadMoreIfNeeded,
+    refetch,
   } = useInfiniteReels({
     initialReelId,
     initialVideoUrl,
@@ -39,7 +40,8 @@ const ReelsPage = () => {
   });
   
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true); // Start muted as per best practices
+  const [hasInteracted, setHasInteracted] = useState(false);
   const [activeTab, setActiveTab] = useState<"foryou" | "following">("foryou");
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -52,6 +54,8 @@ const ReelsPage = () => {
   // Touch gesture state
   const touchStartY = useRef<number>(0);
   const touchStartTime = useRef<number>(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
   
   // Preloaded video cache
   const preloadedVideos = useRef<Set<string>>(new Set());
@@ -171,19 +175,46 @@ const ReelsPage = () => {
       container.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [activeIndex, reels.length]);
+  }, [activeIndex, reels.length, hasMore, isFetchingMore, loadMoreIfNeeded]);
 
   // Handle touch gestures for swipe navigation
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
     touchStartTime.current = Date.now();
-  }, []);
+
+    // Unmute on first interaction
+    if (!hasInteracted) {
+      setIsMuted(false);
+      setHasInteracted(true);
+    }
+  }, [hasInteracted]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (activeIndex === 0 && containerRef.current?.scrollTop === 0) {
+      const currentY = e.touches[0].clientY;
+      const deltaY = currentY - touchStartY.current;
+      if (deltaY > 0) {
+        setPullDistance(Math.min(deltaY * 0.4, 80));
+      }
+    }
+  }, [activeIndex]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     const touchEndY = e.changedTouches[0].clientY;
     const deltaY = touchStartY.current - touchEndY;
     const deltaTime = Date.now() - touchStartTime.current;
     
+    // Handle pull to refresh
+    if (activeIndex === 0 && pullDistance > 60) {
+      setIsRefreshing(true);
+      refetch().finally(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      });
+    } else {
+      setPullDistance(0);
+    }
+
     // Quick swipe detection
     if (Math.abs(deltaY) > 50 && deltaTime < 300) {
       const container = containerRef.current;
@@ -195,15 +226,20 @@ const ReelsPage = () => {
           top: (activeIndex + 1) * window.innerHeight,
           behavior: 'smooth'
         });
-      } else if (deltaY < 0 && activeIndex > 0) {
-        // Swipe down - previous reel
-        container.scrollTo({
-          top: (activeIndex - 1) * window.innerHeight,
-          behavior: 'smooth'
-        });
+      } else if (deltaY < 0) {
+        if (activeIndex > 0) {
+          // Swipe down - previous reel
+          container.scrollTo({
+            top: (activeIndex - 1) * window.innerHeight,
+            behavior: 'smooth'
+          });
+        } else if (deltaY < -150) {
+          // Significant swipe down on first reel - dismiss
+          handleBack();
+        }
       }
     }
-  }, [activeIndex, reels.length]);
+  }, [activeIndex, reels.length, handleBack, pullDistance, refetch]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -225,6 +261,7 @@ const ReelsPage = () => {
         });
       } else if (e.key === "m") {
         setIsMuted(prev => !prev);
+        setHasInteracted(true);
       }
     };
 
@@ -359,7 +396,10 @@ const ReelsPage = () => {
 
         {/* Mute button - bottom left */}
         <button
-          onClick={() => setIsMuted(prev => !prev)}
+          onClick={() => {
+            setIsMuted(prev => !prev);
+            setHasInteracted(true);
+          }}
           className="absolute bottom-8 left-4 md:bottom-6 md:left-6 z-30 p-2.5 rounded-full bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white transition-colors"
         >
           {isMuted ? (
@@ -369,11 +409,24 @@ const ReelsPage = () => {
           )}
         </button>
 
+        {/* Pull to refresh indicator */}
+        {(pullDistance > 0 || isRefreshing) && (
+          <div
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-40 transition-transform duration-200"
+            style={{ transform: `translateX(-50%) translateY(${pullDistance}px)` }}
+          >
+            <div className="bg-white/20 backdrop-blur-md rounded-full p-2 border border-white/10">
+              <Loader2 className={cn("w-6 h-6 text-white", isRefreshing && "animate-spin")} />
+            </div>
+          </div>
+        )}
+
         {/* Reels container - vertical scroll with snap */}
         <div
           ref={containerRef}
           className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide"
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           style={{ scrollSnapType: 'y mandatory' }}
         >
@@ -382,6 +435,7 @@ const ReelsPage = () => {
               key={reel.id}
               reel={reel}
               isActive={index === activeIndex}
+              isNearActive={Math.abs(index - activeIndex) <= 3}
               isMuted={isMuted}
               onOpenComments={() => handleOpenComments(reel.insight_id)}
               commentsCount={commentsCounts[reel.insight_id] || 0}
