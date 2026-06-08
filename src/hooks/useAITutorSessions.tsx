@@ -29,6 +29,7 @@ export const useAITutorSessions = (userId: string | undefined) => {
       const { data, error } = await supabase
         .from('ai_tutor_sessions')
         .select('*')
+        .eq('user_id', userId)
         .order('updated_at', { ascending: false });
       
       if (error) throw error;

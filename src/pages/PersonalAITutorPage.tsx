@@ -75,7 +75,12 @@ const PersonalAITutorPage = () => {
     }
 
     // Save user message
-    await saveMessage(sessionId, userMsg);
+    try {
+      await saveMessage(sessionId, userMsg);
+    } catch (err) {
+      console.error('Failed to save user message:', err);
+      // Continue anyway to maintain UI flow, but log the error
+    }
 
     let assistantContent = '';
 
@@ -149,7 +154,7 @@ const PersonalAITutorPage = () => {
         }
       }
 
-      // Final flush
+      // Final flush of remaining buffer
       if (buffer.trim()) {
         for (let raw of buffer.split('\n')) {
           if (!raw) continue;
@@ -175,13 +180,22 @@ const PersonalAITutorPage = () => {
         }
       }
 
-      // Save assistant message
+      // Save assistant message even if stream was interrupted (best effort persistence)
       if (assistantContent) {
-        await saveMessage(sessionId, { role: 'assistant', content: assistantContent });
+        try {
+          await saveMessage(sessionId, { role: 'assistant', content: assistantContent });
+        } catch (err) {
+          console.error('Failed to save assistant message:', err);
+        }
       }
     } catch (error) {
       console.error('Chat error:', error);
-      toast.error('Failed to send message. Please try again.');
+      toast.error('AI response interrupted. Partially generated content shown.');
+
+      // Save whatever we got before the error
+      if (assistantContent) {
+        await saveMessage(sessionId, { role: 'assistant', content: assistantContent }).catch(console.error);
+      }
     } finally {
       setIsLoading(false);
     }
