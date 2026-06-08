@@ -176,7 +176,7 @@ export const TikTokReel = ({
 
     showUiTemporarily();
     lastTapRef.current = now;
-  }, [isLiked, isMuted, videoRef.current, showUiTemporarily]);
+  }, [isLiked, showUiTemporarily, handleLike]);
 
   const handleLongPressStart = useCallback(() => {
     longPressTimerRef.current = setTimeout(() => {
@@ -197,7 +197,7 @@ export const TikTokReel = ({
     }
   }, []);
 
-  const handleLike = async () => {
+  const handleLike = useCallback(async () => {
     if (!user) {
       navigate("/auth");
       return;
@@ -223,7 +223,7 @@ export const TikTokReel = ({
     } catch (error) {
       toast({ title: "Error", description: "Failed to update like", variant: "destructive" });
     }
-  };
+  }, [user, isLiked, reel.insight_id, navigate, toast]);
 
   const handleShare = async () => {
     try {

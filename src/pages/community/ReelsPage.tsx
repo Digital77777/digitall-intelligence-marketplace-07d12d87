@@ -175,7 +175,7 @@ const ReelsPage = () => {
       container.removeEventListener("scroll", handleScroll);
       clearTimeout(scrollTimeout);
     };
-  }, [activeIndex, reels.length]);
+  }, [activeIndex, reels.length, hasMore, isFetchingMore, loadMoreIfNeeded]);
 
   // Handle touch gestures for swipe navigation
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -239,7 +239,7 @@ const ReelsPage = () => {
         }
       }
     }
-  }, [activeIndex, reels.length, handleBack]);
+  }, [activeIndex, reels.length, handleBack, pullDistance, refetch]);
 
   // Keyboard navigation
   useEffect(() => {
