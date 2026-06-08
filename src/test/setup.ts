@@ -2,6 +2,10 @@ import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
+// Set default environment variables for testing
+process.env.VITE_SUPABASE_URL = 'https://mock.supabase.co';
+process.env.VITE_SUPABASE_ANON_KEY = 'mock-key';
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();

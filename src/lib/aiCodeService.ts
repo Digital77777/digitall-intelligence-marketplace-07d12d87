@@ -16,8 +16,35 @@ export interface CodeCompletionResult {
 
 class AICodeService {
   private async makeRequest(prompt: string, maxTokens: number = 500): Promise<string> {
-    // Using mock responses for demo
-    return this.getMockResponse(prompt);
+    const apiKey = import.meta.env.VITE_HUGGINGFACE_API_KEY;
+
+    if (!apiKey) {
+      console.warn("Hugging Face API Key missing, falling back to mock response");
+      return this.getMockResponse(prompt);
+    }
+
+    try {
+      const response = await fetch(
+        "https://api-inference.huggingface.co/models/codellama/CodeLlama-7b-hf",
+        {
+          headers: { Authorization: `Bearer ${apiKey}` },
+          method: "POST",
+          body: JSON.stringify({
+            inputs: prompt,
+            parameters: {
+              max_new_tokens: maxTokens,
+              return_full_text: false,
+            }
+          }),
+        }
+      );
+
+      const result = await response.json();
+      return Array.isArray(result) ? result[0].generated_text : result.generated_text || this.getMockResponse(prompt);
+    } catch (error) {
+      console.error("AI Service Request Failed:", error);
+      return this.getMockResponse(prompt);
+    }
   }
 
   private getMockResponse(prompt: string): string {

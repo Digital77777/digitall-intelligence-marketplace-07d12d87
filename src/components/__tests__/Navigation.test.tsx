@@ -2,14 +2,18 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@/test/test-utils';
 import Navigation from '../Navigation';
 
-// Mock useAuth hook
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({
-    user: null,
-    loading: false,
-    signOut: vi.fn(),
-  }),
-}));
+// Mock useAuth hook while preserving AuthProvider
+vi.mock('@/hooks/useAuth', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: null,
+      loading: false,
+      signOut: vi.fn(),
+    }),
+  };
+});
 
 describe('Navigation', () => {
   it('renders navigation component', () => {
@@ -20,7 +24,7 @@ describe('Navigation', () => {
 
   it('displays the logo/brand name', () => {
     const { getByText } = render(<Navigation />);
-    expect(getByText(/AI Learning/i)).toBeTruthy();
+    expect(getByText(/Digital Intelligence Marketplace/i)).toBeTruthy();
   });
 
   it('shows sign in button when user is not authenticated', () => {
