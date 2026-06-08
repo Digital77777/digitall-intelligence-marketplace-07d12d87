@@ -22,6 +22,10 @@ import { TopicCard } from "@/components/community/TopicCard";
 import { EventCard } from "@/components/community/EventCard";
 import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import { InstagramFeed } from "@/components/community/InstagramFeed";
+import LinkedInMemberCard from "@/components/community/LinkedInMemberCard";
+import { useActiveMembers } from "@/hooks/useActiveMembers";
+import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
+import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest, useIgnoreConnectionRequest } from "@/hooks/useConnections";
 import { useCommunity } from "@/hooks/useCommunity";
 import { useFeedScroll } from "@/contexts/FeedScrollContext";
 import { usePrefetch } from "@/hooks/usePrefetch";
@@ -33,6 +37,52 @@ import { ContinuationFeed } from "@/components/community/ContinuationFeed";
 import type { CommunityInsight, CommunityEvent } from "@/types/community";
 import { SEOHead } from "@/components/SEOHead";
 import { SuccessWallStrip } from "@/components/growth/SuccessWallStrip";
+
+// Suggested Member Card with hooks
+const SuggestedMemberCard = ({ member }: { member: any }) => {
+  const { user } = useAuth();
+  const { data: connectionStatus } = useConnectionStatus(member.user_id);
+  const { data: followStatus } = useFollowStatus(member.user_id);
+  const { data: isFollowedBy = false } = useIsFollowedBy(member.user_id);
+
+  const sendConnectionRequest = useSendConnectionRequest();
+  const acceptConnection = useAcceptConnectionRequest();
+  const ignoreConnection = useIgnoreConnectionRequest();
+  const followUser = useFollowUser();
+  const unfollowUser = useUnfollowUser();
+  const navigate = useNavigate();
+
+  const isFollowing = !!followStatus;
+  const isOwnProfile = user?.id === member.user_id;
+
+  const getConnectionStatusString = (): 'none' | 'pending' | 'pending_received' | 'accepted' => {
+    if (!connectionStatus) return 'none';
+    if (connectionStatus.status === 'accepted') return 'accepted';
+    if (connectionStatus.status === 'pending') {
+      if (connectionStatus.requester_id === user?.id) return 'pending';
+      return 'pending_received';
+    }
+    return 'none';
+  };
+
+  return (
+    <LinkedInMemberCard
+      member={member}
+      onConnect={() => sendConnectionRequest.mutate(member.user_id)}
+      onFollow={() => followUser.mutate(member.user_id)}
+      onUnfollow={() => unfollowUser.mutate(member.user_id)}
+      onAcceptConnection={() => connectionStatus?.id && acceptConnection.mutate(connectionStatus.id)}
+      onIgnoreConnection={() => connectionStatus?.id && ignoreConnection.mutate(connectionStatus.id)}
+      onViewProfile={() => navigate(`/profile/${member.user_id}`)}
+      connectionStatus={getConnectionStatusString()}
+      isFollowing={isFollowing}
+      isFollowedBy={isFollowedBy}
+      isOwnProfile={isOwnProfile}
+      isConnectPending={sendConnectionRequest.isPending || acceptConnection.isPending || ignoreConnection.isPending}
+      isFollowPending={followUser.isPending || unfollowUser.isPending}
+    />
+  );
+};
 
 // Event category configuration matching BrowseEventsPage
 const EVENT_CATEGORIES = [{
@@ -173,6 +223,15 @@ const CommunityPage = () => {
   const {
     data: stats
   } = useStats();
+
+  // Fetch active members for suggestions
+  const { data: activeMembers = [] } = useActiveMembers();
+  const suggestedMembers = useMemo(() => {
+    // Exclude current user and take top 4
+    return activeMembers
+      .filter(m => m.user_id !== user?.id)
+      .slice(0, 4);
+  }, [activeMembers, user]);
 
   // Helper functions for events (matching BrowseEventsPage)
   const isEventLive = useCallback((eventDate: string, eventTime: string, durationMinutes: number) => {
@@ -403,6 +462,33 @@ const CommunityPage = () => {
           <div className="mb-6">
             <SuccessWallStrip />
           </div>
+
+          {/* Suggested Members - Who to Follow */}
+          {suggestedMembers.length > 0 && (
+            <section className="mb-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-bold">Who to follow</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/community/find-members")}
+                  className="text-primary hover:text-primary/80"
+                >
+                  View all
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {suggestedMembers.map((member) => (
+                  <SuggestedMemberCard key={member.user_id} member={member} />
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Main Content Area */}
           <div>
             {/* Search and Filters */}

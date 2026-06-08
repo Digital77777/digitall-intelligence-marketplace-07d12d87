@@ -1,5 +1,5 @@
 import React from "react";
-import { UserPlus, UserCheck, Clock, Check, UserMinus, Loader2 } from "lucide-react";
+import { UserPlus, UserCheck, Clock, Check, UserMinus, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -9,13 +9,16 @@ export type ActionState =
   | "pending"        // Request sent, waiting for response
   | "pending_received" // Someone sent us a request
   | "active"         // Following or Connected
-  | "loading";       // Loading state
+  | "loading"        // Loading state
+  | "ignored";       // Request ignored (can still follow)
 
 interface SocialActionButtonProps {
   actionType: ActionType;
   state: ActionState;
   onAction: () => void;
   onSecondaryAction?: () => void; // For unfollow or accept
+  onTertiaryAction?: () => void; // For ignore
+  isFollowedBy?: boolean;        // For "Follow Back" label
   disabled?: boolean;
   size?: "sm" | "default" | "lg";
   className?: string;
@@ -27,6 +30,8 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
   state,
   onAction,
   onSecondaryAction,
+  onTertiaryAction,
+  isFollowedBy = false,
   disabled = false,
   size = "sm",
   className,
@@ -92,19 +97,32 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
   // Pending received - someone wants to connect/follow us
   if (state === "pending_received") {
     return (
-      <Button
-        size={size}
-        onClick={isFollow ? onAction : (onSecondaryAction || onAction)}
-        disabled={disabled}
-        className={cn(
-          "bg-emerald-600 hover:bg-emerald-700 text-white",
-          fullWidth && "w-full",
-          className
+      <div className={cn("flex gap-1.5", fullWidth && "w-full")}>
+        <Button
+          size={size}
+          onClick={isFollow ? onAction : (onSecondaryAction || onAction)}
+          disabled={disabled}
+          className={cn(
+            "bg-emerald-600 hover:bg-emerald-700 text-white flex-1",
+            className
+          )}
+        >
+          {isFollow ? <UserPlus className="h-4 w-4 mr-1.5" /> : <Check className="h-4 w-4 mr-1.5" />}
+          {isFollow ? (isFollowedBy ? "Follow Back" : "Follow") : "Accept"}
+        </Button>
+        {!isFollow && onTertiaryAction && (
+          <Button
+            variant="outline"
+            size={size}
+            onClick={onTertiaryAction}
+            disabled={disabled}
+            className="px-2 border-destructive/30 text-destructive hover:bg-destructive/10"
+            title="Ignore Request"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         )}
-      >
-        {isFollow ? <UserPlus className="h-4 w-4 mr-1.5" /> : <Check className="h-4 w-4 mr-1.5" />}
-        {isFollow ? "Follow Back" : "Accept"}
-      </Button>
+      </div>
     );
   }
 
@@ -162,6 +180,7 @@ interface SocialActionsProps {
   onUnfollow: () => void;
   onConnect: () => void;
   onAcceptConnection?: () => void;
+  onIgnoreConnection?: () => void;
   isFollowPending?: boolean;
   isConnectPending?: boolean;
   showMessage?: boolean;
@@ -179,6 +198,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
   onUnfollow,
   onConnect,
   onAcceptConnection,
+  onIgnoreConnection,
   isFollowPending = false,
   isConnectPending = false,
   layout = "horizontal",
@@ -215,6 +235,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
         state={getFollowState()}
         onAction={onFollow}
         onSecondaryAction={onUnfollow}
+        isFollowedBy={isFollowedBy}
         disabled={isFollowPending}
         size={size}
         fullWidth={layout === "vertical"}
@@ -226,6 +247,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
         state={getConnectionState()}
         onAction={onConnect}
         onSecondaryAction={onAcceptConnection}
+        onTertiaryAction={onIgnoreConnection}
         disabled={isConnectPending}
         size={size}
         fullWidth={layout === "vertical"}

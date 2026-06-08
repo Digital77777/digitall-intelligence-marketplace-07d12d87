@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 import { usePostTypography } from "./usePostTypography";
+import { MemberActionsWrapper } from "./MemberActionsWrapper";
 
 interface InstagramPostDesktopProps {
   insight: CommunityInsight;
@@ -210,9 +211,15 @@ export const InstagramPostDesktop = memo(({
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9 -mr-2 text-muted-foreground hover:text-foreground rounded-full shrink-0">
-          <MoreHorizontal className="h-[18px] w-[18px]" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <MemberActionsWrapper
+            userId={insight.profiles?.user_id || ""}
+            size="sm"
+          />
+          <Button variant="ghost" size="icon" className="h-9 w-9 -mr-2 text-muted-foreground hover:text-foreground rounded-full shrink-0">
+            <MoreHorizontal className="h-[18px] w-[18px]" />
+          </Button>
+        </div>
       </header>
 
       {/* Text content above media — more natural reading order */}
