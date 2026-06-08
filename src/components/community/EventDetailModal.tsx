@@ -53,9 +53,7 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
   const { deleteEvent } = useCommunity();
   const { toast } = useToast();
   
-  if (!event) return null;
-
-  const isOwner = user?.id === event.user_id;
+  const isOwner = user?.id === event?.user_id;
   
   // Calculate capacity
   const capacityPercentage = event.max_attendees 
@@ -66,8 +64,9 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
   // Fetch event attendees with their profiles
   const { data: attendees = [] } = useQuery({
-    queryKey: ["event-attendees", event.id],
+    queryKey: ["event-attendees", event?.id],
     queryFn: async () => {
+      if (!event?.id) return [];
       const { data, error } = await supabase
         .from("event_attendees")
         .select(`
@@ -87,8 +86,10 @@ export const EventDetailModal: React.FC<EventDetailModalProps> = ({
       if (error) throw error;
       return data || [];
     },
-    enabled: isOpen,
+    enabled: !!event?.id && isOpen,
   });
+
+  if (!event) return null;
 
   const getInitials = (name?: string) => {
     if (!name) return "U";
