@@ -2,24 +2,110 @@ import { useCallback, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-// Prefetch route components via dynamic import is removed since core pages
-// are already statically imported by App.tsx — dynamic re-imports would not
-// create separate chunks and only generate Vite warnings.
+// Registry of lazy-loaded page imports to enable programmatic prefetching
+// We use a manual registry to match the dynamic imports used in App.tsx exactly
+export const pageImports: Record<string, () => Promise<any>> = {
+  '/course/foundation-path': () => import('../pages/course/FoundationPath'),
+  '/learning-paths/:pathId': () => import('../pages/learning/PathDetailPage'),
+  '/learning-paths/:pathId/:courseId': () => import('../pages/learning/CourseMissionsPage'),
+  '/learning-paths/:pathId/:courseId/:missionId': () => import('../pages/learning/MissionPage'),
+  '/course/practical-skills': () => import('../pages/course/PracticalSkills'),
+  '/course/technical-developer': () => import('../pages/course/TechnicalDeveloper'),
+  '/course/business-careers': () => import('../pages/course/BusinessCareers'),
+  '/course/:courseId/lesson/:lessonId': () => import('../pages/course/LessonPage'),
+  '/tools/ai-code-assistant': () => import('../pages/tools/AICodeAssistant'),
+  '/tools/neural-image-generator': () => import('../pages/tools/NeuralImageGenerator'),
+  '/tools/smart-analytics': () => import('../pages/tools/SmartAnalytics'),
+  '/tools/conversational-ai': () => import('../pages/tools/ConversationalAI'),
+  '/challenge/:id': () => import('../pages/ChallengePage'),
+  '/marketplace/sell-products': () => import('../pages/SellProductsPage'),
+  '/marketplace/freelance-services': () => import('../pages/FreelanceServicesPage'),
+  '/marketplace/create-freelancer-profile': () => import('../pages/CreateFreelancerProfilePage'),
+  '/marketplace/browse-freelancers': () => import('../pages/BrowseFreelancersPage'),
+  '/marketplace/freelancer/:id': () => import('../pages/FreelancerProfilePage'),
+  '/marketplace/my-listings': () => import('../pages/MyListingsPage'),
+  '/marketplace/create': () => import('../pages/CreateListingPage'),
+  '/marketplace/create-listing': () => import('../pages/CreateListingPage'),
+  '/marketplace/schedule-consultation': () => import('../pages/ScheduleConsultationPage'),
+  '/seller-dashboard': () => import('../pages/SellerDashboardPage'),
+  '/client-dashboard': () => import('../pages/ClientDashboardPage'),
+  '/marketplace/post-jobs': () => import('../pages/PostJobsPage'),
+  '/create-job-posting': () => import('../pages/CreateJobPostingPage'),
+  '/marketplace/jobs': () => import('../pages/JobListingsPage'),
+  '/marketplace/ai-development': () => import('../pages/AIDevelopmentPage'),
+  '/marketplace/start-project': () => import('../pages/StartProjectPage'),
+  '/start-selling': () => import('../pages/StartSellingPage'),
+  '/creator-suite': () => import('../pages/CreatorSuitePage'),
+  '/marketplace/wishlist': () => import('../pages/WishlistPage'),
+  '/community/topic/:topicId': () => import('../pages/community/TopicDetailPage'),
+  '/community/browse-events': () => import('../pages/community/BrowseEventsPage'),
+  '/community/find-members': () => import('../pages/community/FindMembersPage'),
+  '/community/host-event': () => import('../pages/community/HostEventPage'),
+  '/community/edit-event/:eventId': () => import('../pages/community/EditEventPage'),
+  '/community/inbox': () => import('../pages/community/InboxPage'),
+  '/community/share-insight': () => import('../pages/community/ShareInsightPage'),
+  '/community/start-topic': () => import('../pages/community/StartTopicPage'),
+  '/community/join-whatsapp': () => import('../pages/community/WhatsAppCommunityPage'),
+  '/community/create-reel': () => import('../pages/community/CreateReelPage'),
+  '/community/followers': () => import('../pages/community/FollowersPage'),
+  '/community/my-network': () => import('../pages/community/MyNetworkPage'),
+  '/career-certification': () => import('../pages/CareerCertificationPage'),
+  '/career-certification/:slug': () => import('../pages/career/CertificationDetailPage'),
+  '/career/job-matches': () => import('../pages/career/JobMatchesPage'),
+  '/career/recruiter': () => import('../pages/career/RecruiterDashboardPage'),
+  '/job-placement': () => import('../pages/JobPlacementPage'),
+  '/strategy-sessions': () => import('../pages/StrategySessionsPage'),
+  '/personal-ai-tutor': () => import('../pages/PersonalAITutorPage'),
+  '/analytics': () => import('../pages/AnalyticsPage'),
+  '/support': () => import('../pages/SupportPage'),
+  '/notification-settings': () => import('../pages/NotificationSettingsPage'),
+  '/install-pwa': () => import('../pages/InstallPWAPage'),
+  '/profile/:userId': () => import('../pages/PublicProfilePage'),
+  '/edit-listing/:id': () => import('../pages/EditListingPage'),
+  '/listing/:id': () => import('../pages/ListingDetailPage'),
+  '/marketplace/listing/:id': () => import('../pages/ListingDetailPage'),
+  '/marketplace/preview/:id': () => import('../pages/ListingPreviewFeedPage'),
+  '/feedback': () => import('../pages/FeedbackPage'),
+  '/update-app': () => import('../pages/UpdateAppPage'),
+  '/creator/onboarding': () => import('../pages/creator/CreatorOnboardingPage'),
+  '/programs/coming-soon': () => import('../pages/programs/ComingSoonPage'),
+  '/programs/referral-rewards': () => import('../pages/programs/ReferralRewardsPage'),
+  '/programs/community-hero': () => import('../pages/programs/CommunityHeroPage'),
+  '/programs/quests': () => import('../pages/programs/QuestsPage'),
+  '/programs/ambassador': () => import('../pages/programs/AmbassadorPage'),
+  '/growth': () => import('../pages/growth/GrowthHubPage'),
+  '/growth/quests': () => import('../pages/growth/QuestsBoardPage'),
+  '/growth/partner': () => import('../pages/growth/PartnerDashboardPage'),
+  '/growth/success': () => import('../pages/growth/SuccessWallPage'),
+};
 
-// Cache to track which data has been prefetched
-const prefetchedData = new Set<string>();
-
-// Data prefetch keys for core routes
+const prefetched = new Set<string>();
 
 export const usePrefetch = () => {
   const queryClient = useQueryClient();
 
-  // Prefetch community data
-  const prefetchCommunityData = useCallback(() => {
-    if (prefetchedData.has('community')) return;
-    prefetchedData.add('community');
+  const findMatchingPath = (path: string) => {
+    if (pageImports[path]) return path;
+    return Object.keys(pageImports).find(route => {
+      const routeParts = route.split('/');
+      const pathParts = path.split('/');
+      if (routeParts.length !== pathParts.length) return false;
+      return routeParts.every((part, i) => part.startsWith(':') || part === pathParts[i]);
+    });
+  };
 
-    // Prefetch insights
+  const prefetchComponent = useCallback((path: string) => {
+    const matchingPath = findMatchingPath(path);
+    if (matchingPath && !prefetched.has(`comp:${matchingPath}`)) {
+      prefetched.add(`comp:${matchingPath}`);
+      pageImports[matchingPath]();
+    }
+  }, []);
+
+  const prefetchCommunityData = useCallback(() => {
+    if (prefetched.has('data:community')) return;
+    prefetched.add('data:community');
+
     queryClient.prefetchQuery({
       queryKey: ["community-insights"],
       queryFn: async () => {
@@ -34,7 +120,6 @@ export const usePrefetch = () => {
       staleTime: 1000 * 60 * 10,
     });
 
-    // Prefetch events
     queryClient.prefetchQuery({
       queryKey: ["community-events"],
       queryFn: async () => {
@@ -50,14 +135,12 @@ export const usePrefetch = () => {
     });
   }, [queryClient]);
 
-  // Prefetch reels data - uses infinite query keys to match useInfiniteReels hook
   const prefetchReelsData = useCallback(() => {
-    if (prefetchedData.has('reels')) return;
-    prefetchedData.add('reels');
+    if (prefetched.has('data:reels')) return;
+    prefetched.add('data:reels');
 
     const REELS_PAGE_SIZE = 10;
 
-    // Prefetch first page of community_reels using infinite query key
     queryClient.prefetchInfiniteQuery({
       queryKey: ["community-reels-infinite"],
       queryFn: async ({ pageParam = 0 }) => {
@@ -68,16 +151,13 @@ export const usePrefetch = () => {
           .range(pageParam * REELS_PAGE_SIZE, (pageParam + 1) * REELS_PAGE_SIZE - 1);
 
         if (error) throw error;
-        
-        const reels = (data || []).map(reel => ({
-          ...reel,
-          created_at: reel.created_at || new Date().toISOString(),
-          likes_count: reel.likes_count || 0,
-          views_count: reel.views_count || 0,
-        }));
-
         return {
-          reels,
+          reels: (data || []).map(reel => ({
+            ...reel,
+            created_at: reel.created_at || new Date().toISOString(),
+            likes_count: reel.likes_count || 0,
+            views_count: reel.views_count || 0,
+          })),
           nextPage: data && data.length === REELS_PAGE_SIZE ? pageParam + 1 : undefined
         };
       },
@@ -85,7 +165,6 @@ export const usePrefetch = () => {
       staleTime: 1000 * 60 * 10,
     });
 
-    // Prefetch first page of insight videos using infinite query key
     queryClient.prefetchInfiniteQuery({
       queryKey: ["insight-videos-for-reels-infinite"],
       queryFn: async ({ pageParam = 0 }) => {
@@ -97,7 +176,6 @@ export const usePrefetch = () => {
           .range(pageParam * REELS_PAGE_SIZE, (pageParam + 1) * REELS_PAGE_SIZE - 1);
 
         if (error) throw error;
-        
         const reels = (data || []).flatMap((insight) => 
           (insight.videos || []).map((url: string, i: number) => ({
             id: `insight-video-${insight.id}-${i}`,
@@ -122,10 +200,9 @@ export const usePrefetch = () => {
     });
   }, [queryClient]);
 
-  // Basic marketplace data prefetch
   const prefetchMarketplaceData = useCallback(() => {
-    if (prefetchedData.has('marketplace')) return;
-    prefetchedData.add('marketplace');
+    if (prefetched.has('data:marketplace')) return;
+    prefetched.add('data:marketplace');
 
     queryClient.prefetchQuery({
       queryKey: ["marketplace-listings-preview"],
@@ -142,12 +219,10 @@ export const usePrefetch = () => {
     });
   }, [queryClient]);
 
-  // Enhanced marketplace browse data prefetch - fetches all data needed by BrowseMarketplacePage
   const prefetchMarketplaceBrowseData = useCallback(() => {
-    if (prefetchedData.has('marketplace-browse')) return;
-    prefetchedData.add('marketplace-browse');
+    if (prefetched.has('data:marketplace-browse')) return;
+    prefetched.add('data:marketplace-browse');
 
-    // Prefetch categories
     queryClient.prefetchQuery({
       queryKey: ['marketplace-categories'],
       queryFn: async () => {
@@ -161,68 +236,10 @@ export const usePrefetch = () => {
       },
       staleTime: 1000 * 60 * 10,
     });
-
-    // Prefetch featured/suggested listings
-    queryClient.prefetchQuery({
-      queryKey: ['marketplace-suggested'],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('marketplace_listings')
-          .select(`
-            *,
-            category:marketplace_categories(id, name, icon)
-          `)
-          .eq('status', 'active')
-          .eq('is_featured', true)
-          .order('created_at', { ascending: false })
-          .limit(10);
-        if (error) throw error;
-        return data || [];
-      },
-      staleTime: 1000 * 60 * 10,
-    });
-
-    // Prefetch top chart listings (sorted by view count as proxy for popularity)
-    queryClient.prefetchQuery({
-      queryKey: ['marketplace-top-charts'],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('marketplace_listings')
-          .select(`
-            *,
-            category:marketplace_categories(id, name, icon)
-          `)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(20);
-        if (error) throw error;
-        return data || [];
-      },
-      staleTime: 1000 * 60 * 10,
-    });
-
-    // Prefetch initial listings for browse page
-    queryClient.prefetchQuery({
-      queryKey: ['marketplace-listings', { page: 1, search: '' }],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('marketplace_listings')
-          .select(`
-            *,
-            category:marketplace_categories(id, name, icon)
-          `)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .range(0, 19);
-        if (error) throw error;
-        return data || [];
-      },
-      staleTime: 1000 * 60 * 10,
-    });
   }, [queryClient]);
 
   const prefetchRoute = useCallback((path: string) => {
-    // Prefetch associated data based on route
+    prefetchComponent(path);
     if (path === '/community/reels') {
       prefetchReelsData();
     } else if (path === '/community' || path.startsWith('/community/')) {
@@ -232,18 +249,7 @@ export const usePrefetch = () => {
     } else if (path === '/marketplace' || path.startsWith('/marketplace/')) {
       prefetchMarketplaceData();
     }
-  }, [prefetchReelsData, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData]);
-
-  // Prefetch core data on mount
-  const prefetchCoreRoutes = useCallback(() => {
-    // Delay to not block initial render
-    setTimeout(() => {
-      prefetchCommunityData();
-      prefetchMarketplaceData();
-      prefetchMarketplaceBrowseData();
-      prefetchReelsData();
-    }, 1000);
-  }, [prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData, prefetchReelsData]);
+  }, [prefetchComponent, prefetchReelsData, prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData]);
 
   const handleMouseEnter = useCallback((path: string) => {
     prefetchRoute(path);
@@ -253,22 +259,30 @@ export const usePrefetch = () => {
     prefetchRoute(path);
   }, [prefetchRoute]);
 
+  const prefetchCoreRoutes = useCallback(() => {
+    const prefetch = () => {
+      prefetchCommunityData();
+      prefetchMarketplaceData();
+      prefetchMarketplaceBrowseData();
+      prefetchReelsData();
+    };
+    if ('requestIdleCallback' in window) {
+      (window as any).requestIdleCallback(prefetch);
+    } else {
+      setTimeout(prefetch, 1000);
+    }
+  }, [prefetchCommunityData, prefetchMarketplaceData, prefetchMarketplaceBrowseData, prefetchReelsData]);
+
   return {
     prefetchRoute,
-    prefetchReelsData,
-    prefetchCommunityData,
-    prefetchMarketplaceData,
-    prefetchMarketplaceBrowseData,
     prefetchCoreRoutes,
     handleMouseEnter,
     handleTouchStart,
   };
 };
 
-// Hook to auto-prefetch on app load
 export const useAutoPrefetch = () => {
   const { prefetchCoreRoutes } = usePrefetch();
-
   useEffect(() => {
     prefetchCoreRoutes();
   }, [prefetchCoreRoutes]);

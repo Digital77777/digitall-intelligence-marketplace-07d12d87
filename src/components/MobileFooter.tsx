@@ -64,6 +64,7 @@ const MobileFooter = () => {
               key={item.path}
               to={item.path}
               onClick={() => handleNavClick(item.path, isActive)}
+              onMouseEnter={() => handleTouchStart(item.path)}
               onTouchStart={() => handleTouchStart(item.path)}
               aria-label={`Navigate to ${item.label}`}
               aria-current={isActive ? "page" : undefined}
