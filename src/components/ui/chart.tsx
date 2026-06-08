@@ -74,6 +74,11 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  // Simple sanitization to prevent CSS injection
+  const sanitizeValue = (value: string) => {
+    return value.replace(/[^\w\s#(),.%-]/gi, '')
+  }
+
   return (
     <style
       dangerouslySetInnerHTML={{
@@ -86,7 +91,7 @@ ${colorConfig
     const color =
       itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
       itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color ? `  --color-${key}: ${sanitizeValue(color)};` : null
   })
   .join("\n")}
 }
