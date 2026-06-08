@@ -9,7 +9,6 @@ import type { CommunityTopic } from "@/types/community";
 import { RichTextRenderer } from "@/components/community/RichTextRenderer";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
-import { MemberActionsWrapper } from "./MemberActionsWrapper";
 
 interface TopicCardProps {
   topic: CommunityTopic;
@@ -54,17 +53,11 @@ export const TopicCard = memo(({ topic, onTopicClick, getInitials }: TopicCardPr
               {formatDistanceToNow(new Date(topic.created_at), { addSuffix: true })}
             </p>
           </div>
-          <div className="flex items-center gap-1">
-            <MemberActionsWrapper
-              userId={topic.profiles?.user_id || ""}
-              size="sm"
-            />
-            {topic.is_pinned && (
-              <Badge variant="secondary" className="text-xs shrink-0 px-2 py-0.5">
-                <TrendingUp className="w-3 h-3" />
-              </Badge>
-            )}
-          </div>
+          {topic.is_pinned && (
+            <Badge variant="secondary" className="text-xs shrink-0 px-2 py-0.5">
+              <TrendingUp className="w-3 h-3" />
+            </Badge>
+          )}
         </div>
 
         {/* Post Content */}

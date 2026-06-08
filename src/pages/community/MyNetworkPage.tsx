@@ -29,7 +29,8 @@ import {
   useAcceptConnectionRequest,
   useIgnoreConnectionRequest,
   useSendConnectionRequest,
-  useConnectionStatus
+  useConnectionStatus,
+  type ConnectionWithProfile
 } from "@/hooks/useConnections";
 import { SEOHead } from "@/components/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -40,6 +41,15 @@ interface NetworkUser {
   full_name: string | null;
   avatar_url: string | null;
   headline: string | null;
+}
+
+interface ConnectionWithConnectedUser extends ConnectionWithProfile {
+  connected_user?: {
+    user_id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    headline: string | null;
+  } | null;
 }
 
 // Wrapper component for member card with hooks
@@ -107,14 +117,15 @@ const NetworkMemberCard = ({
 const PendingRequestCard = ({ 
   connection 
 }: { 
-  connection: any;
+  connection: ConnectionWithProfile;
 }) => {
   const user = connection.requester || { 
     user_id: connection.requester_id,
     full_name: null,
     avatar_url: null,
-    headline: null
   };
+
+  const headline = (user as { headline?: string | null }).headline || null;
 
   return (
     <Card className="border-primary/20 bg-primary/5">
@@ -124,7 +135,7 @@ const PendingRequestCard = ({
             user_id: user.user_id || connection.requester_id,
             full_name: user.full_name,
             avatar_url: user.avatar_url,
-            headline: user.headline,
+            headline,
           }}
           connectionStatus="pending_received"
           variant="list"
@@ -170,12 +181,15 @@ const MyNetworkPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.follower_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as NetworkUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.follower_id,
+          full_name: profile?.full_name || null,
+          avatar_url: profile?.avatar_url || null,
+          headline: profile?.headline || null,
+        };
+      }) as NetworkUser[];
     },
     enabled: !!user,
   });
@@ -201,12 +215,15 @@ const MyNetworkPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.following_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as NetworkUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.following_id,
+          full_name: profile?.full_name || null,
+          avatar_url: profile?.avatar_url || null,
+          headline: profile?.headline || null,
+        };
+      }) as NetworkUser[];
     },
     enabled: !!user,
   });
@@ -461,7 +478,7 @@ const MyNetworkPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                connections.map((connection: any) => (
+                (connections as ConnectionWithConnectedUser[]).map((connection) => (
                   <NetworkMemberCard
                     key={connection.id}
                     user={{

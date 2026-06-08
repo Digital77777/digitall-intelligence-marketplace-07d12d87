@@ -23,7 +23,7 @@ import { EventCard } from "@/components/community/EventCard";
 import { EventSkeletonGrid } from "@/components/community/EventCardSkeleton";
 import { InstagramFeed } from "@/components/community/InstagramFeed";
 import LinkedInMemberCard from "@/components/community/LinkedInMemberCard";
-import { useActiveMembers } from "@/hooks/useActiveMembers";
+import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
 import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
 import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest, useIgnoreConnectionRequest } from "@/hooks/useConnections";
 import { useCommunity } from "@/hooks/useCommunity";
@@ -39,7 +39,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { SuccessWallStrip } from "@/components/growth/SuccessWallStrip";
 
 // Suggested Member Card with hooks
-const SuggestedMemberCard = ({ member }: { member: any }) => {
+const SuggestedMemberCard = ({ member }: { member: ActiveMember }) => {
   const { user } = useAuth();
   const { data: connectionStatus } = useConnectionStatus(member.user_id);
   const { data: followStatus } = useFollowStatus(member.user_id);
@@ -434,7 +434,7 @@ const CommunityPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
               <Button size="lg" className="bg-gradient-ai text-white" onClick={handleStartTopic}>
                 <Plus className="mr-2 h-5 w-5" />
-                ​Private   
+                Private
               </Button>
               <Button variant="outline" size="lg" onClick={() => navigate('/community/reels')}>
                 <Play className="mr-2 h-5 w-5" />

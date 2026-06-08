@@ -2,10 +2,9 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Users, UserPlus, UserCheck, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
@@ -51,6 +50,8 @@ const MemberCardWithHooks = ({
     return 'none';
   };
 
+  const connectionId = connectionStatus?.id;
+
   return (
     <MemberCard
       member={{
@@ -66,8 +67,8 @@ const MemberCardWithHooks = ({
       onFollow={() => followUser.mutate(userData.user_id)}
       onUnfollow={() => unfollowUser.mutate(userData.user_id)}
       onConnect={() => sendConnectionRequest.mutate(userData.user_id)}
-      onAcceptConnection={connectionStatus?.id ? () => acceptConnection.mutate(connectionStatus.id) : undefined}
-      onIgnoreConnection={connectionStatus?.id ? () => ignoreConnection.mutate(connectionStatus.id) : undefined}
+      onAcceptConnection={connectionId ? () => acceptConnection.mutate(connectionId) : undefined}
+      onIgnoreConnection={connectionId ? () => ignoreConnection.mutate(connectionId) : undefined}
       isFollowPending={followUser.isPending || unfollowUser.isPending}
       isConnectPending={sendConnectionRequest.isPending || acceptConnection.isPending || ignoreConnection.isPending}
       variant="list"
@@ -103,12 +104,15 @@ const FollowersPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.follower_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as FollowUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.follower_id,
+          full_name: profile?.full_name,
+          avatar_url: profile?.avatar_url,
+          headline: profile?.headline,
+        };
+      }) as FollowUser[];
     },
     enabled: !!user,
   });
@@ -134,12 +138,15 @@ const FollowersPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.following_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as FollowUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.following_id,
+          full_name: profile?.full_name,
+          avatar_url: profile?.avatar_url,
+          headline: profile?.headline,
+        };
+      }) as FollowUser[];
     },
     enabled: !!user,
   });

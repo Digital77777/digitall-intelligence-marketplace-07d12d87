@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef, useEffect } from "react";
+import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye, Share2, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -39,29 +39,32 @@ export const InstagramPostDesktop = memo(({
   const lastClickRef = useRef<number>(0);
 
   // Combine images and videos for carousel
-  const mediaItems: { type: 'image' | 'video'; src: string; poster?: string }[] = [];
-  
-  if (insight.cover_image) {
-    mediaItems.push({ type: 'image', src: insight.cover_image });
-  }
-  
-  if (insight.images && insight.images.length > 0) {
-    insight.images.forEach((img) => {
-      if (img !== insight.cover_image) {
-        mediaItems.push({ type: 'image', src: img });
-      }
-    });
-  }
-  
-  if (insight.videos && insight.videos.length > 0) {
-    insight.videos.forEach((video, index) => {
-      mediaItems.push({ 
-        type: 'video', 
-        src: video, 
-        poster: insight.video_thumbnails?.[index] 
+  const mediaItems = useMemo(() => {
+    const items: { type: 'image' | 'video'; src: string; poster?: string }[] = [];
+
+    if (insight.cover_image) {
+      items.push({ type: 'image', src: insight.cover_image });
+    }
+
+    if (insight.images && insight.images.length > 0) {
+      insight.images.forEach((img) => {
+        if (img !== insight.cover_image) {
+          items.push({ type: 'image', src: img });
+        }
       });
-    });
-  }
+    }
+
+    if (insight.videos && insight.videos.length > 0) {
+      insight.videos.forEach((video, index) => {
+        items.push({
+          type: 'video',
+          src: video,
+          poster: insight.video_thumbnails?.[index]
+        });
+      });
+    }
+    return items;
+  }, [insight.cover_image, insight.images, insight.videos, insight.video_thumbnails]);
 
   const hasMultipleMedia = mediaItems.length > 1;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
