@@ -191,7 +191,13 @@ export const InstagramPostDesktop = memo(({
           </Avatar>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[15px] font-semibold leading-tight hover:underline cursor-pointer truncate">
+              <span
+                className="text-[15px] font-semibold leading-tight hover:underline cursor-pointer truncate"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewClick(insight);
+                }}
+              >
                 {insight.profiles?.full_name || "Community Member"}
               </span>
               {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
