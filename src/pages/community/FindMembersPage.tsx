@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
-import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest } from "@/hooks/useConnections";
+import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest, useRemoveConnection } from "@/hooks/useConnections";
 import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -29,6 +29,7 @@ const MemberCardWithHooks = ({
   const { data: isFollowedBy = false } = useIsFollowedBy(member.user_id);
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnectionRequest();
+  const removeConnection = useRemoveConnection();
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   
@@ -64,6 +65,7 @@ const MemberCardWithHooks = ({
       onUnfollow={() => unfollowUser.mutate(member.user_id)}
       onConnect={() => sendConnectionRequest.mutate(member.user_id)}
       onAcceptConnection={connectionStatus?.id ? () => acceptConnection.mutate(connectionStatus.id) : undefined}
+      onDisconnect={connectionStatus?.id ? () => removeConnection.mutate(connectionStatus.id) : undefined}
       isFollowPending={followUser.isPending}
       isConnectPending={sendConnectionRequest.isPending}
       variant={variant}

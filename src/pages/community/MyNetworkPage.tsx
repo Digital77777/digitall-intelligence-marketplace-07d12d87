@@ -28,7 +28,8 @@ import {
   useAcceptedConnections,
   useAcceptConnectionRequest,
   useIgnoreConnectionRequest,
-  useSendConnectionRequest
+  useSendConnectionRequest,
+  useRemoveConnection
 } from "@/hooks/useConnections";
 import { SEOHead } from "@/components/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +63,7 @@ const NetworkMemberCard = ({
   const unfollowUser = useUnfollowUser();
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnectionRequest();
+  const removeConnection = useRemoveConnection();
 
   const isFollowing = !!followStatus;
   const isOwnProfile = currentUser?.id === user.user_id;
@@ -82,6 +84,7 @@ const NetworkMemberCard = ({
       onUnfollow={() => unfollowUser.mutate(user.user_id)}
       onConnect={() => sendConnectionRequest.mutate(user.user_id)}
       onAcceptConnection={connectionId ? () => acceptConnection.mutate(connectionId) : undefined}
+      onDisconnect={connectionId ? () => removeConnection.mutate(connectionId) : undefined}
       isFollowPending={followUser.isPending}
       isConnectPending={sendConnectionRequest.isPending}
       variant={variant}

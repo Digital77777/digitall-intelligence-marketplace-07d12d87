@@ -281,11 +281,45 @@ export const useIgnoreConnectionRequest = () => {
   });
 };
 
+// Standalone mutation hook for removing/disconnecting
+export const useRemoveConnection = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (connectionId: string) => {
+      const { error } = await supabase
+        .from("user_connections")
+        .delete()
+        .eq("id", connectionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-connection-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["connection-status"] });
+      queryClient.invalidateQueries({ queryKey: ["accepted-connections"] });
+      toast({
+        title: "Connection Removed",
+        description: "You are no longer connected with this user.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to remove connection",
+        variant: "destructive",
+      });
+    },
+  });
+};
+
 // Legacy hook for backward compatibility - deprecated, use standalone hooks instead
 export const useConnections = () => {
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnectionRequest = useAcceptConnectionRequest();
   const ignoreConnectionRequest = useIgnoreConnectionRequest();
+  const removeConnection = useRemoveConnection();
 
   return {
     useConnectionStatus,
@@ -294,5 +328,6 @@ export const useConnections = () => {
     sendConnectionRequest,
     acceptConnectionRequest,
     ignoreConnectionRequest,
+    removeConnection,
   };
 };

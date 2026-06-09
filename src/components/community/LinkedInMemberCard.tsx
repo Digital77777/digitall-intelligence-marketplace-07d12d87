@@ -1,10 +1,11 @@
 import React from "react";
-import { X, UserPlus, Clock, Check } from "lucide-react";
+import { X } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
+import { SocialActions } from "./SocialActionButton";
 
 export interface LinkedInMemberCardProps {
   member: {
@@ -17,10 +18,13 @@ export interface LinkedInMemberCardProps {
   };
   onConnect: (userId: string) => void;
   onFollow: (userId: string) => void;
+  onUnfollow: (userId: string) => void;
   onViewProfile: (userId: string) => void;
   onDismiss?: (userId: string) => void;
-  connectionStatus: 'none' | 'pending' | 'accepted';
+  onAcceptConnection?: (userId: string) => void;
+  connectionStatus: 'none' | 'pending' | 'pending_received' | 'accepted';
   isFollowing: boolean;
+  isFollowedBy?: boolean;
   isOwnProfile: boolean;
   isConnectPending: boolean;
   isFollowPending: boolean;
@@ -30,10 +34,13 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
   member,
   onConnect,
   onFollow,
+  onUnfollow,
   onViewProfile,
   onDismiss,
+  onAcceptConnection,
   connectionStatus,
   isFollowing,
+  isFollowedBy = false,
   isOwnProfile,
   isConnectPending,
   isFollowPending,
@@ -48,88 +55,6 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
-
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (connectionStatus === 'none' && !isFollowing) {
-      onConnect(member.user_id);
-    } else if (!isFollowing) {
-      onFollow(member.user_id);
-    }
-  };
-
-  const renderButton = () => {
-    if (isOwnProfile) {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full rounded-full text-xs font-medium"
-          onClick={(e) => {
-            e.stopPropagation();
-            onViewProfile(member.user_id);
-          }}
-        >
-          View Profile
-        </Button>
-      );
-    }
-
-    if (connectionStatus === 'accepted') {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="w-full rounded-full text-xs font-medium bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
-        >
-          <Check className="h-3 w-3 mr-1" />
-          Connected
-        </Button>
-      );
-    }
-
-    if (connectionStatus === 'pending') {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="w-full rounded-full text-xs font-medium bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800"
-        >
-          <Clock className="h-3 w-3 mr-1" />
-          Pending
-        </Button>
-      );
-    }
-
-    if (isFollowing) {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className="w-full rounded-full text-xs font-medium bg-primary/10 text-primary border-primary/20"
-        >
-          <Check className="h-3 w-3 mr-1" />
-          Following
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleButtonClick}
-        disabled={isConnectPending || isFollowPending}
-        className="w-full rounded-full text-xs font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-      >
-        <UserPlus className="h-3 w-3 mr-1" />
-        Connect
-      </Button>
-    );
   };
 
   return (
@@ -201,7 +126,33 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
         </div>
 
         {/* Action button */}
-        {renderButton()}
+        <div onClick={(e) => e.stopPropagation()}>
+          {isOwnProfile ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full rounded-full text-xs font-medium"
+              onClick={() => onViewProfile(member.user_id)}
+            >
+              View Profile
+            </Button>
+          ) : (
+            <SocialActions
+              userId={member.user_id}
+              isFollowing={isFollowing}
+              isFollowedBy={isFollowedBy}
+              connectionStatus={connectionStatus}
+              onFollow={() => onFollow(member.user_id)}
+              onUnfollow={() => onUnfollow(member.user_id)}
+              onConnect={() => onConnect(member.user_id)}
+              onAcceptConnection={onAcceptConnection ? () => onAcceptConnection(member.user_id) : undefined}
+              isFollowPending={isFollowPending}
+              isConnectPending={isConnectPending}
+              layout="vertical"
+              size="sm"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

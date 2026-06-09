@@ -136,15 +136,18 @@ export const SocialActionButton: React.FC<SocialActionButtonProps> = ({
       <Button
         variant="outline"
         size={size}
-        disabled
+        onClick={onSecondaryAction || onAction}
+        disabled={disabled}
         className={cn(
-          "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
+          "group bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all",
           fullWidth && "w-full",
           className
         )}
       >
-        <Check className="h-4 w-4 mr-1.5" />
-        Connected
+        <Check className="h-4 w-4 mr-1.5 group-hover:hidden" />
+        <UserMinus className="h-4 w-4 mr-1.5 hidden group-hover:inline" />
+        <span className="group-hover:hidden">Connected</span>
+        <span className="hidden group-hover:inline">Disconnect</span>
       </Button>
     );
   }
@@ -162,6 +165,7 @@ interface SocialActionsProps {
   onUnfollow: () => void;
   onConnect: () => void;
   onAcceptConnection?: () => void;
+  onDisconnect?: () => void;
   isFollowPending?: boolean;
   isConnectPending?: boolean;
   showMessage?: boolean;
@@ -179,6 +183,7 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
   onUnfollow,
   onConnect,
   onAcceptConnection,
+  onDisconnect,
   isFollowPending = false,
   isConnectPending = false,
   layout = "horizontal",
@@ -225,7 +230,9 @@ export const SocialActions: React.FC<SocialActionsProps> = ({
         actionType="connect"
         state={getConnectionState()}
         onAction={onConnect}
-        onSecondaryAction={onAcceptConnection}
+        onSecondaryAction={
+          getConnectionState() === "active" ? onDisconnect : onAcceptConnection
+        }
         disabled={isConnectPending}
         size={size}
         fullWidth={layout === "vertical"}
