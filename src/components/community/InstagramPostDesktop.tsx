@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef, useEffect } from "react";
+import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye, Share2, Bookmark } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 import { usePostTypography } from "./usePostTypography";
+import { MemberActionsWrapper } from "./MemberActionsWrapper";
 
 interface InstagramPostDesktopProps {
   insight: CommunityInsight;
@@ -38,29 +39,32 @@ export const InstagramPostDesktop = memo(({
   const lastClickRef = useRef<number>(0);
 
   // Combine images and videos for carousel
-  const mediaItems: { type: 'image' | 'video'; src: string; poster?: string }[] = [];
-  
-  if (insight.cover_image) {
-    mediaItems.push({ type: 'image', src: insight.cover_image });
-  }
-  
-  if (insight.images && insight.images.length > 0) {
-    insight.images.forEach((img) => {
-      if (img !== insight.cover_image) {
-        mediaItems.push({ type: 'image', src: img });
-      }
-    });
-  }
-  
-  if (insight.videos && insight.videos.length > 0) {
-    insight.videos.forEach((video, index) => {
-      mediaItems.push({ 
-        type: 'video', 
-        src: video, 
-        poster: insight.video_thumbnails?.[index] 
+  const mediaItems = useMemo(() => {
+    const items: { type: 'image' | 'video'; src: string; poster?: string }[] = [];
+
+    if (insight.cover_image) {
+      items.push({ type: 'image', src: insight.cover_image });
+    }
+
+    if (insight.images && insight.images.length > 0) {
+      insight.images.forEach((img) => {
+        if (img !== insight.cover_image) {
+          items.push({ type: 'image', src: img });
+        }
       });
-    });
-  }
+    }
+
+    if (insight.videos && insight.videos.length > 0) {
+      insight.videos.forEach((video, index) => {
+        items.push({
+          type: 'video',
+          src: video,
+          poster: insight.video_thumbnails?.[index]
+        });
+      });
+    }
+    return items;
+  }, [insight.cover_image, insight.images, insight.videos, insight.video_thumbnails]);
 
   const hasMultipleMedia = mediaItems.length > 1;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
@@ -187,7 +191,13 @@ export const InstagramPostDesktop = memo(({
           </Avatar>
           <div className="flex flex-col min-w-0">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-[15px] font-semibold leading-tight hover:underline cursor-pointer truncate">
+              <span
+                className="text-[15px] font-semibold leading-tight hover:underline cursor-pointer truncate"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewClick(insight);
+                }}
+              >
                 {insight.profiles?.full_name || "Community Member"}
               </span>
               {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
@@ -210,9 +220,15 @@ export const InstagramPostDesktop = memo(({
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9 -mr-2 text-muted-foreground hover:text-foreground rounded-full shrink-0">
-          <MoreHorizontal className="h-[18px] w-[18px]" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <MemberActionsWrapper
+            userId={insight.profiles?.user_id || ""}
+            size="sm"
+          />
+          <Button variant="ghost" size="icon" className="h-9 w-9 -mr-2 text-muted-foreground hover:text-foreground rounded-full shrink-0">
+            <MoreHorizontal className="h-[18px] w-[18px]" />
+          </Button>
+        </div>
       </header>
 
       {/* Text content above media — more natural reading order */}

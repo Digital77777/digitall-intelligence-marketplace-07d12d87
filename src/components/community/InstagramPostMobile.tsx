@@ -1,4 +1,4 @@
-import React, { memo, useState, useCallback, useRef, useEffect } from "react";
+import React, { memo, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { Heart, MessageCircle, MoreHorizontal, Volume2, VolumeX, ChevronLeft, ChevronRight, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { OfficialBadge } from "@/components/ui/official-badge";
 import { useIsOfficialAccount } from "@/hooks/useOfficialAccounts";
 import { usePostTypography } from "./usePostTypography";
+import { MemberActionsWrapper } from "./MemberActionsWrapper";
 
 interface InstagramPostMobileProps {
   insight: CommunityInsight;
@@ -37,21 +38,24 @@ export const InstagramPostMobile = memo(({
   const lastTapRef = useRef<number>(0);
 
   // Combine images and videos for carousel
-  const mediaItems: { type: 'image' | 'video'; src: string; poster?: string }[] = [];
-  
-  if (insight.cover_image) {
-    mediaItems.push({ type: 'image', src: insight.cover_image });
-  }
-  
-  if (insight.videos && insight.videos.length > 0) {
-    insight.videos.forEach((video, index) => {
-      mediaItems.push({ 
-        type: 'video', 
-        src: video, 
-        poster: insight.video_thumbnails?.[index] 
+  const mediaItems = useMemo(() => {
+    const items: { type: 'image' | 'video'; src: string; poster?: string }[] = [];
+
+    if (insight.cover_image) {
+      items.push({ type: 'image', src: insight.cover_image });
+    }
+
+    if (insight.videos && insight.videos.length > 0) {
+      insight.videos.forEach((video, index) => {
+        items.push({
+          type: 'video',
+          src: video,
+          poster: insight.video_thumbnails?.[index]
+        });
       });
-    });
-  }
+    }
+    return items;
+  }, [insight.cover_image, insight.videos, insight.video_thumbnails]);
 
   const hasMultipleMedia = mediaItems.length > 1;
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
@@ -179,7 +183,13 @@ export const InstagramPostMobile = memo(({
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-semibold leading-tight">
+              <span
+                className="text-sm font-semibold leading-tight hover:text-primary transition-colors cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewClick(insight);
+                }}
+              >
                 {insight.profiles?.full_name || "Community Member"}
               </span>
               {isOfficial && <OfficialBadge label={badgeLabel} variant="compact" />}
@@ -187,9 +197,15 @@ export const InstagramPostMobile = memo(({
             <span className="text-xs text-muted-foreground">{timeAgo}</span>
           </div>
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <MemberActionsWrapper
+            userId={insight.profiles?.user_id || ""}
+            size="sm"
+          />
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Media Content - Full width edge-to-edge like Instagram */}
