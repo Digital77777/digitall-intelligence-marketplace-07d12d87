@@ -2,15 +2,16 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Users, UserPlus, UserCheck, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
-import { useFollowStatus, useFollowUser, useUnfollowUser } from "@/hooks/useFollows";
+import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
+import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest, useIgnoreConnectionRequest } from "@/hooks/useConnections";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { SEOHead } from "@/components/SEOHead";
+import MemberCard from "@/components/community/MemberCard";
 
 interface FollowUser {
   user_id: string;
@@ -20,90 +21,58 @@ interface FollowUser {
 }
 
 // Separate component to properly use hooks
-const UserCard = ({ 
-  userData, 
-  showFollowBack = false 
+const MemberCardWithHooks = ({
+  userData,
 }: { 
-  userData: FollowUser; 
-  showFollowBack?: boolean 
+  userData: FollowUser;
 }) => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: followStatus } = useFollowStatus(userData.user_id);
+  const { data: isFollowedBy = false } = useIsFollowedBy(userData.user_id);
+  const { data: connectionStatus } = useConnectionStatus(userData.user_id);
+
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
-  const isFollowing = !!followStatus;
+  const sendConnectionRequest = useSendConnectionRequest();
+  const acceptConnection = useAcceptConnectionRequest();
+  const ignoreConnection = useIgnoreConnectionRequest();
 
-  const getInitials = (name: string | null) => {
-    if (!name) return "?";
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  const isFollowing = !!followStatus;
+  const isOwnProfile = user?.id === userData.user_id;
+
+  const getConnectionStatusString = (): 'none' | 'pending' | 'pending_received' | 'accepted' => {
+    if (!connectionStatus) return 'none';
+    if (connectionStatus.status === 'accepted') return 'accepted';
+    if (connectionStatus.status === 'pending') {
+      if (connectionStatus.requester_id === user?.id) return 'pending';
+      return 'pending_received';
+    }
+    return 'none';
   };
 
+  const connectionId = connectionStatus?.id;
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div 
-            className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 cursor-pointer"
-            onClick={() => navigate(`/profile/${userData.user_id}`)}
-          >
-            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 flex-shrink-0">
-              <AvatarImage src={userData.avatar_url || undefined} />
-              <AvatarFallback className="text-sm sm:text-lg font-semibold bg-gradient-ai text-white">
-                {getInitials(userData.full_name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold truncate hover:text-primary transition-colors">
-                {userData.full_name || "Anonymous User"}
-              </h3>
-              {userData.headline && (
-                <p className="text-sm text-muted-foreground truncate">
-                  {userData.headline}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            {showFollowBack && !isFollowing ? (
-              <Button
-                size="sm"
-                onClick={() => followUser.mutate(userData.user_id)}
-                disabled={followUser.isPending}
-                className="bg-gradient-ai text-white flex-1 sm:flex-initial"
-              >
-                <UserPlus className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Follow Back</span>
-              </Button>
-            ) : isFollowing ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => unfollowUser.mutate(userData.user_id)}
-                disabled={unfollowUser.isPending}
-                className="bg-primary/10 text-primary border-primary/20 flex-1 sm:flex-initial"
-              >
-                <UserCheck className="h-4 w-4 sm:mr-1" />
-                <span className="hidden sm:inline">Following</span>
-              </Button>
-            ) : null}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => navigate(`/community/inbox?userId=${userData.user_id}`)}
-              className="flex-1 sm:flex-initial"
-            >
-              <MessageCircle className="h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Message</span>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <MemberCard
+      member={{
+        user_id: userData.user_id,
+        full_name: userData.full_name,
+        avatar_url: userData.avatar_url,
+        headline: userData.headline,
+      }}
+      isFollowing={isFollowing}
+      isFollowedBy={isFollowedBy}
+      connectionStatus={getConnectionStatusString()}
+      isOwnProfile={isOwnProfile}
+      onFollow={() => followUser.mutate(userData.user_id)}
+      onUnfollow={() => unfollowUser.mutate(userData.user_id)}
+      onConnect={() => sendConnectionRequest.mutate(userData.user_id)}
+      onAcceptConnection={connectionId ? () => acceptConnection.mutate(connectionId) : undefined}
+      onIgnoreConnection={connectionId ? () => ignoreConnection.mutate(connectionId) : undefined}
+      isFollowPending={followUser.isPending || unfollowUser.isPending}
+      isConnectPending={sendConnectionRequest.isPending || acceptConnection.isPending || ignoreConnection.isPending}
+      variant="list"
+    />
   );
 };
 
@@ -135,12 +104,15 @@ const FollowersPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.follower_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as FollowUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.follower_id,
+          full_name: profile?.full_name,
+          avatar_url: profile?.avatar_url,
+          headline: profile?.headline,
+        };
+      }) as FollowUser[];
     },
     enabled: !!user,
   });
@@ -166,12 +138,15 @@ const FollowersPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.following_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as FollowUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.following_id,
+          full_name: profile?.full_name,
+          avatar_url: profile?.avatar_url,
+          headline: profile?.headline,
+        };
+      }) as FollowUser[];
     },
     enabled: !!user,
   });
@@ -250,7 +225,7 @@ const FollowersPage = () => {
                 </Card>
               ) : (
                 followers.map((follower) => (
-                  <UserCard key={follower.user_id} userData={follower} showFollowBack />
+                  <MemberCardWithHooks key={follower.user_id} userData={follower} />
                 ))
               )}
             </TabsContent>
@@ -273,7 +248,7 @@ const FollowersPage = () => {
                 </Card>
               ) : (
                 following.map((followed) => (
-                  <UserCard key={followed.user_id} userData={followed} />
+                  <MemberCardWithHooks key={followed.user_id} userData={followed} />
                 ))
               )}
             </TabsContent>

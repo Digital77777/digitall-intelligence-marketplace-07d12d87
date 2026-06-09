@@ -1,5 +1,5 @@
 import React from "react";
-import { X } from "lucide-react";
+import { X, UserPlus, Clock, Check, UserCheck, UserMinus, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,9 +19,11 @@ export interface LinkedInMemberCardProps {
   onConnect: (userId: string) => void;
   onFollow: (userId: string) => void;
   onUnfollow: (userId: string) => void;
+  onAcceptConnection?: (userId: string) => void;
+  onIgnoreConnection?: (userId: string) => void;
+  onDisconnect?: (userId: string) => void;
   onViewProfile: (userId: string) => void;
   onDismiss?: (userId: string) => void;
-  onAcceptConnection?: (userId: string) => void;
   connectionStatus: 'none' | 'pending' | 'pending_received' | 'accepted';
   isFollowing: boolean;
   isFollowedBy?: boolean;
@@ -35,9 +37,11 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
   onConnect,
   onFollow,
   onUnfollow,
+  onAcceptConnection,
+  onIgnoreConnection,
+  onDisconnect,
   onViewProfile,
   onDismiss,
-  onAcceptConnection,
   connectionStatus,
   isFollowing,
   isFollowedBy = false,
@@ -146,6 +150,8 @@ const LinkedInMemberCard: React.FC<LinkedInMemberCardProps> = ({
               onUnfollow={() => onUnfollow(member.user_id)}
               onConnect={() => onConnect(member.user_id)}
               onAcceptConnection={onAcceptConnection ? () => onAcceptConnection(member.user_id) : undefined}
+              onIgnoreConnection={onIgnoreConnection ? () => onIgnoreConnection(member.user_id) : undefined}
+              onDisconnect={onDisconnect ? () => onDisconnect(member.user_id) : undefined}
               isFollowPending={isFollowPending}
               isConnectPending={isConnectPending}
               layout="vertical"

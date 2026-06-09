@@ -29,7 +29,9 @@ import {
   useAcceptConnectionRequest,
   useIgnoreConnectionRequest,
   useSendConnectionRequest,
-  useRemoveConnection
+  useRemoveConnection,
+  useConnectionStatus,
+  type ConnectionWithProfile
 } from "@/hooks/useConnections";
 import { SEOHead } from "@/components/SEOHead";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,31 +44,52 @@ interface NetworkUser {
   headline: string | null;
 }
 
+interface ConnectionWithConnectedUser extends ConnectionWithProfile {
+  connected_user?: {
+    user_id: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    headline: string | null;
+  } | null;
+}
+
 // Wrapper component for member card with hooks
 const NetworkMemberCard = ({ 
   user,
-  showFollowBack = false,
-  connectionStatus = "none" as const,
-  connectionId,
+  connectionStatus: propConnectionStatus,
   variant = "list" as const,
 }: { 
   user: NetworkUser;
-  showFollowBack?: boolean;
   connectionStatus?: "none" | "pending" | "pending_received" | "accepted";
-  connectionId?: string;
   variant?: "list" | "compact" | "card";
 }) => {
   const { user: currentUser } = useAuth();
   const { data: followStatus } = useFollowStatus(user.user_id);
   const { data: isFollowedBy = false } = useIsFollowedBy(user.user_id);
+  const { data: fetchedConnectionStatus } = useConnectionStatus(user.user_id);
+
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnectionRequest();
+  const ignoreConnection = useIgnoreConnectionRequest();
   const removeConnection = useRemoveConnection();
 
   const isFollowing = !!followStatus;
   const isOwnProfile = currentUser?.id === user.user_id;
+
+  const getConnectionStatusString = (): 'none' | 'pending' | 'pending_received' | 'accepted' => {
+    if (propConnectionStatus) return propConnectionStatus;
+    if (!fetchedConnectionStatus) return 'none';
+    if (fetchedConnectionStatus.status === 'accepted') return 'accepted';
+    if (fetchedConnectionStatus.status === 'pending') {
+      if (fetchedConnectionStatus.requester_id === currentUser?.id) return 'pending';
+      return 'pending_received';
+    }
+    return 'none';
+  };
+
+  const connectionId = fetchedConnectionStatus?.id;
 
   return (
     <MemberCard
@@ -78,15 +101,16 @@ const NetworkMemberCard = ({
       }}
       isFollowing={isFollowing}
       isFollowedBy={isFollowedBy}
-      connectionStatus={connectionStatus}
+      connectionStatus={getConnectionStatusString()}
       isOwnProfile={isOwnProfile}
       onFollow={() => followUser.mutate(user.user_id)}
       onUnfollow={() => unfollowUser.mutate(user.user_id)}
       onConnect={() => sendConnectionRequest.mutate(user.user_id)}
       onAcceptConnection={connectionId ? () => acceptConnection.mutate(connectionId) : undefined}
+      onIgnoreConnection={connectionId ? () => ignoreConnection.mutate(connectionId) : undefined}
       onDisconnect={connectionId ? () => removeConnection.mutate(connectionId) : undefined}
-      isFollowPending={followUser.isPending}
-      isConnectPending={sendConnectionRequest.isPending}
+      isFollowPending={followUser.isPending || unfollowUser.isPending}
+      isConnectPending={sendConnectionRequest.isPending || acceptConnection.isPending || ignoreConnection.isPending || removeConnection.isPending}
       variant={variant}
     />
   );
@@ -96,61 +120,29 @@ const NetworkMemberCard = ({
 const PendingRequestCard = ({ 
   connection 
 }: { 
-  connection: any;
+  connection: ConnectionWithProfile;
 }) => {
-  const acceptConnection = useAcceptConnectionRequest();
-  const ignoreConnection = useIgnoreConnectionRequest();
-  const followUser = useFollowUser();
-  const { data: followStatus } = useFollowStatus(connection.requester?.user_id || connection.requester_id);
-
   const user = connection.requester || { 
     user_id: connection.requester_id,
     full_name: null,
     avatar_url: null,
-    headline: null
   };
+
+  const headline = (user as { headline?: string | null }).headline || null;
 
   return (
     <Card className="border-primary/20 bg-primary/5">
-      <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <MemberCard
-            member={{
-              user_id: user.user_id || connection.requester_id,
-              full_name: user.full_name,
-              avatar_url: user.avatar_url,
-              headline: user.headline,
-            }}
-            isFollowing={!!followStatus}
-            connectionStatus="pending_received"
-            isOwnProfile={false}
-            onFollow={() => followUser.mutate(user.user_id || connection.requester_id)}
-            onUnfollow={() => {}}
-            onConnect={() => {}}
-            onAcceptConnection={() => acceptConnection.mutate(connection.id)}
-            isFollowPending={followUser.isPending}
-            isConnectPending={acceptConnection.isPending}
-            variant="list"
-          />
-          <div className="flex gap-2 shrink-0 ml-auto">
-            <Button
-              size="sm"
-              onClick={() => acceptConnection.mutate(connection.id)}
-              disabled={acceptConnection.isPending}
-              className="bg-primary hover:bg-primary/90"
-            >
-              Accept
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => ignoreConnection.mutate(connection.id)}
-              disabled={ignoreConnection.isPending}
-            >
-              Ignore
-            </Button>
-          </div>
-        </div>
+      <CardContent className="p-2">
+        <NetworkMemberCard
+          user={{
+            user_id: user.user_id || connection.requester_id,
+            full_name: user.full_name,
+            avatar_url: user.avatar_url,
+            headline,
+          }}
+          connectionStatus="pending_received"
+          variant="list"
+        />
       </CardContent>
     </Card>
   );
@@ -192,12 +184,15 @@ const MyNetworkPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.follower_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as NetworkUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.follower_id,
+          full_name: profile?.full_name || null,
+          avatar_url: profile?.avatar_url || null,
+          headline: profile?.headline || null,
+        };
+      }) as NetworkUser[];
     },
     enabled: !!user,
   });
@@ -223,12 +218,15 @@ const MyNetworkPage = () => {
 
       if (error) throw error;
 
-      return (data || []).map((item: any) => ({
-        user_id: item.following_id,
-        full_name: item.public_profiles?.full_name,
-        avatar_url: item.public_profiles?.avatar_url,
-        headline: item.public_profiles?.headline,
-      })) as NetworkUser[];
+      return (data || []).map((item) => {
+        const profile = Array.isArray(item.public_profiles) ? item.public_profiles[0] : item.public_profiles;
+        return {
+          user_id: item.following_id,
+          full_name: profile?.full_name || null,
+          avatar_url: profile?.avatar_url || null,
+          headline: profile?.headline || null,
+        };
+      }) as NetworkUser[];
     },
     enabled: !!user,
   });
@@ -401,7 +399,6 @@ const MyNetworkPage = () => {
                   <NetworkMemberCard
                     key={follower.user_id}
                     user={follower}
-                    showFollowBack
                     variant="list"
                   />
                 ))
@@ -484,7 +481,7 @@ const MyNetworkPage = () => {
                   </CardContent>
                 </Card>
               ) : (
-                connections.map((connection: any) => (
+                (connections as ConnectionWithConnectedUser[]).map((connection) => (
                   <NetworkMemberCard
                     key={connection.id}
                     user={{

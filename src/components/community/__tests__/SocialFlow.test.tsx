@@ -29,9 +29,9 @@ describe('SocialActionButton', () => {
     expect(screen.getByRole('button')).toBeDisabled();
   });
 
-  it('renders Follow Back when state is pending_received and type is follow', () => {
+  it('renders Follow Back when state is pending_received and type is follow and isFollowedBy is true', () => {
     const onAction = vi.fn();
-    render(<SocialActionButton actionType="follow" state="pending_received" onAction={onAction} />);
+    render(<SocialActionButton actionType="follow" state="pending_received" onAction={onAction} isFollowedBy={true} />);
 
     const button = screen.getByRole('button', { name: /follow back/i });
     expect(button).toBeInTheDocument();

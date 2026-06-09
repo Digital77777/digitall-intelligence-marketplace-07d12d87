@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useActiveMembers, type ActiveMember } from "@/hooks/useActiveMembers";
-import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest, useRemoveConnection } from "@/hooks/useConnections";
+import { useConnectionStatus, useSendConnectionRequest, useAcceptConnectionRequest, useIgnoreConnectionRequest, useRemoveConnection } from "@/hooks/useConnections";
 import { useFollowStatus, useFollowUser, useUnfollowUser, useIsFollowedBy } from "@/hooks/useFollows";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -29,6 +29,7 @@ const MemberCardWithHooks = ({
   const { data: isFollowedBy = false } = useIsFollowedBy(member.user_id);
   const sendConnectionRequest = useSendConnectionRequest();
   const acceptConnection = useAcceptConnectionRequest();
+  const ignoreConnection = useIgnoreConnectionRequest();
   const removeConnection = useRemoveConnection();
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
@@ -47,6 +48,8 @@ const MemberCardWithHooks = ({
     return 'none';
   };
 
+  const connectionId = connectionStatus?.id;
+
   return (
     <MemberCard
       member={{
@@ -64,10 +67,11 @@ const MemberCardWithHooks = ({
       onFollow={() => followUser.mutate(member.user_id)}
       onUnfollow={() => unfollowUser.mutate(member.user_id)}
       onConnect={() => sendConnectionRequest.mutate(member.user_id)}
-      onAcceptConnection={connectionStatus?.id ? () => acceptConnection.mutate(connectionStatus.id) : undefined}
-      onDisconnect={connectionStatus?.id ? () => removeConnection.mutate(connectionStatus.id) : undefined}
-      isFollowPending={followUser.isPending}
-      isConnectPending={sendConnectionRequest.isPending}
+      onAcceptConnection={connectionId ? () => acceptConnection.mutate(connectionId) : undefined}
+      onIgnoreConnection={connectionId ? () => ignoreConnection.mutate(connectionId) : undefined}
+      onDisconnect={connectionId ? () => removeConnection.mutate(connectionId) : undefined}
+      isFollowPending={followUser.isPending || unfollowUser.isPending}
+      isConnectPending={sendConnectionRequest.isPending || acceptConnection.isPending || ignoreConnection.isPending || removeConnection.isPending}
       variant={variant}
     />
   );

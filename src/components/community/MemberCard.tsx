@@ -27,6 +27,7 @@ export interface MemberCardProps {
   onUnfollow: () => void;
   onConnect: () => void;
   onAcceptConnection?: () => void;
+  onIgnoreConnection?: () => void;
   onDisconnect?: () => void;
   isFollowPending?: boolean;
   isConnectPending?: boolean;
@@ -44,6 +45,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
   onUnfollow,
   onConnect,
   onAcceptConnection,
+  onIgnoreConnection,
   onDisconnect,
   isFollowPending = false,
   isConnectPending = false,
@@ -135,6 +137,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
                   onUnfollow={onUnfollow}
                   onConnect={onConnect}
                   onAcceptConnection={onAcceptConnection}
+                  onIgnoreConnection={onIgnoreConnection}
                   onDisconnect={onDisconnect}
                   isFollowPending={isFollowPending}
                   isConnectPending={isConnectPending}
@@ -203,6 +206,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
                   onUnfollow={onUnfollow}
                   onConnect={onConnect}
                   onAcceptConnection={onAcceptConnection}
+                  onIgnoreConnection={onIgnoreConnection}
                   onDisconnect={onDisconnect}
                   isFollowPending={isFollowPending}
                   isConnectPending={isConnectPending}
@@ -295,6 +299,7 @@ const MemberCard: React.FC<MemberCardProps> = ({
               onUnfollow={onUnfollow}
               onConnect={onConnect}
               onAcceptConnection={onAcceptConnection}
+              onIgnoreConnection={onIgnoreConnection}
               onDisconnect={onDisconnect}
               isFollowPending={isFollowPending}
               isConnectPending={isConnectPending}
