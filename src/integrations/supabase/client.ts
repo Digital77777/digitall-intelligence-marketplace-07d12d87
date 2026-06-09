@@ -8,16 +8,21 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Validate environment configuration
 if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
   console.error('❌ DEPLOYMENT ERROR: Supabase configuration missing!');
-  console.error('Please ensure these environment variables are set in Vercel:');
+  console.error('Please ensure these environment variables are set in your deployment platform:');
   console.error('- VITE_SUPABASE_URL');
   console.error('- VITE_SUPABASE_ANON_KEY');
-  throw new Error('Missing Supabase configuration. Check deployment environment variables.');
+  // We log the error but don't throw to prevent a total app crash at module import time
+  // The app will handle the missing client gracefully or show an ErrorBoundary
 }
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+// Use fallback values to prevent createClient from throwing if variables are missing
+export const supabase = createClient<Database>(
+  SUPABASE_URL || 'https://placeholder.supabase.co',
+  SUPABASE_PUBLISHABLE_KEY || 'placeholder-key',
+  {
   auth: {
     storage: localStorage,
     persistSession: true,

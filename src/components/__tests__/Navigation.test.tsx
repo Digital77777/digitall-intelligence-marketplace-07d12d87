@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@/test/test-utils';
 import Navigation from '../Navigation';
+import { TierProvider } from '@/contexts/TierContext';
+import { AuthProvider } from '@/hooks/useAuth';
 
 // Mock useAuth hook
 vi.mock('@/hooks/useAuth', () => ({
@@ -9,6 +11,17 @@ vi.mock('@/hooks/useAuth', () => ({
     loading: false,
     signOut: vi.fn(),
   }),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
+// Mock TierProvider
+vi.mock('@/contexts/TierContext', () => ({
+  useTier: () => ({
+    tierName: 'starter',
+    loading: false,
+    canAccessFeature: () => true,
+  }),
+  TierProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 describe('Navigation', () => {
@@ -20,7 +33,7 @@ describe('Navigation', () => {
 
   it('displays the logo/brand name', () => {
     const { getByText } = render(<Navigation />);
-    expect(getByText(/AI Learning/i)).toBeTruthy();
+    expect(getByText(/Digital Intelligence Marketplace/i)).toBeTruthy();
   });
 
   it('shows sign in button when user is not authenticated', () => {
